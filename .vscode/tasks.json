@@ -1,0 +1,70 @@
+{
+  // Tasks to configure, build, and run unit tests via CTest
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: Configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["-S", ".", "-B", "build"],
+      "options": {
+        "env": {
+          // Ensure cmake is available if not on PATH
+          "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+        }
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: Build",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "build", "--config", "Release"],
+      "options": {
+        "env": {
+          "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+        }
+      },
+      "group": "build",
+      "dependsOn": ["CMake: Configure"],
+      "problemMatcher": []
+    },
+    {
+      "label": "CTest: Run All",
+      "type": "shell",
+      "command": "ctest",
+      "args": ["--test-dir", "build", "-C", "Release", "--output-on-failure"],
+      "options": {
+        "env": {
+          "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOn": ["CMake: Build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "CTest: Run Single (SmokeTest.BasicTruth)",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--test-dir", "build",
+        "-C", "Release",
+        "-R", "^SmokeTest\\.BasicTruth$",
+        "--output-on-failure"
+      ],
+      "options": {
+        "env": {
+          "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+        }
+      },
+      "group": "test",
+      "dependsOn": ["CMake: Build"],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -15,24 +15,19 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 add_library(DeskController STATIC source/arduino/DeskController.cpp)
-target_include_directories(DeskController PUBLIC source/arduino source/hal)
-
-include_directories(
-    source/arduino
-    source/hal
-    source/hal_mock
-
-)
+target_include_directories(DeskController PUBLIC source/arduino source/arduino/hal_mock)
 
 add_executable(UnitTests
     tests/UnitTests.cpp
-    source/arduino/DeskController.cpp
-    source/hal_mock/MockHal.cpp
-    source/hal_mock/MockHal.h
-    source/arduino/DeskController.h
 )
 
-target_link_libraries(UnitTests
+target_include_directories(UnitTests PRIVATE
+    source/arduino
+    source/arduino/hal_mock
+)
+
+target_link_libraries(UnitTests PRIVATE
+    DeskController
     GTest::gtest
 )
 

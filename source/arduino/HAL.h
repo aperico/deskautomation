@@ -1,0 +1,39 @@
+#ifndef HAL_H
+#define HAL_H
+
+#if defined(ARDUINO)
+    #define PLATFORM_ARDUINO 1
+#else
+    #define PLATFORM_HOST 1
+#endif
+
+#ifndef PLATFORM_ARDUINO
+  #include "hal_mock/HALMock.h"
+#endif
+
+static const int ERROR_LED = 13;
+static const int MOVING_UP_LED = 12;
+static const int MOVING_DOWN_LED = 11;
+static const unsigned int BLINK_INTERVAL_MS = 500;
+static const int IN1 = 8;
+static const int IN2 = 9;
+static const int ENA = 10;
+static const unsigned char MOTOR_SPEED = 255;
+
+void HAL_SetErrorLED(const bool state);
+void HAL_SetWarningLED(const bool state);
+void HAL_SetPowerLED(const bool state);
+void HAL_SetMotorDirection(const bool state);
+void HAL_SetMovingDownLED(const bool state);
+void HAL_SetMovingUpLED(const bool state);
+bool HAL_GetMovingDownLED();
+bool HAL_GetMovingUpLED();
+bool HAL_GetErrorLED();
+void HAL_MoveUp(const unsigned char speed);
+void HAL_MoveDown(const unsigned char speed);
+void HAL_StopMotor();
+void HAL_BlinkErrorLED();
+void HAL_BlinkUPLED();
+void HAL_BlinkDOWNLED();
+
+#endif

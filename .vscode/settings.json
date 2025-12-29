@@ -2,6 +2,29 @@
   "editor.defaultFormatter": "xaver.clang-format",
   "editor.formatOnSave": false,
   "C_Cpp.clang_format_style": "file",
-  "C_Cpp.clang_format_fallbackStyle": "none"
-  
+  "C_Cpp.clang_format_fallbackStyle": "none",
+
+  // CMake Tools: keep build dir consistent with CLI
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.buildType": "Release",
+  "cmake.ctestArgs": ["--output-on-failure"],
+  "cmake.buildBeforeRun": true,
+
+  // Force Ninja generator to match existing build.ninja
+  "cmake.generator": "Ninja",
+  "cmake.preferredGenerators": ["Ninja"],
+
+  // Ensure CMake Tools uses MSYS2 cmake/ctest and has Ninja on PATH
+  "cmake.cmakePath": "C:/msys64/mingw64/bin/cmake.exe",
+  "cmake.ctestPath": "C:/msys64/mingw64/bin/ctest.exe",
+  "cmake.environment": {
+    "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+  },
+
+  // Prefer CMakePresets for configure/build/test to keep parity with CLI
+  "cmake.useCMakePresets": "always",
+  "cmake.configurePreset": "ninja-msys",
+  "cmake.buildPreset": "release",
+  "cmake.testPreset": "all-tests"
+  "cmake.configureOnOpen": true
 }

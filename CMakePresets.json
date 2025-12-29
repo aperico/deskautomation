@@ -1,0 +1,36 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ninja-msys",
+      "displayName": "Ninja (MSYS2)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "14",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "ninja-msys",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "all-tests",
+      "displayName": "Run all tests (Release)",
+      "configurePreset": "ninja-msys",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true },
+      "execution": {
+        "noTestsAction": "error",
+        "jobs": 8
+      }
+    }
+  ]
+}
