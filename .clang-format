@@ -1,0 +1,37 @@
+BasedOnStyle: LLVM
+Language: Cpp
+
+# === LINE BREAK CONTROL ===
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: Never
+
+# === FUNCTION & BRACE STYLE ===
+BreakBeforeBraces: Allman
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakAfterReturnType: All
+
+# === ARGUMENTS & PARAMETERS ===
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# === LAMBDAS ===
+AllowShortLambdasOnASingleLine: None
+
+# === CONTROL STRUCTURES ===
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+
+# === POINTERS & REFERENCES ===
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# === READABILITY ===
+IndentWidth: 4
+ContinuationIndentWidth: 4
+UseTab: Never
