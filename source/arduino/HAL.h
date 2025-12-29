@@ -13,15 +13,14 @@
 
 #include "DeskController.h"
 
+#include "PinConfig.h"
+
 static const unsigned int BLINK_INTERVAL_MS = 500;
 static const unsigned char MOTOR_SPEED = 255;
 
 static const int ERROR_LED = 13;
 static const int MOVING_UP_LED = 12;
 static const int MOVING_DOWN_LED = 11;
-static const int IN1 = 8;
-static const int IN2 = 9;
-static const int ENA = 10;
 
 void HAL_Init();
 void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs);

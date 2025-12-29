@@ -4,6 +4,7 @@ typedef enum {
   APP_STATE_IDLE = 0,
   APP_STATE_MOVE_UP,
   APP_STATE_MOVE_DOWN,
+  APP_STATE_DWELL,
   APP_STATE_ERROR
 } AppState_t;
 
@@ -13,7 +14,19 @@ void process_move_up() { appState = APP_STATE_MOVE_UP; }
 
 void process_move_down() { appState = APP_STATE_MOVE_DOWN; }
 
-void process_stop() { appState = APP_STATE_ERROR; }
+void process_stop() { appState = APP_STATE_IDLE; }
+
+#if defined(ARDUINO)
+#include <Arduino.h>
+static unsigned long now_ms() { return millis(); }
+#else
+static unsigned long fake_ms = 0;
+static unsigned long now_ms() { fake_ms += 100; return fake_ms; }
+#endif
+
+static const unsigned long DWELL_TIME_MS = 200;
+static unsigned long dwellStartMs = 0;
+static void process_dwell() { appState = APP_STATE_DWELL; dwellStartMs = now_ms(); }
 
 void DeskApp_task_init(DeskAppInputs_t *inputs,
                                   DeskAppOutputs_t *outputs){
@@ -42,21 +55,43 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
 
   switch (appState) {
   case APP_STATE_IDLE:
-    outputs->stop = TRUE;
+    // Idle: no motion unless a button is pressed
     outputs->error = FALSE;
-    // buttons are mutually exclusive
     if (inputs->btUPPressed) {
-      process_move_up();
+      if (inputs->upperLimitActive == TRUE) {
+        outputs->stop = TRUE;
+        // remain IDLE due to upper limit
+      } else {
+        outputs->moveUp = TRUE;
+        outputs->stop = FALSE;
+        process_move_up();
+      }
     } else if (inputs->btDOWNPressed) {
-      process_move_down();
+      if (inputs->lowerLimitActive == TRUE) {
+        outputs->stop = TRUE;
+        // remain IDLE due to lower limit
+      } else {
+        outputs->moveDown = TRUE;
+        outputs->stop = FALSE;
+        process_move_down();
+      }
     } else {
-      process_stop();
+      outputs->stop = TRUE;
+      // remain in IDLE
     }
     break;
   case APP_STATE_MOVE_UP:
     outputs->moveUp = TRUE;
     if ((inputs->upperLimitActive == TRUE) || (inputs->btUPPressed == FALSE)) {
-      process_stop();
+      if (inputs->btDOWNPressed == TRUE && inputs->lowerLimitActive == FALSE) {
+        // immediate stop and enter dwell before reversing
+        outputs->moveUp = FALSE;
+        outputs->moveDown = FALSE;
+        outputs->stop = TRUE;
+        process_dwell();
+      } else {
+        process_stop();
+      }
     }
 
     if (inputs->lowerLimitActive == TRUE) {
@@ -68,17 +103,49 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
 
     if ((inputs->lowerLimitActive == TRUE) ||
         (inputs->btDOWNPressed == FALSE)) {
-      process_stop();
+      if (inputs->btUPPressed == TRUE && inputs->upperLimitActive == FALSE) {
+        // immediate stop and enter dwell before reversing
+        outputs->moveUp = FALSE;
+        outputs->moveDown = FALSE;
+        outputs->stop = TRUE;
+        process_dwell();
+      } else {
+        process_stop();
+      }
     }
     if (inputs->upperLimitActive == TRUE) {
       appState = APP_STATE_ERROR;
     }
 
     break;
+  case APP_STATE_DWELL:
+    outputs->stop = TRUE;
+    outputs->error = FALSE;
+    if (now_ms() - dwellStartMs >= DWELL_TIME_MS) {
+      if (inputs->btUPPressed == TRUE && inputs->upperLimitActive == FALSE) {
+        outputs->moveUp = TRUE;
+        outputs->stop = FALSE;
+        process_move_up();
+      } else if (inputs->btDOWNPressed == TRUE && inputs->lowerLimitActive == FALSE) {
+        outputs->moveDown = TRUE;
+        outputs->stop = FALSE;
+        process_move_down();
+      } else {
+        process_stop();
+      }
+    }
+    break;
   case APP_STATE_ERROR:
     outputs->stop = TRUE;
-    outputs->error = TRUE;
-    // TODO create method to reset the desk to a safe position
+    // Latched error until safe conditions are met
+    if ((inputs->btUPPressed == FALSE) && (inputs->btDOWNPressed == FALSE) &&
+        (inputs->upperLimitActive == FALSE) && (inputs->lowerLimitActive == FALSE)) {
+      // Clear error and return to idle when no inputs and no limits
+      outputs->error = FALSE;
+      appState = APP_STATE_IDLE;
+    } else {
+      outputs->error = TRUE;
+    }
     break;
   default:
     appState = APP_STATE_IDLE;
