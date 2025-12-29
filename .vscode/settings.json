@@ -25,6 +25,6 @@
   "cmake.useCMakePresets": "always",
   "cmake.configurePreset": "ninja-msys",
   "cmake.buildPreset": "release",
-  "cmake.testPreset": "all-tests"
+  "cmake.testPreset": "all-tests",
   "cmake.configureOnOpen": true
 }

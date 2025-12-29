@@ -3,6 +3,25 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "CMake: Clean",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Remove-Item -Path \"${workspaceFolder}/build\" -Recurse -Force -ErrorAction SilentlyContinue; if (!(Test-Path \"${workspaceFolder}/build\")) { New-Item -ItemType Directory -Path \"${workspaceFolder}/build\" | Out-Null }"
+      ],
+      "options": {
+        "env": {
+          "PATH": "C:/msys64/mingw64/bin;${env:PATH}"
+        }
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "CMake: Configure",
       "type": "shell",
       "command": "cmake",
@@ -14,6 +33,7 @@
         }
       },
       "group": "build",
+      "dependsOn": ["CMake: Clean"],
       "problemMatcher": []
     },
     {

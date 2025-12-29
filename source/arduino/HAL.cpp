@@ -1,8 +1,47 @@
 #include "HAL.h"
 
+
 #if defined(ARDUINO)
 #include <Arduino.h>
 #endif
+
+void HAL_Init() {
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ERROR_LED, OUTPUT);
+  pinMode(MOVING_UP_LED, OUTPUT);
+  pinMode(MOVING_DOWN_LED, OUTPUT);
+  HAL_StopMotor();
+}
+
+void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs){
+if (ret == APP_TASK_SUCCESS) {
+    if (outputs->moveUp == TRUE) {
+      HAL_SetErrorLED(false);
+      HAL_BlinkUPLED();
+      HAL_MoveUp(MOTOR_SPEED);
+    }
+    if (outputs->moveDown == TRUE) {
+      HAL_SetErrorLED(false);
+      HAL_BlinkDOWNLED();
+      HAL_MoveDown(MOTOR_SPEED);
+    }
+    if (outputs->stop == TRUE) {
+      HAL_SetErrorLED(false);
+      HAL_SetMovingUpLED(false);
+      HAL_SetMovingDownLED(false);
+      HAL_StopMotor();
+    }
+  } else {
+    HAL_SetErrorLED(true);
+    HAL_SetMovingUpLED(false);
+    HAL_SetMovingDownLED(false);
+    HAL_BlinkErrorLED();
+    HAL_StopMotor();
+  }
+}
+
 
 void HAL_SetErrorLED(const bool state) { 
   digitalWrite(ERROR_LED, state); 

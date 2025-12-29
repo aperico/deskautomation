@@ -15,6 +15,22 @@ void process_move_down() { appState = APP_STATE_MOVE_DOWN; }
 
 void process_stop() { appState = APP_STATE_ERROR; }
 
+void DeskApp_task_init(DeskAppInputs_t *inputs,
+                                  DeskAppOutputs_t *outputs){
+  // app inputs init
+  inputs->btUPPressed = FALSE;
+  inputs->btDOWNPressed = FALSE;
+  inputs->upperLimitActive = FALSE;
+  inputs->lowerLimitActive = FALSE;
+
+  // app outputs init
+  outputs->moveUp = FALSE;
+  outputs->moveDown = FALSE;
+  outputs->stop = TRUE;
+  outputs->error = FALSE;
+}
+
+
 DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
                                   DeskAppOutputs_t *outputs) {
   DeskAppTask_Return_t ret = APP_TASK_SUCCESS;

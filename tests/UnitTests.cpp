@@ -5,29 +5,30 @@
 TEST(SmokeTest, BasicTruth) {
   DeskAppInputs_t inputs;
   DeskAppOutputs_t outputs;
+  DeskAppTask_Return_t ret;
 
   inputs.btUPPressed = FALSE;
   inputs.btDOWNPressed = FALSE;
   inputs.upperLimitActive = FALSE;
   inputs.lowerLimitActive = FALSE;
 
-  DeskApp_task(&inputs, &outputs);
+  ret = DeskApp_task(&inputs, &outputs);
+  EXPECT_EQ(ret, APP_TASK_SUCCESS);
 
-  EXPECT_EQ(1 + 1, 2);
 }
 
 TEST(SmokeTest, BasicTruth2) {
   DeskAppInputs_t inputs;
   DeskAppOutputs_t outputs;
+  DeskAppTask_Return_t ret;
 
   inputs.btUPPressed = FALSE;
   inputs.btDOWNPressed = FALSE;
   inputs.upperLimitActive = FALSE;
   inputs.lowerLimitActive = FALSE;
 
-  DeskApp_task(&inputs, &outputs);
-
-  EXPECT_EQ(1 + 1, 2);
+  ret = DeskApp_task(&inputs, &outputs);
+  EXPECT_EQ(ret, APP_TASK_SUCCESS);
 }
 
 int main(int argc, char **argv) {

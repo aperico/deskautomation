@@ -20,8 +20,10 @@ typedef struct {
 typedef enum {
   APP_TASK_SUCCESS = 0,
   APP_TASK_ERROR
-
 } DeskAppTask_Return_t;
+
+void DeskApp_task_init(DeskAppInputs_t *inputs,
+                                  DeskAppOutputs_t *outputs);
 
 DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
                                   DeskAppOutputs_t *outputs);

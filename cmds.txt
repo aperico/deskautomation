@@ -2,6 +2,8 @@ C:\msys64\mingw64\bin\cmake -S . -B build
 C:\msys64\mingw64\bin\cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
 
+//run single
+ctest --test-dir build -C Release -R "^SmokeTest\.BasicTruth2$" --output-on-failure
 
 cmake --preset ninja-msys
 cmake --build --preset release
