@@ -1,3 +1,9 @@
+// HAL.h
+// -----------------------------------------------------------------------------
+// Hardware Abstraction Layer for Desk Automation Project
+// Provides functions to control and read hardware components
+// -----------------------------------------------------------------------------
+
 #ifndef HAL_H
 #define HAL_H
 
@@ -18,7 +24,7 @@
 static const unsigned int BLINK_INTERVAL_MS = 500;
 static const unsigned char MOTOR_SPEED = 255;
 
-void HAL_Init();
+void HAL_Init(); // Initialize all hardware pins and peripherals
 void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs);
 
 void HAL_SetErrorLED(const bool state);

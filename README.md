@@ -344,3 +344,57 @@ UNO PWM-capable pins: D3, D5, D6, D9, D10, D11.
 - Ensure common ground between Arduino and BTS7960.
 - Update HAL constants to match BTS7960 if/when migrating.
 
+
+## Architecture
+
+- **PinConfig.h**  
+  Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.  
+  *Edit this file to change hardware pin mappings.*
+
+- **HAL.h / HAL.cpp**  
+  Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
+
+- **DeskController.h / DeskController.cpp**  
+  Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
+
+- **arduino.ino**  
+  Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
+
+---
+
+## Hardware Connections
+
+| Function                | Arduino Pin |
+|-------------------------|-------------|
+| Error Indicator LED     | 13          |
+| Left Position LED       | 5           |
+| Right Position LED      | 4           |
+| Button Up               | 3           |
+| Button Down             | 2           |
+| Motor IN1               | 8           |
+| Motor IN2               | 9           |
+| Motor ENA (PWM)         | 10          |
+
+---
+
+
+3. **Operation:**  
+   - Use the UP and DOWN buttons to control desk movement.
+   - LEDs indicate desk position and errors.
+
+
+
+---
+
+## Code Structure
+
+- **Modular Design:**  
+  Hardware, logic, and configuration are separated for clarity and maintainability.
+
+- **State Management:**  
+  Uses input/output structs to pass data between layers.
+
+- **Non-blocking Loop:**  
+  The main loop is designed to be responsive and non-blocking.
+
+---

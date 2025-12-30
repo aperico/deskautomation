@@ -1,3 +1,8 @@
+// DeskController.h
+// -----------------------------------------------------------------------------
+// Desk movement logic and state machine for Desk Automation Project
+// -----------------------------------------------------------------------------
+
 #ifndef DESKCONTROLLER_H
 #define DESKCONTROLLER_H
 
