@@ -4,7 +4,10 @@
 #define DRIVER_L298N 1
 //#define DRIVER_BTS7960 2
 
-static const int BUTTON_UP_PIN = 4;
+static const int ERROR_LED = 13;
+static const int LED_LEFT_PIN = 5;
+static const int LED_RIGHT_PIN = 4;
+static const int BUTTON_UP_PIN = 3;
 static const int BUTTON_DOWN_PIN = 2;
 static const int IN1 = 8;
 static const int IN2 = 9;

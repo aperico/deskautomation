@@ -17,19 +17,16 @@ void loop() {
   // Read inputs
   inputs.btUPPressed = digitalRead(BUTTON_UP_PIN) == LOW ? FALSE : TRUE;
   inputs.btDOWNPressed = digitalRead(BUTTON_DOWN_PIN) == LOW ? FALSE : TRUE;
-//delay(100); // Simple debounce (10ms)
   static unsigned long lastPrintTime = 0;
   unsigned long currentTime = millis();
   if (currentTime - lastPrintTime >= 500) {
-    Serial.print("right: ");
-    Serial.print(inputs.btUPPressed == TRUE ? "1" : "0");
-    Serial.print(" ");
-    Serial.print("left: ");
-    Serial.print(inputs.btDOWNPressed == TRUE ? "1" : "0");
-    Serial.print("\n");
+    // do nothing
     lastPrintTime = currentTime;
   }
 
+  
   ret = DeskApp_task(&inputs, &outputs);
   HAL_ProcessAppState(ret, &outputs);
+
+  
 }
