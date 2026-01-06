@@ -17,19 +17,19 @@ enable_testing()
 add_library(DeskController STATIC source/arduino/DeskController.cpp)
 target_include_directories(DeskController PUBLIC source/arduino source/arduino/hal_mock)
 
-add_executable(UnitTests
-    tests/UnitTests.cpp
+add_executable(SoftwareTests
+    tests/SoftwareTests.cpp
 )
 
-target_include_directories(UnitTests PRIVATE
+target_include_directories(SoftwareTests PRIVATE
     source/arduino
     source/arduino/hal_mock
 )
 
-target_link_libraries(UnitTests PRIVATE
+target_link_libraries(SoftwareTests PRIVATE
     DeskController
     GTest::gtest
 )
 
 include(GoogleTest)
-gtest_discover_tests(UnitTests)
+gtest_discover_tests(SoftwareTests)

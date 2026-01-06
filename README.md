@@ -1,3 +1,24 @@
+# Glossary
+
+This glossary defines key terms used throughout the documentation to ensure clarity and consistency.
+
+| Term                | Definition |
+|---------------------|------------|
+| ECU                 | Electronic Control Unit; the microcontroller managing desk logic |
+| Desk Controller     | The software and hardware module responsible for desk movement and safety |
+| Motor Driver        | Hardware component (e.g., L298N) that powers and controls the motor |
+| State Machine       | Software logic managing system states and transitions |
+| Error               | A detected fault or unsafe condition that disables movement |
+| Fault               | A hardware or software abnormality (e.g., overcurrent, both limits active) |
+| Indicator LED       | Visual feedback device showing system state (IDLE, MOVING_UP, MOVING_DOWN, ERROR) |
+| Limit Switch        | Hardware sensor indicating upper or lower desk position |
+| Dwell               | A short waiting period before reversing desk direction |
+| Test Case           | A repeatable procedure to verify requirement compliance |
+| Requirement         | A statement of system behavior, function, or constraint |
+| Use Case            | A scenario describing user interaction with the system |
+
+Refer to this glossary for clarification of terms in all documentation artifacts.
+
 # Automated Mechanical Desk Lift  
 **Arduino-Based Control System**
 
@@ -6,8 +27,6 @@
 ## Overview
 
 This project implements a **motorized height adjustment system** for a mechanical desk using an **Arduino-based controller**.  
-The system replaces manual adjustment with an electric drive, emphasizing **safety**, **modularity**, and **incremental development**.
-
 The architecture is designed for:
 - Temporary hardware during early development (JGY370 + L298N)
 - Future extensibility (limit switches, current sensing, height presets)
@@ -35,9 +54,18 @@ The architecture is designed for:
 ---
 
 ## Components
-- Arduino UNO
 - L298N motor driver
 - JGY370 DC motor (12V)
+## State Transitions
+
+The system operates as a state machine. The following transitions occur:
+
+- **Idle → MovingUp**: When the user presses the 'Up' button and the desk is not at the upper limit.
+- **Idle → MovingDown**: When the user presses the 'Down' button and the desk is not at the lower limit.
+- **MovingUp → Idle**: When the desk reaches the upper limit or the 'Up' button is released.
+- **MovingDown → Idle**: When the desk reaches the lower limit or the 'Down' button is released.
+
+See the state diagram above for a visual representation.
 - 9V–12V battery
 - Elitek ON/OFF switch
 ---
@@ -54,11 +82,18 @@ The architecture is designed for:
 
 ---
 
-## Use Cases (User Perspective)
+## Documentation
 
 ---
 
-[See System Use Cases](SystemUseCases.md)
+[System Use Cases](SystemUseCases.md)
+[Software Requirements](SoftwareRequirements.md)
+[Software Architecture](SoftwareArchitecture.md)
+[Software Detailed Design](SoftwareDetailedDesign.md)
+[Software Test Cases Specification](SoftwareTestCasesSpecification.md)
+[Traceability Matrix](TraceabilityMatrix.md)
+
+
 
 ## Key Design Constraints
 
@@ -165,21 +200,7 @@ Below are the main states and their transitions:
 
 ---
 
-### **State Diagram**
 
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE
-    IDLE --> MOVING_UP: Up button pressed
-    IDLE --> MOVING_DOWN: Down button pressed
-    MOVING_UP --> IDLE: Up button released / timeout / upper limit
-    MOVING_DOWN --> IDLE: Down button released / timeout / lower limit
-    MOVING_UP --> ERROR: Fault detected
-    MOVING_DOWN --> ERROR: Fault detected
-    ERROR --> IDLE: Error cleared
-```
-
----
 
 ## Wiring Diagrams
 
@@ -206,23 +227,9 @@ stateDiagram-v2
 | ENA                | 10 (PWM)    | Motor speed (PWM)    |
 
 ---
+## Traceability
 
-## Use Case ↔ Unit Test Traceability
 
-| Use Case | Test(s) |
-|---|---|
-| UC-01: Power the Desk Control System | DeskAppTest.UC01_Power_IdleStop_NoError; DeskAppTest.UC01_NoButtonsPressed_IdleNoMovement |
-| UC-02: Raise Desk | DeskAppTest.UC02_UpPressed_MovesUp_WhenNotAtUpperLimit; DeskAppTest.UC02_UpPressed_DoesNotMoveUp_WhenAtUpperLimit |
-| UC-03: Lower Desk | DeskAppTest.UC03_DownPressed_MovesDown_WhenNotAtLowerLimit; DeskAppTest.UC03_DownPressed_DoesNotMoveDown_WhenAtLowerLimit |
-| UC-04: Emergency Stop (Software-Based or Manual) | DeskAppTest.UC04_EmergencyStop_FromUp_WhenLowerLimitActive; DeskAppTest.UC04_EmergencyStop_FromDown_WhenUpperLimitActive |
-| UC-05: Visual Feedback | Covered by output assertions in all movement and error tests (e.g., outputs.moveUp, outputs.moveDown, outputs.error, outputs.stop) |
-| UC-06: Power-Off During Movement | Not directly unit-testable; implied by stop behavior in DeskAppTest.UC01_NoButtonsPressed_IdleNoMovement |
-| UC-07: Simultaneous Button Presses | DeskAppTest.UC07_BothButtonsPressed_UpHasPriority_WhenNotAtUpperLimit; DeskAppTest.UC08_BothButtonsPressed_NoMovement_WhenAtBothLimits |
-| UC-08: Error Indication and Recovery | DeskAppTest.UC04_EmergencyStop_FromUp_WhenLowerLimitActive; DeskAppTest.UC04_EmergencyStop_FromDown_WhenUpperLimitActive; DeskAppTest.UC09_ErrorRecovery_ToIdle_WhenSafe |
-| UC-10: Dwell before reversal (Up ↔ Down) | DeskAppTest.UC10_DwellBeforeReversal_UpToDown |
-| Smoke/Basic Logic | SmokeTest.BasicTruth |
-
-- **Note:** Some user experience aspects (like actual LED feedback and power cycling) are validated indirectly through output flags in the tests.
 
 ---
 

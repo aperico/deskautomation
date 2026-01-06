@@ -1,8 +1,9 @@
 #include "../source/arduino/DeskController.h"
 #include <gtest/gtest.h>
+// Software Test Cases implemented are based on SoftwareTestCases.md
 
-// UC-01: Power the Desk Control System
-TEST(DeskAppTest, UC01_Power_IdleStop_NoError) {
+// SR-01: System Initialization
+TEST(DeskAppTest, SR01_Power_IdleStop_NoError) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -17,7 +18,7 @@ TEST(DeskAppTest, UC01_Power_IdleStop_NoError) {
     EXPECT_EQ(outputs.error, FALSE);
 }
 
-TEST(DeskAppTest, UC01_NoButtonsPressed_IdleNoMovement) {
+TEST(DeskAppTest, SR01_NoButtonsPressed_IdleNoMovement) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -32,8 +33,8 @@ TEST(DeskAppTest, UC01_NoButtonsPressed_IdleNoMovement) {
     EXPECT_EQ(outputs.error, FALSE);
 }
 
-// UC-02: Raise Desk
-TEST(DeskAppTest, UC02_UpPressed_MovesUp_WhenNotupperLimitActive) {
+// SR-02: Upward Movement Command
+TEST(DeskAppTest, SR02_UpPressed_MovesUp_WhenNotupperLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -49,7 +50,7 @@ TEST(DeskAppTest, UC02_UpPressed_MovesUp_WhenNotupperLimitActive) {
     EXPECT_EQ(outputs.error, FALSE);
 }
 
-TEST(DeskAppTest, UC02_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
+TEST(DeskAppTest, SR02_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -65,8 +66,8 @@ TEST(DeskAppTest, UC02_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
     EXPECT_EQ(outputs.error, FALSE);
 }
 
-// UC-03: Lower Desk
-TEST(DeskAppTest, UC03_DownPressed_MovesDown_WhenNotlowerLimitActive) {
+// SR-03: Downward Movement Command
+TEST(DeskAppTest, SR03_DownPressed_MovesDown_WhenNotlowerLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -83,7 +84,7 @@ TEST(DeskAppTest, UC03_DownPressed_MovesDown_WhenNotlowerLimitActive) {
     
 }
 
-TEST(DeskAppTest, UC03_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
+TEST(DeskAppTest, SR03_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -100,8 +101,8 @@ TEST(DeskAppTest, UC03_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
     
 }
 
-// UC-04: Emergency Stop (Software-Based or Manual)
-TEST(DeskAppTest, UC04_EmergencyStop_FromUp_WhenLowerLimitActive) {
+// SR-04: Emergency Stop
+TEST(DeskAppTest, SR04_EmergencyStop_FromUp_WhenLowerLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -119,7 +120,7 @@ TEST(DeskAppTest, UC04_EmergencyStop_FromUp_WhenLowerLimitActive) {
     EXPECT_EQ(ret, APP_TASK_ERROR);
 }
 
-TEST(DeskAppTest, UC04_EmergencyStop_FromDown_WhenUpperLimitActive) {
+TEST(DeskAppTest, SR04_EmergencyStop_FromDown_WhenUpperLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -137,12 +138,12 @@ TEST(DeskAppTest, UC04_EmergencyStop_FromDown_WhenUpperLimitActive) {
     
 }
 
-// UC-05: Visual Feedback (covered by output assertions in all tests)
+// SR-05: Visual Feedback (covered by output assertions in all tests)
 
-// UC-06: Power-Off During Movement (not directly unit-testable, implied by idle tests)
+// SR-06: Power-Off Handling (directly tested below)
 
-// UC-07: Simultaneous Button Presses
-TEST(DeskAppTest, UC07_BothButtonsPressed_NoMovement_Commanded) {
+// SR-07: Simultaneous Button Presses
+TEST(DeskAppTest, SR07_BothButtonsPressed_NoMovement_Commanded) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -159,7 +160,7 @@ TEST(DeskAppTest, UC07_BothButtonsPressed_NoMovement_Commanded) {
     EXPECT_EQ(outputs.error, FALSE);
 }
 
-TEST(DeskAppTest, UC08_BothButtonsPressed_NoMovement_WhenAtBothLimits) {
+TEST(DeskAppTest, SR07_BothButtonsPressed_NoMovement_WhenAtBothLimits) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -177,8 +178,8 @@ TEST(DeskAppTest, UC08_BothButtonsPressed_NoMovement_WhenAtBothLimits) {
     
 }
 
-// UC-08: Error Indication and Recovery
-TEST(DeskAppTest, UC09_ErrorRecovery_ToIdle_WhenSafe) {
+// SR-08: Error Detection and Recovery
+TEST(DeskAppTest, SR08_ErrorRecovery_ToIdle_WhenSafe) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -197,8 +198,8 @@ TEST(DeskAppTest, UC09_ErrorRecovery_ToIdle_WhenSafe) {
     
 }
 
-// UC-10: Dwell before reversal (Up -> Down)
-TEST(DeskAppTest, UC10_DwellBeforeReversal_UpToDown) {
+// SR-02/SR-03: Dwell before reversal (Up -> Down)
+TEST(DeskAppTest, SR02_SR03_DwellBeforeReversal_UpToDown) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -218,7 +219,28 @@ TEST(DeskAppTest, UC10_DwellBeforeReversal_UpToDown) {
     // (This assertion may need to be adjusted based on your implementation)
     EXPECT_EQ(outputs.moveDown, FALSE); // Assuming dwell prevents immediate down
     EXPECT_EQ(outputs.moveUp, FALSE);
-    
+}
+
+// SR-06: Power-Off Handling
+TEST(DeskAppTest, SR06_PowerOffDuringMovement_ReinitializesToIdle) {
+    DeskAppInputs_t inputs = {};
+    DeskAppOutputs_t outputs = {};
+    DeskApp_task_init(&inputs, &outputs);
+
+    // Simulate Up button pressed, moving up
+    inputs.btUPPressed = TRUE;
+    inputs.btDOWNPressed = FALSE;
+    inputs.upperLimitActive = FALSE;
+    DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
+    EXPECT_EQ(outputs.moveUp, TRUE);
+
+    // Simulate power-off (re-initialize)
+    DeskApp_task_init(&inputs, &outputs);
+
+    // After power restore, system should be IDLE, no movement
+    EXPECT_EQ(outputs.moveUp, FALSE);
+    EXPECT_EQ(outputs.moveDown, FALSE);
+    EXPECT_EQ(outputs.error, FALSE);
 }
 
 // Smoke/Basic Logic
