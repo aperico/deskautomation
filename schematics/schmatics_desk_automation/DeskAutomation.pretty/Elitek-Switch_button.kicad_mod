@@ -1,0 +1,125 @@
+(footprint "Elitek-Switch_button"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at -12 -2.5 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "5e420c4a-e78c-461f-83d7-afd89da85c1d")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "Elitek-SW-BT"
+		(at -9 -4 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "fa64730e-237a-4c69-8a8d-5ab678a1f502")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "09ee876f-f077-484d-a3e8-a02425f865ec")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "64a7dacf-57d3-4d06-895e-0971571247dd")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole board_only)
+	(fp_rect
+		(start -15 -5.4)
+		(end 15 4.6)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "1007a506-4f33-4a73-93bc-534668e30101")
+	)
+	(fp_rect
+		(start -14.85 -1.25)
+		(end -12.35 1.25)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "Edge.Cuts")
+		(uuid "2e31434e-7764-4196-be54-8daa7acb15a1")
+	)
+	(fp_rect
+		(start 12.35 -1.25)
+		(end 14.85 1.25)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "Edge.Cuts")
+		(uuid "ec078f77-4c1a-4d65-9dcf-a94b85b572da")
+	)
+	(fp_circle
+		(center 0.05 -0.348784)
+		(end 5.05 -0.348784)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "Edge.Cuts")
+		(uuid "da8b3970-f0d2-4637-bb35-f2e50cc20ac9")
+	)
+	(fp_rect
+		(start -15.15 -5.548784)
+		(end 15.25 4.851216)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "584f5f45-c88a-40e0-8644-52d6527b8e2d")
+	)
+	(fp_text user "${REFERENCE}"
+		(at -9 3.4 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "6718d480-9799-4e25-9859-048863043edd")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(embedded_fonts no)
+)

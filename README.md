@@ -34,6 +34,14 @@ The architecture is designed for:
 
 ---
 
+## Components
+- Arduino UNO
+- L298N motor driver
+- JGY370 DC motor (12V)
+- 9V–12V battery
+- Elitek ON/OFF switch
+---
+
 ## System Actors
 
 | Actor              | Description                    |
@@ -46,68 +54,11 @@ The architecture is designed for:
 
 ---
 
-## Use Cases
-
-### UC-01: Power the Desk Control System
-**Actor:** User  
-**Main Flow:**
-1. User toggles the power switch to ON.
-2. Motor driver receives power.
-3. Arduino powers up (USB or regulated supply).
-
-### UC-02: Raise Desk
-**Actor:** User  
-**Main Flow:**
-1. User presses the “Up” button.
-2. Arduino sets motor direction to UP.
-3. Motor driver energizes the motor.
-4. Desk moves upward.
-5. Motor stops when button is released or timeout occurs.
-
-### UC-03: Lower Desk
-**Actor:** User  
-**Main Flow:**
-1. User presses the “Down” button.
-2. Arduino sets motor direction to DOWN.
-3. Motor driver energizes the motor.
-4. Desk moves downward.
-5. Motor stops when button is released or timeout occurs.
-
-### UC-04: Emergency Stop (Software-Based)
-**Actor:** System  
-**Main Flow:**
-1. System detects a fault or timeout.
-2. Motor driver is de-energized.
-3. Desk movement stops immediately.
-
-### UC-05: Hardware Upgrade Without Software Rewrite
-**Actor:** Developer  
-**Main Flow:**
-1. Developer updates pin mappings and HAL for new hardware.
-2. Control logic remains unchanged.
-3. System operates with new hardware after recompilation.
-
-### UC-06: Host-Based Unit Testing
-**Actor:** Developer  
-**Main Flow:**
-1. Developer runs unit tests on a PC using mocks for Arduino functions.
-2. Test results validate control logic correctness.
-
-### UC-07: Dual Button Handling (Up Priority)
-**Actor:** User  
-**Main Flow:**
-1. User presses both Up and Down buttons simultaneously.
-2. System prioritizes Up command.
-3. Desk moves upward.
-
-### UC-08: Limit Lockout Behavior
-**Actor:** System  
-**Main Flow:**
-1. System detects an active limit (upper or lower).
-2. Movement toward the active limit is blocked.
-3. If both limits are active, all movement is blocked.
+## Use Cases (User Perspective)
 
 ---
+
+[See System Use Cases](SystemUseCases.md)
 
 ## Key Design Constraints
 
@@ -263,12 +214,15 @@ stateDiagram-v2
 | UC-01: Power the Desk Control System | DeskAppTest.UC01_Power_IdleStop_NoError; DeskAppTest.UC01_NoButtonsPressed_IdleNoMovement |
 | UC-02: Raise Desk | DeskAppTest.UC02_UpPressed_MovesUp_WhenNotAtUpperLimit; DeskAppTest.UC02_UpPressed_DoesNotMoveUp_WhenAtUpperLimit |
 | UC-03: Lower Desk | DeskAppTest.UC03_DownPressed_MovesDown_WhenNotAtLowerLimit; DeskAppTest.UC03_DownPressed_DoesNotMoveDown_WhenAtLowerLimit |
-| UC-04: Emergency Stop (Software-Based) | DeskAppTest.UC04_EmergencyStop_FromUp_WhenLowerLimitActive; DeskAppTest.UC04_EmergencyStop_FromDown_WhenUpperLimitActive |
-| UC-09: Error Recovery (Latched → Idle) | DeskAppTest.UC09_ErrorRecovery_ToIdle_WhenSafe |
-| UC-05: Hardware Upgrade Without Software Rewrite | Not directly unit-testable; covered by HAL abstraction and pin documentation |
-| UC-06: Host-Based Unit Testing | SmokeTest.BasicTruth |
-| UC-07: Dual Button Handling (Up Priority) | DeskAppTest.UC07_BothButtonsPressed_UpHasPriority_WhenNotAtUpperLimit |
-| UC-08: Limit Lockout Behavior | DeskAppTest.UC08_BothButtonsPressed_NoMovement_WhenAtBothLimits |
+| UC-04: Emergency Stop (Software-Based or Manual) | DeskAppTest.UC04_EmergencyStop_FromUp_WhenLowerLimitActive; DeskAppTest.UC04_EmergencyStop_FromDown_WhenUpperLimitActive |
+| UC-05: Visual Feedback | Covered by output assertions in all movement and error tests (e.g., outputs.moveUp, outputs.moveDown, outputs.error, outputs.stop) |
+| UC-06: Power-Off During Movement | Not directly unit-testable; implied by stop behavior in DeskAppTest.UC01_NoButtonsPressed_IdleNoMovement |
+| UC-07: Simultaneous Button Presses | DeskAppTest.UC07_BothButtonsPressed_UpHasPriority_WhenNotAtUpperLimit; DeskAppTest.UC08_BothButtonsPressed_NoMovement_WhenAtBothLimits |
+| UC-08: Error Indication and Recovery | DeskAppTest.UC04_EmergencyStop_FromUp_WhenLowerLimitActive; DeskAppTest.UC04_EmergencyStop_FromDown_WhenUpperLimitActive; DeskAppTest.UC09_ErrorRecovery_ToIdle_WhenSafe |
+| UC-10: Dwell before reversal (Up ↔ Down) | DeskAppTest.UC10_DwellBeforeReversal_UpToDown |
+| Smoke/Basic Logic | SmokeTest.BasicTruth |
+
+- **Note:** Some user experience aspects (like actual LED feedback and power cycling) are validated indirectly through output flags in the tests.
 
 ---
 

@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "DeskAutomation")(type "KiCad")(uri "${KIPRJMOD}/DeskAutomation.pretty")(options "")(descr ""))
+)

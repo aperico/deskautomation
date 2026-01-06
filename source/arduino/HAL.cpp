@@ -53,7 +53,7 @@ void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t 
     HAL_StopMotor();
   }
 }
-
+// L298N 
 
 void HAL_SetErrorLED(const bool state) { 
   digitalWrite(ERROR_LED, state? HIGH : LOW); 

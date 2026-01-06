@@ -48,16 +48,40 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
                                   DeskAppOutputs_t *outputs) {
   DeskAppTask_Return_t ret = APP_TASK_SUCCESS;
 
-  // Default outputs
+  // Clear outputs by default
   outputs->moveUp = FALSE;
   outputs->moveDown = FALSE;
   outputs->stop = FALSE;
+  outputs->error = FALSE;
+
+  // --- Both limits active (lockout) ---
+  if (inputs->upperLimitActive && inputs->lowerLimitActive) {
+    outputs->error = TRUE;
+    appState = APP_STATE_ERROR;
+    return APP_TASK_ERROR;
+  }
+
+  // --- Emergency stop: moving up but lower limit active, or moving down but upper limit active ---
+  if ((appState == APP_STATE_MOVE_UP && inputs->lowerLimitActive) ||
+      (appState == APP_STATE_MOVE_DOWN && inputs->upperLimitActive)) {
+    outputs->moveUp = FALSE;
+    outputs->moveDown = FALSE;
+    outputs->stop = TRUE;
+    outputs->error = TRUE;
+    appState = APP_STATE_ERROR;
+    return APP_TASK_ERROR;
+  }
 
   switch (appState) {
   case APP_STATE_IDLE:
-    // Idle: no motion unless a button is pressed
     outputs->error = FALSE;
-    if (inputs->btUPPressed) {
+    // UC-07: If both buttons pressed, no movement should be commanded
+    if (inputs->btUPPressed && inputs->btDOWNPressed) {
+      outputs->moveUp = FALSE;
+      outputs->moveDown = FALSE;
+      outputs->stop = TRUE;
+      // remain in IDLE
+    } else if (inputs->btUPPressed) {
       if (inputs->upperLimitActive == TRUE) {
         outputs->stop = TRUE;
         // remain IDLE due to upper limit
@@ -81,6 +105,14 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
     }
     break;
   case APP_STATE_MOVE_UP:
+    // UC-07: If both buttons pressed, stop movement
+    if (inputs->btUPPressed && inputs->btDOWNPressed) {
+      outputs->moveUp = FALSE;
+      outputs->moveDown = FALSE;
+      outputs->stop = TRUE;
+      process_stop();
+      break;
+    }
     outputs->moveUp = TRUE;
     if ((inputs->upperLimitActive == TRUE) || (inputs->btUPPressed == FALSE)) {
       if (inputs->btDOWNPressed == TRUE && inputs->lowerLimitActive == FALSE) {
@@ -93,14 +125,26 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
         process_stop();
       }
     }
-
+    // Emergency stop if lower limit becomes active while moving up
     if (inputs->lowerLimitActive == TRUE) {
+      outputs->moveUp = FALSE;
+      outputs->moveDown = FALSE;
+      outputs->stop = TRUE;
+      outputs->error = TRUE;
       appState = APP_STATE_ERROR;
+      return APP_TASK_ERROR;
     }
     break;
   case APP_STATE_MOVE_DOWN:
+    // UC-07: If both buttons pressed, stop movement
+    if (inputs->btUPPressed && inputs->btDOWNPressed) {
+      outputs->moveUp = FALSE;
+      outputs->moveDown = FALSE;
+      outputs->stop = TRUE;
+      process_stop();
+      break;
+    }
     outputs->moveDown = TRUE;
-
     if ((inputs->lowerLimitActive == TRUE) ||
         (inputs->btDOWNPressed == FALSE)) {
       if (inputs->btUPPressed == TRUE && inputs->upperLimitActive == FALSE) {
@@ -113,10 +157,15 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs,
         process_stop();
       }
     }
+    // Emergency stop if upper limit becomes active while moving down
     if (inputs->upperLimitActive == TRUE) {
+      outputs->moveUp = FALSE;
+      outputs->moveDown = FALSE;
+      outputs->stop = TRUE;
+      outputs->error = TRUE;
       appState = APP_STATE_ERROR;
+      return APP_TASK_ERROR;
     }
-
     break;
   case APP_STATE_DWELL:
     outputs->stop = TRUE;

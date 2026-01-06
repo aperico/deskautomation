@@ -35,5 +35,8 @@ void loop() {
 
   // Run application logic and update hardware state
   ret = DeskApp_task(&inputs, &outputs);
-  HAL_ProcessAppState(ret, &outputs);
+  //HAL_ProcessAppState(ret, &outputs);
+   digitalWrite(LED_RIGHT_PIN, HIGH); // Test: Turn ON LED
+  digitalWrite(LED_LEFT_PIN, HIGH);  // Test: Turn ON LED
+  digitalWrite(ERROR_LED, HIGH);      // Test: Turn OFF ERROR LED
 }
