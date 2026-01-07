@@ -44,19 +44,33 @@ Welcome! This project implements a motorized height adjustment system for a mech
 
 
 ## Documentation Index
-- [Glossary](documentation/Glossary.md) – Review terminology before starting
-- [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
-- [Safety Notes](documentation/SafetyNotes.md)
-- [Software Requirements](documentation/SoftwareRequirements.md)
-- [Software Architecture](documentation/SoftwareArchitecture.md)
-- [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
-- [System Use Cases](documentation/SystemUseCases.md)
-- [Traceability Matrix](documentation/TraceabilityMatrix.md)
-- [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
-- [Roadmap](documentation/Roadmap.md)
+ [Glossary](documentation/Glossary.md) – Review terminology before starting
+ [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
+ [Safety Notes](documentation/SafetyNotes.md)
+ [Software Requirements](documentation/SoftwareRequirements.md)
+ [Software Architecture](documentation/SoftwareArchitecture.md)
+ [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
+ [System Use Cases](documentation/SystemUseCases.md)
+ [Traceability Matrix](documentation/TraceabilityMatrix.md)
+ [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
+ [Roadmap](documentation/Roadmap.md)
+
+
+## Project File Overview
+
+This table provides an overview and description of the main project files and folders, with direct links for easy navigation.
+
+| File/Folder | Description |
+|-------------|-------------|
+| [source/arduino/arduino.ino](source/arduino/arduino.ino) | Main application entry point for Arduino. Handles setup and main loop. |
+| [source/arduino/PinConfig.h](source/arduino/PinConfig.h) | Pin assignments for all hardware connections. |
+| [source/arduino/HAL.h](source/arduino/HAL.h), [HAL.cpp](source/arduino/HAL.cpp) | Hardware Abstraction Layer for controlling LEDs, buttons, and motor driver. |
+| [source/arduino/DeskController.h](source/arduino/DeskController.h), [DeskController.cpp](source/arduino/DeskController.cpp) | Main logic and state machine for desk movement and safety. |
+| [source/arduino/hal_mock/HALMock.h](source/arduino/hal_mock/HALMock.h), [HALMock.cpp](source/arduino/hal_mock/HALMock.cpp) | Mock hardware abstraction for unit testing. |
+| [source/arduino/hal_mock/SerialMock.h](source/arduino/hal_mock/SerialMock.h) | Serial interface mock for testing. |
+| [tests/UnitTests.cpp](tests/UnitTests.cpp) | Host-based unit tests for core logic and hardware abstraction. |
 
 ---
-
 ## Project Glossary
 
 | Term            | Definition                                                                 |
