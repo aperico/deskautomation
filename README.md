@@ -20,7 +20,7 @@ Welcome! This project implements a motorized height adjustment system for a mech
 
 ## Coding Standards
 
-All contributors must follow the [Coding Guidelines](documentation/CodingGuidelines.md) to ensure code quality and consistency. These guidelines are enforced by automated linting and static analysis tools in CI.
+All contributors must follow the [Coding Guidelines](documentation/codingguidelines.md) to ensure code quality and consistency. These guidelines are enforced by automated linting and static analysis tools in CI.
 
 ---
 
