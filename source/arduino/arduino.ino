@@ -24,8 +24,8 @@ static DeskAppInputs_t inputs;
 static DeskAppOutputs_t outputs;
 
 // Debounce states for buttons
-DebounceState upDebounce = {false, 0};
-DebounceState downDebounce = {false, 0};
+static DebounceState upDebounce = {false, 0};
+static DebounceState downDebounce = {false, 0};
 const unsigned long debounceDelay = 50; // ms
 
 // -----------------------------------------------------------------------------
