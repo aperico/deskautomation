@@ -3,10 +3,6 @@
 // Software Test Cases implemented are based on SoftwareTestCases.md
 
 // SR-01: System Initialization# Software Requirements
-
-
-
-
 TEST(DeskAppTest, SR01_Power_IdleStop_NoError) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};

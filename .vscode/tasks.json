@@ -85,6 +85,29 @@
       "group": "test",
       "dependsOn": ["CMake: Build"],
       "problemMatcher": []
+    },
+    {
+      "label": "Build Tests",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "-DDESK_CONTROLLER_ENABLE_TEST_INTERFACE",
+        "-std=c++17",
+        "-I${workspaceFolder}/source/arduino",
+        "-I${workspaceFolder}/tests",
+        "${workspaceFolder}/tests/UnitTests.cpp",
+        "${workspaceFolder}/source/arduino/DeskController.cpp",
+        "-lgtest",
+        "-lgtest_main",
+        "-pthread",
+        "-o",
+        "${workspaceFolder}/tests/desk_tests"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
     }
   ]
 }

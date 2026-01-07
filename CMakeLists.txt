@@ -30,10 +30,16 @@ target_sources(SoftwareTests PRIVATE
   ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock/SerialMock.cpp
 )
 
+# Enable test interface for white-box testing
+target_compile_definitions(SoftwareTests PRIVATE 
+    DESK_CONTROLLER_ENABLE_TEST_INTERFACE
+)
+
 # ensure include path for test build
 target_include_directories(SoftwareTests PRIVATE
   ${CMAKE_SOURCE_DIR}/source/arduino
   ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock
+  ${CMAKE_SOURCE_DIR}/tests
 )
 
 target_link_libraries(SoftwareTests PRIVATE
@@ -43,3 +49,28 @@ target_link_libraries(SoftwareTests PRIVATE
 include(GoogleTest)
 gtest_discover_tests(SoftwareTests)
 gtest_add_tests(TARGET SoftwareTests)
+
+# Add unit tests executable
+add_executable(UnitTests
+  tests/UnitTests.cpp
+)
+
+target_sources(UnitTests PRIVATE
+  ${CMAKE_SOURCE_DIR}/source/arduino/DeskController.cpp
+)
+
+# Enable test interface for white-box testing
+target_compile_definitions(UnitTests PRIVATE 
+    DESK_CONTROLLER_ENABLE_TEST_INTERFACE
+)
+
+target_include_directories(UnitTests PRIVATE
+  ${CMAKE_SOURCE_DIR}/source/arduino
+  ${CMAKE_SOURCE_DIR}/tests
+)
+
+target_link_libraries(UnitTests PRIVATE
+    GTest::gtest_main
+)
+
+gtest_discover_tests(UnitTests)

@@ -6,8 +6,6 @@
 #ifndef DESKCONTROLLER_H
 #define DESKCONTROLLER_H
 
-
-
 /**
  * @brief Application input signals for the Desk controller
  *
