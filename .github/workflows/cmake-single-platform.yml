@@ -53,7 +53,11 @@ jobs:
     - name: Run unit tests and output results (JUnit XML)
       working-directory: build
       run: |
-        ctest --output-on-failure -C ${{env.BUILD_TYPE}} --gtest_output=xml:test-results.xml || true
+        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -T Test || true
+        # Move the JUnit XML to the expected location if it exists
+        if [ -f Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml ]; then
+          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results.xml
+        fi
 
     - name: Generate coverage report
       run: |
