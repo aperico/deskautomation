@@ -1,37 +1,83 @@
-#if defined(ARDUINO)
-#include <Arduino.h>
-#endif
 #include "HAL.h"
 
-// Debounce helper function moved from arduino.ino
-/**
- * @brief Debounces a button input on a specified pin.
- *
- * This function checks the state of a button connected to the given pin and applies a debounce algorithm
- * to filter out noise caused by mechanical button presses. It uses the provided DebounceState structure
- * to track the last stable state and the last time the state changed. If the button state remains stable
- * for longer than the specified debounce delay, the function returns the new state.
- *
- * @param pin The digital pin number where the button is connected.
- * @param state Reference to a DebounceState structure holding the last state and last debounce time.
- * @param debounceDelay The minimum time (in milliseconds) the button state must remain stable to be considered valid.
- * @return true if the button state has changed and is stable; false otherwise.
- */
-bool HAL_debounceButton(const int pin, DebounceState &state, const unsigned long debounceDelay) {
-  bool reading = digitalRead(pin) == LOW ? false : true;
-  unsigned long currentTime = millis();
-  if (reading != state.lastState) {
-    state.lastDebounceTime = currentTime;
-  }
-  if ((currentTime - state.lastDebounceTime) > debounceDelay) {
-    state.lastState = reading;
-    return reading;
-  }
-  state.lastState = reading;
-  return false;
+#if defined(ARDUINO)
+  #include <Arduino.h>
+#else
+  #include <stdio.h>
+  #include <time.h>
+  static unsigned long millis(void) { return (unsigned long)(clock() * 1000 / CLOCKS_PER_SEC); }
+  /* Provide digitalRead/digitalWrite/analogWrite/pinMode stubs via HALMock on host */
+#endif
+
+/* internal configuration constants (internal linkage) */
+static const uint32_t kBlinkIntervalMs   = 500u;
+static const uint8_t  kDefaultMotorSpeed = 255u;
+
+/* HAL internal state for blinking and LED snapshots */
+static uint32_t lastBlinkTime = 0;
+static bool     errorLedState = false;
+static bool     upLedState    = false;
+static bool     downLedState  = false;
+
+/* Logging hook - enabled when DEBUG defined on Arduino */
+#if defined(ARDUINO) && defined(DEBUG)
+  #define HAL_LOG(msg) Serial.println(msg)
+#else
+  #define HAL_LOG(msg) (void)0
+#endif
+
+/* small helpers */
+static inline bool readButtonPressed(const int pin) {
+  /* Assumes wiring uses INPUT_PULLUP; LOW == pressed */
+  return (digitalRead(pin) == LOW);
 }
 
-void HAL_Init() {
+static void apply_movement_state(const bool moveUp, const bool moveDown) {
+  if (moveUp && !moveDown) {
+    HAL_MoveUp(kDefaultMotorSpeed);
+    return;
+  }
+  if (moveDown && !moveUp) {
+    HAL_MoveDown(kDefaultMotorSpeed);
+    return;
+  }
+  HAL_StopMotor();
+}
+
+/* Debounce implementation */
+bool HAL_debounceButton(const int pin, DebounceState *state, const uint32_t debounceDelay) {
+  if (state == NULL) {
+    return false;
+  }
+
+  const bool rawPressed = readButtonPressed(pin);
+  const uint32_t now = millis();
+
+  state->changed = false;
+
+  if (rawPressed != state->lastReading) {
+    /* raw reading changed, restart debounce timer */
+    state->lastDebounceMs = now;
+    state->lastReading = rawPressed;
+  }
+
+  /* wrap-safe comparison */
+  if ((uint32_t)(now - state->lastDebounceMs) >= debounceDelay) {
+    if (state->stableState != state->lastReading) {
+      state->stableState = state->lastReading;
+      state->changed = true;
+    }
+  }
+
+  return state->stableState;
+}
+
+/* Initialization: configure pins, set safe defaults (no blocking/delays) */
+void HAL_Init(void) {
+#if defined(ARDUINO)
+  Serial.begin(115200);
+#endif
+
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
 
@@ -42,105 +88,115 @@ void HAL_Init() {
   pinMode(ERROR_LED, OUTPUT);
   pinMode(LED_RIGHT_PIN, OUTPUT);
   pinMode(LED_LEFT_PIN, OUTPUT);
-  
+
+  /* safe defaults: motor stopped, LEDs off */
   HAL_StopMotor();
+  HAL_SetErrorLED(false);
+  HAL_SetMovingUpLED(false);
+  HAL_SetMovingDownLED(false);
 
-  digitalWrite(LED_RIGHT_PIN, HIGH); // Test: Turn ON LED
-  digitalWrite(LED_LEFT_PIN, HIGH);  // Test: Turn ON LED
-  digitalWrite(ERROR_LED, HIGH);      // Test: Turn OFF ERROR LED
-  delay(1000); // Wait for 2 seconds
-
-  digitalWrite(LED_RIGHT_PIN, LOW); // Test: Turn ON LED
-  digitalWrite(LED_LEFT_PIN, LOW);  // Test: Turn ON LED
-  digitalWrite(ERROR_LED, LOW);      // Test: Turn OFF ERROR LED
+  /* initialize blink manager timestamp */
+  lastBlinkTime = millis();
 }
 
-void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs){
-  
-  
-  if (ret == APP_TASK_SUCCESS) {
-    if (outputs->moveUp == true) {
-      HAL_SetErrorLED(false);
-      HAL_MoveUp(MOTOR_SPEED);
+/* Periodic task to handle blinking and other time-based HAL work.
+   Call from main loop at least once per blink interval. */
+void HAL_Task(void) {
+  const uint32_t now = millis();
+  if ((uint32_t)(now - lastBlinkTime) >= kBlinkIntervalMs) {
+    lastBlinkTime = now;
+    /* toggle only error LED blinking; callers control whether error LED is in "blink mode" */
+    if (HAL_GetErrorLED()) {
+      errorLedState = !errorLedState;
+      digitalWrite(ERROR_LED, errorLedState ? HIGH : LOW);
     }
-    if (outputs->moveDown == true) {
-      HAL_SetErrorLED(false);
-      HAL_MoveDown(MOTOR_SPEED);
-    }
-    if (outputs->stop == true) {
-      HAL_SetErrorLED(false);
-      HAL_SetMovingUpLED(false);
-      HAL_SetMovingDownLED(false);
-      HAL_StopMotor();
-    }
-  } else {
-    HAL_SetErrorLED(true);
-    HAL_SetMovingUpLED(false);
-    HAL_SetMovingDownLED(false);
-    HAL_BlinkErrorLED();
-    HAL_StopMotor();
+    /* future: manage other timed LED behavior here */
   }
 }
-// L298N 
 
-void HAL_SetErrorLED(const bool state) { 
-  digitalWrite(ERROR_LED, state? HIGH : LOW); 
+/* Map application outputs into hardware actions.
+   Prioritization: application error -> explicit stop -> movement -> idle */
+void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs) {
+  HAL_LOG("HAL_ProcessAppState entry");
+
+  if (ret != APP_TASK_SUCCESS) {
+    /* app-level error: indicate and stop motor */
+    HAL_SetErrorLED(true);
+    HAL_StopMotor();
+    HAL_LOG("APP_TASK_ERROR: stop and error LED on");
+    return;
+  }
+
+  if (outputs == NULL) {
+    /* defensive: no outputs => be safe */
+    HAL_StopMotor();
+    HAL_SetErrorLED(false);
+    HAL_LOG("NULL outputs: stopped");
+    return;
+  }
+
+  /* set error indicator based on application-provided flag */
+  HAL_SetErrorLED(outputs->error);
+
+  /* explicit stop takes precedence */
+  if (outputs->stop) {
+    HAL_StopMotor();
+    HAL_LOG("Output stop requested");
+    return;
+  }
+
+  /* apply movement deterministically */
+  apply_movement_state(outputs->moveUp, outputs->moveDown);
+  HAL_LOG("Movement applied");
 }
 
-void HAL_SetMovingUpLED(const bool state) { 
-  digitalWrite(LED_LEFT_PIN, state? HIGH : LOW); 
+/* LED helpers: update internal state snapshot and write pin */
+void HAL_SetErrorLED(const bool state) {
+  digitalWrite(ERROR_LED, state ? HIGH : LOW);
+  errorLedState = state;
 }
+
+void HAL_SetMovingUpLED(const bool state) {
+  digitalWrite(LED_LEFT_PIN, state ? HIGH : LOW);
+  upLedState = state;
+}
+
 void HAL_SetMovingDownLED(const bool state) {
-  digitalWrite(LED_RIGHT_PIN, state? HIGH : LOW); 
+  digitalWrite(LED_RIGHT_PIN, state ? HIGH : LOW);
+  downLedState = state;
 }
 
-bool HAL_GetMovingDownLED() { return digitalRead(LED_RIGHT_PIN); }
-bool HAL_GetMovingUpLED() { return digitalRead(LED_LEFT_PIN); }
-bool HAL_GetErrorLED() { return digitalRead(ERROR_LED); }
+bool HAL_GetMovingUpLED(void)   { return upLedState; }
+bool HAL_GetMovingDownLED(void) { return downLedState; }
+bool HAL_GetErrorLED(void)      { return errorLedState; }
 
-void HAL_MoveUp(const unsigned char speed) {
+/* Motor commands (defensive) */
+void HAL_MoveUp(const uint8_t speed) {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
   analogWrite(ENA, speed);
-  HAL_SetMovingUpLED(true); // Turn ON LED when moving up
-}
-
-void HAL_MoveDown(const unsigned char speed) {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);
-  analogWrite(ENA, speed);
-  HAL_SetMovingDownLED(true); // Turn ON LED when moving down
-}
-
-void HAL_StopMotor() {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW);
-  analogWrite(ENA, 0);
-  HAL_SetMovingUpLED(false);    // Turn OFF LEDs when stopped
+  HAL_SetMovingUpLED(true);
   HAL_SetMovingDownLED(false);
 }
 
-void HAL_BlinkErrorLED() {
-  static unsigned long lastBlinkTime = 0;
-  if (millis() - lastBlinkTime >= BLINK_INTERVAL_MS) {
-    lastBlinkTime = millis();
-    HAL_SetErrorLED(!HAL_GetErrorLED());
-  }
+void HAL_MoveDown(const uint8_t speed) {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  analogWrite(ENA, speed);
+  HAL_SetMovingDownLED(true);
+  HAL_SetMovingUpLED(false);
 }
 
-void HAL_BlinkUPLED() {
-  static unsigned long lastBlinkTime = 0;
-  if (millis() - lastBlinkTime >= BLINK_INTERVAL_MS) {
-    lastBlinkTime = millis();
-    HAL_SetMovingUpLED(!HAL_GetMovingUpLED());
-  }
+void HAL_StopMotor(void) {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  analogWrite(ENA, 0);
+  HAL_SetMovingUpLED(false);
+  HAL_SetMovingDownLED(false);
 }
 
-void HAL_BlinkDOWNLED() {
-  static unsigned long lastBlinkTime = 0;
-  if (millis() - lastBlinkTime >= BLINK_INTERVAL_MS) {
-    lastBlinkTime = millis();
-    HAL_SetMovingDownLED(!HAL_GetMovingDownLED());
-  }
-}
+/* Backwards-compatible blink helpers (now managed via HAL_Task) */
+void HAL_BlinkErrorLED(void)  { /* no-op; prefer HAL_Task to manage blinking */ }
+void HAL_BlinkUPLED(void)     { /* no-op; use HAL_Task if blinking required */ }
+void HAL_BlinkDOWNLED(void)   { /* no-op; use HAL_Task if blinking required */ }
 

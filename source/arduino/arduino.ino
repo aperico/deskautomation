@@ -1,4 +1,3 @@
-
 // arduino.ino
 // -----------------------------------------------------------------------------
 // Main application file for Desk Automation Project
@@ -50,9 +49,9 @@ void setup() {
 void loop() {
   static DeskAppTask_Return_t ret;
 
-  // Debounced button reads
-  inputs.btUPPressed = HAL_debounceButton(BUTTON_UP_PIN, upDebounce, debounceDelay);
-  inputs.btDOWNPressed = HAL_debounceButton(BUTTON_DOWN_PIN, downDebounce, debounceDelay);
+  // read debounced buttons
+  inputs.btUPPressed   = HAL_debounceButton(BUTTON_UP_PIN, &upDebounce, debounceDelay);
+  inputs.btDOWNPressed = HAL_debounceButton(BUTTON_DOWN_PIN, &downDebounce, debounceDelay);
 
   // Run application logic and update hardware state
   ret = DeskApp_task(&inputs, &outputs);
