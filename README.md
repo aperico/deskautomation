@@ -3,7 +3,7 @@
 Welcome! This project implements a motorized height adjustment system for a mechanical desk using an Arduino-based controller. It is designed for safety, modularity, and future extensibility.
 
 <p align="center">
-  <img src="documentation/deskcrank.jpg" alt="Desk Crank System" width="220"/>
+  <img src="documentation/deskcrank.png" alt="Desk Crank System" width="220"/>
 </p>
 
 ---
@@ -12,37 +12,39 @@ Welcome! This project implements a motorized height adjustment system for a mech
 - **Purpose:** Automate desk movement (up/down) with safety and reliability.
 - **Technologies:** Arduino UNO, L298N motor driver, modular C++ codebase.
 - **Features:**
-	- Up/Down movement with button control
-	- Indicator LEDs for status
-	- Safety checks and error handling
-	- Modular hardware abstraction
-	- Host-based unit testing
+    - Up/Down movement with button control
+    - Host-based unit testing
 - **Compliance:** ISO 25119, ASPICE
+
+---
+
+## Coding Standards
+
+All contributors must follow the [Coding Guidelines](documentation/CodingGuidelines.md) to ensure code quality and consistency. These guidelines are enforced by automated linting and static analysis tools in CI.
 
 ---
 
 ## Quick Start
 1. **Clone the repository:**
-	 ```sh
-	 git clone https://github.com/aperico/deskatuomation.git
-	 ```
+     ```sh
+     git clone https://github.com/aperico/deskatuomation.git
+     ```
 2. **Install prerequisites:**
-	 - Arduino IDE or PlatformIO
-	 - CMake (for build/test automation)
-	 - [Hardware setup](documentation/HardwareConnections.md)
+     - Arduino IDE or PlatformIO
+     - [Hardware setup](documentation/HardwareConnections.md)
 3. **Build the project:**
-	 - Use CMake tasks in VS Code or run:
-		 ```sh
-		 cmake -S . -B build
-		 cmake --build build --config Release
-		 ```
+     - Use CMake tasks in VS Code or run:
+         ```sh
+         cmake -S . -B build
+         cmake --build build --config Release
+         ```
 4. **Flash to Arduino:**
-	 - Open `source/arduino/arduino.ino` in Arduino IDE and upload.
+     - Open `source/arduino/arduino.ino` in Arduino IDE and upload.
 5. **Run unit tests:**
-	 - Use CTest tasks or run:
-		 ```sh
-		 ctest --test-dir build -C Release --output-on-failure
-		 ```
+     - Use CTest tasks or run:
+         ```sh
+         ctest --test-dir build -C Release --output-on-failure
+         ```
 
 ---
 
