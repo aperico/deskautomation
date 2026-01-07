@@ -3,10 +3,8 @@
 #if defined(ARDUINO)
   #include <Arduino.h>
 #else
-  #include <stdio.h>
-  #include <time.h>
-  static unsigned long millis(void) { return (unsigned long)(clock() * 1000 / CLOCKS_PER_SEC); }
-  /* Provide digitalRead/digitalWrite/analogWrite/pinMode stubs via HALMock on host */
+  /* Use host-side HAL mock implementations (millis, pin IO) */
+  #include "hal_mock/HALMock.h"
 #endif
 
 /* internal configuration constants (internal linkage) */

@@ -18,18 +18,28 @@ add_library(DeskController STATIC source/arduino/DeskController.cpp)
 target_include_directories(DeskController PUBLIC source/arduino source/arduino/hal_mock)
 
 add_executable(SoftwareTests
-    tests/SoftwareTests.cpp
+  tests/SoftwareTests.cpp
+  tests/IntegrationTests.cpp
 )
 
+# Ensure HAL and application sources are linked into the test binary so HAL_Init() and other symbols are available
+target_sources(SoftwareTests PRIVATE
+  ${CMAKE_SOURCE_DIR}/source/arduino/HAL.cpp
+  ${CMAKE_SOURCE_DIR}/source/arduino/DeskController.cpp
+  ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock/HALMock.cpp
+  ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock/SerialMock.cpp
+)
+
+# ensure include path for test build
 target_include_directories(SoftwareTests PRIVATE
-    source/arduino
-    source/arduino/hal_mock
+  ${CMAKE_SOURCE_DIR}/source/arduino
+  ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock
 )
 
 target_link_libraries(SoftwareTests PRIVATE
-    DeskController
-    GTest::gtest
+    GTest::gtest_main
 )
 
 include(GoogleTest)
 gtest_discover_tests(SoftwareTests)
+gtest_add_tests(TARGET SoftwareTests)

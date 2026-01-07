@@ -1,10 +1,8 @@
-
 # Software Test Cases Specification
 
 This document lists the test cases for the Automated Mechanical Desk Lift system. Test cases are derived from [Software Requirements](SoftwareRequirements.md) and are designed to be clear, repeatable, and verifiable.
 
 ---
-
 
 ## Navigation
 - [System Use Cases](SystemUseCases.md)
@@ -16,8 +14,11 @@ This document lists the test cases for the Automated Mechanical Desk Lift system
 ## Test Case Structure
 Each test case includes preconditions, steps, and expected results. Update this section as requirements and implementation evolve.
 
+---
+
 ## SR-01: System Initialization
-**Test Case: SR01_TC01_PowerOn_InitializesToIdle**
+
+### Test Case: SR01_TC01_PowerOn_InitializesToIdle
 - Precondition: System is powered off.
 - Steps:
   1. Power on the system.
@@ -27,7 +28,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Movement outputs are inactive.
   - Ready status indicator is ON.
 
-**Test Case: SR01_TC02_NoButtonsPressed_IdleNoMovement**
+### Test Case: SR01_TC02_NoButtonsPressed_IdleNoMovement
 - Precondition: System is powered on and in IDLE.
 - Steps:
   1. Ensure no buttons are pressed.
@@ -38,7 +39,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-02: Upward Movement Command
-**Test Case: SR02_TC01_UpPressed_MovesUp**
+
+### Test Case: SR02_TC01_UpPressed_MovesUp
 - Precondition: System is in IDLE, not at upper limit.
 - Steps:
   1. Press Up button.
@@ -46,19 +48,15 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Upward movement is commanded.
   - Up indicator LED is ON.
 
-**Test Case: SR02_TC02_UpPressed_AtUpperLimit_NoMovement**
+### Test Case: SR02_TC02_UpPressed_AtUpperLimit_NoMovement
 - Precondition: System is in IDLE, upper limit is active.
 - Steps:
-
----
-
-*For questions or suggestions, open an issue or contact the project maintainers.*
   1. Press Up button.
 - Expected Result:
   - No movement is commanded.
   - System remains in IDLE.
 
-**Test Case: SR02_TC03_UpReleased_StopsMovement**
+### Test Case: SR02_TC03_UpReleased_StopsMovement
 - Precondition: System is moving up.
 - Steps:
   1. Release Up button.
@@ -66,7 +64,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Movement stops.
   - Indicator LED returns to IDLE.
 
-**Test Case: SR02_TC04_DwellBeforeReversal_UpToDown**
+### Test Case: SR02_TC04_DwellBeforeReversal_UpToDown
 - Precondition: System is moving up.
 - Steps:
   1. Release Up button.
@@ -78,7 +76,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-03: Downward Movement Command
-**Test Case: SR03_TC01_DownPressed_MovesDown**
+
+### Test Case: SR03_TC01_DownPressed_MovesDown
 - Precondition: System is in IDLE, not at lower limit.
 - Steps:
   1. Press Down button.
@@ -86,7 +85,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Downward movement is commanded.
   - Down indicator LED is ON.
 
-**Test Case: SR03_TC02_DownPressed_AtLowerLimit_NoMovement**
+### Test Case: SR03_TC02_DownPressed_AtLowerLimit_NoMovement
 - Precondition: System is in IDLE, lower limit is active.
 - Steps:
   1. Press Down button.
@@ -94,7 +93,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - No movement is commanded.
   - System remains in IDLE.
 
-**Test Case: SR03_TC03_DownReleased_StopsMovement**
+### Test Case: SR03_TC03_DownReleased_StopsMovement
 - Precondition: System is moving down.
 - Steps:
   1. Release Down button.
@@ -102,7 +101,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Movement stops.
   - Indicator LED returns to IDLE.
 
-**Test Case: SR03_TC04_DwellBeforeReversal_DownToUp**
+### Test Case: SR03_TC04_DwellBeforeReversal_DownToUp
 - Precondition: System is moving down.
 - Steps:
   1. Release Down button.
@@ -114,7 +113,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-04: Emergency Stop
-**Test Case: SR04_TC01_BothButtonsPressed_EmergencyStop**
+
+### Test Case: SR04_TC01_BothButtonsPressed_EmergencyStop
 - Precondition: System is moving.
 - Steps:
   1. Press both Up and Down buttons simultaneously.
@@ -123,7 +123,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - System state is ERROR.
   - Error indicator LED is ON.
 
-**Test Case: SR04_TC02_FaultDetected_EmergencyStop**
+### Test Case: SR04_TC02_FaultDetected_EmergencyStop
 - Precondition: System is moving.
 - Steps:
   1. Simulate fault or timeout condition.
@@ -132,7 +132,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - System state is ERROR.
   - Error indicator LED is ON.
 
-**Test Case: SR04_TC03_ClearErrorByPowerCycle**
+### Test Case: SR04_TC03_ClearErrorByPowerCycle
 - Precondition: System is in ERROR state.
 - Steps:
   1. Cycle system power.
@@ -143,7 +143,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-05: Visual Feedback
-**Test Case: SR05_TC01_StateLEDsReflectSystemState**
+
+### Test Case: SR05_TC01_StateLEDsReflectSystemState
 - Precondition: System is powered on.
 - Steps:
   1. Change system state (IDLE, MOVING_UP, MOVING_DOWN, ERROR).
@@ -153,14 +154,15 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-06: Power-Off Handling
-**Test Case: SR06_TC01_PowerOffDuringMovement_StopsMovement**
+
+### Test Case: SR06_TC01_PowerOffDuringMovement_StopsMovement
 - Precondition: System is moving.
 - Steps:
   1. Power off the system.
 - Expected Result:
   - All movement outputs are deactivated.
 
-**Test Case: SR06_TC02_PowerRestore_ReinitializesToIdle**
+### Test Case: SR06_TC02_PowerRestore_ReinitializesToIdle
 - Precondition: System was powered off during movement.
 - Steps:
   1. Power on the system.
@@ -171,7 +173,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-07: Simultaneous Button Presses
-**Test Case: SR07_TC01_BothButtonsPressed_NoMovement**
+
+### Test Case: SR07_TC01_BothButtonsPressed_NoMovement
 - Precondition: System is in IDLE.
 - Steps:
   1. Press both Up and Down buttons simultaneously.
@@ -179,7 +182,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - No movement is commanded.
   - System remains in IDLE.
 
-**Test Case: SR07_TC02_BothButtonsPressed_WhileMoving_StopsMovement**
+### Test Case: SR07_TC02_BothButtonsPressed_WhileMoving_StopsMovement
 - Precondition: System is moving.
 - Steps:
   1. Press both Up and Down buttons simultaneously.
@@ -187,7 +190,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Movement stops.
   - System remains in IDLE or enters ERROR if limits are active.
 
-**Test Case: SR07_TC03_ReleaseBothButtons_ResumesNormalOperation**
+### Test Case: SR07_TC03_ReleaseBothButtons_ResumesNormalOperation
 - Precondition: System stopped due to both buttons pressed.
 - Steps:
   1. Release both buttons.
@@ -197,7 +200,8 @@ Each test case includes preconditions, steps, and expected results. Update this 
 ---
 
 ## SR-08: Error Detection and Recovery
-**Test Case: SR08_TC01_BothLimitsActive_ErrorState**
+
+### Test Case: SR08_TC01_BothLimitsActive_ErrorState
 - Precondition: System is powered on.
 - Steps:
   1. Activate both upper and lower limits.
@@ -205,7 +209,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - System state is ERROR.
   - Error indicator LED is ON.
 
-**Test Case: SR08_TC02_Overcurrent_ErrorState**
+### Test Case: SR08_TC02_Overcurrent_ErrorState
 - Precondition: System is powered on.
 - Steps:
   1. Simulate overcurrent event.
@@ -213,7 +217,7 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - System state is ERROR.
   - Error indicator LED is ON.
 
-**Test Case: SR08_TC03_ClearErrorByPowerCycle**
+### Test Case: SR08_TC03_ClearErrorByPowerCycle
 - Precondition: System is in ERROR state.
 - Steps:
   1. Cycle system power.
@@ -221,12 +225,14 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Error state is cleared.
   - System returns to IDLE.
 
+---
+
 ## SR-09: Button Debouncing
 
 **Requirement:**  
 All button inputs shall be debounced using the `HAL_debounceButton` function to ensure reliable detection.
 
-**Test Case: SR09_TC01_Debounce_PreventsFalseTrigger**
+### Test Case: SR09_TC01_Debounce_PreventsFalseTrigger
 - Precondition: Button is connected to the specified pin.
 - Steps:
   1. Simulate rapid toggling of the button pin within the debounce delay.
@@ -235,19 +241,19 @@ All button inputs shall be debounced using the `HAL_debounceButton` function to 
   - `HAL_debounceButton` returns the stable state only after the debounce delay has elapsed.
   - No false triggers are detected.
 
-**Test Case: SR09_TC02_Debounce_StableAfterDelay**
+### Test Case: SR09_TC02_Debounce_StableAfterDelay
 - Precondition: Button is pressed and held longer than the debounce delay.
 - Steps:
   1. Call `HAL_debounceButton` repeatedly while holding the button.
 - Expected Result:
   - The function returns the new stable state after the debounce delay.
 
-**Test Case: SR09_TC03_DebounceState_TracksState**
+### Test Case: SR09_TC03_DebounceState_TracksState
 - Precondition: `DebounceState` struct is initialized.
 - Steps:
   1. Use `HAL_debounceButton` with the struct for multiple button events.
 - Expected Result:
-  - The struct correctly tracks `lastState` and `lastDebounceTime` for each button.
+  - The struct correctly tracks `lastReading`, `stableState`, `changed`, and `lastDebounceMs` for each button.
 
 ---
 

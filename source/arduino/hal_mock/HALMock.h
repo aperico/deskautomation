@@ -1,16 +1,31 @@
 #pragma once
 #include "SerialMock.h"
-#define OUTPUT 1
-#define INPUT 0
-#define LOW 0
-#define HIGH 1
-#define INPUT_PULLUP 1
-#define INPUT_PULLDOWN 0
+#include <cstdint>
 
-SerialMock Serial;
+/* Arduino-like constants */
+#ifndef OUTPUT
+  #define OUTPUT 1
+#endif
+#ifndef INPUT
+  #define INPUT 0
+#endif
+#ifndef LOW
+  #define LOW 0
+#endif
+#ifndef HIGH
+  #define HIGH 1
+#endif
+#ifndef INPUT_PULLUP
+  #define INPUT_PULLUP 2
+#endif
+
+/* mock instance */
+extern SerialMock Serial;
+
+/* Minimal Arduino-like API for host unit tests */
 void pinMode(int pin, int mode);
-void digitalWrite(int pin, bool value);
-bool digitalRead(int pin);
+void digitalWrite(int pin, int value);
+int  digitalRead(int pin);
 void analogWrite(int pin, int value);
-unsigned long millis();
+unsigned long millis(void);
 void delay(unsigned long ms);
