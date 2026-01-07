@@ -61,7 +61,8 @@ jobs:
 
     - name: Generate coverage report
       run: |
-        geninfo build --output-filename coverage.info --ignore-errors mismatch || true
+        geninfo build --output-filename coverage.info --ignore-errors mismatch --base-directory source/arduino --no-external || true
+        lcov --extract coverage.info "*/source/arduino/*" --output-file coverage.info
         lcov --list coverage.info
 
     - name: Upload test results
