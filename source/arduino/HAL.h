@@ -22,13 +22,26 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Configured in HAL.cpp to avoid multiple-definition from header inclusion */
-extern const uint32_t BLINK_INTERVAL_MS;
-extern const uint8_t  DEFAULT_MOTOR_SPEED;
+/* HAL configuration constants are internal to HAL implementation; do not export globals here */
 
-/* HAL lifecycle */
-void HAL_Init(void);
-void HAL_Task(void); /* call periodically from main loop to handle blink/timers */
+/**
+ * @brief Initialize HAL subsystem and configure pins
+ */
+void HAL_init(void);
+
+/**
+ * @brief Periodic HAL task to process timed events (blinking, timeouts)
+ *
+ * Call from main loop at least as often as the blink interval.
+ */
+void HAL_Task(void);
+
+/**
+ * @brief Apply application outputs to hardware and enforce prioritization
+ *
+ * @param ret Application task return code
+ * @param outputs Pointer to application outputs (may be NULL)
+ */
 void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs);
 
 /* LED controls */
@@ -55,9 +68,33 @@ typedef struct {
 } DebounceState;
 
 /* Button input + debounce
-   Returns current debounced state (true = pressed). Updates state->changed flag. */
-bool HAL_readButton(const int pin);
+  Returns current debounced state (true = pressed). Updates state->changed flag. */
 bool HAL_debounceButton(const int pin, DebounceState *state, const uint32_t debounceDelay);
+
+/**
+ * @brief Convenience wrapper: perform debounce for a named pin and return stable state
+ *
+ * This wrapper centralizes debounce defaults and reduces boilerplate in application code.
+ */
+bool HAL_readDebounced(const int pin);
+
+/**
+ * @brief Wait during startup for a short period while hardware settles
+ *
+ * Implementations may be blocking for a short time (e.g. 1000ms) and are intended
+ * to be called from `setup()` only.
+ */
+void HAL_wait_startup(void);
+
+/**
+ * @brief Logger callback signature. If set, HAL_LOG will call this instead of Serial.
+ */
+typedef void (*HAL_Logger_t)(const char *msg);
+
+/**
+ * @brief Set an optional logger callback for HAL diagnostic output
+ */
+void HAL_set_logger(HAL_Logger_t logger);
 
 /* Blink helpers (used by HAL_Task) */
 void HAL_BlinkErrorLED(void);

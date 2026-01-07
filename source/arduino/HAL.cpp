@@ -10,6 +10,7 @@
 /* internal configuration constants (internal linkage) */
 static const uint32_t kBlinkIntervalMs   = 500u;
 static const uint8_t  kDefaultMotorSpeed = 255u;
+static HAL_Logger_t    hal_logger = NULL;
 
 /* HAL internal state for blinking and LED snapshots */
 static uint32_t lastBlinkTime = 0;
@@ -18,10 +19,15 @@ static bool     upLedState    = false;
 static bool     downLedState  = false;
 
 /* Logging hook - enabled when DEBUG defined on Arduino */
-#if defined(ARDUINO) && defined(DEBUG)
-  #define HAL_LOG(msg) Serial.println(msg)
+/* HAL_LOG: if a logger is registered use it, otherwise use Serial when available */
+#if defined(ARDUINO)
+  #if defined(DEBUG)
+    #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { Serial.println(msg); } } while(0)
+  #else
+    #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { (void)0; } } while(0)
+  #endif
 #else
-  #define HAL_LOG(msg) (void)0
+  #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { /* no-op on host by default */ } } while(0)
 #endif
 
 /* small helpers */
@@ -70,8 +76,14 @@ bool HAL_debounceButton(const int pin, DebounceState *state, const uint32_t debo
   return state->stableState;
 }
 
+bool HAL_readDebounced(const int pin) {
+  static DebounceState tmpStateUp = { false, false, false, 0 };
+  /* Use default debounce delay for convenience */
+  return HAL_debounceButton(pin, &tmpStateUp, 50u);
+}
+
 /* Initialization: configure pins, set safe defaults (no blocking/delays) */
-void HAL_Init(void) {
+void HAL_init(void) {
 #if defined(ARDUINO)
   Serial.begin(115200);
 #endif
@@ -95,6 +107,19 @@ void HAL_Init(void) {
 
   /* initialize blink manager timestamp */
   lastBlinkTime = millis();
+}
+
+void HAL_wait_startup(void) {
+  /* Default short blocking wait to allow hardware/human to settle */
+  const unsigned long start = millis();
+  const unsigned long timeout = 1000u;
+  while ((unsigned long)(millis() - start) < timeout) {
+    HAL_Task();
+  }
+}
+
+void HAL_set_logger(HAL_Logger_t logger) {
+  hal_logger = logger;
 }
 
 /* Periodic task to handle blinking and other time-based HAL work.
@@ -154,6 +179,19 @@ void HAL_SetErrorLED(const bool state) {
   errorLedState = state;
 }
 
+void HAL_SetWarningLED(const bool state) {
+  // Warning LED not implemented in current hardware
+  // Reserved for future use
+  (void)state;
+}
+
+void HAL_SetPowerLED(const bool state) {
+  // Power LED not implemented in current hardware
+  // Could be mapped to ERROR_LED in IDLE state for "ready" indication
+  // For now, no-op to maintain API compatibility
+  (void)state;
+}
+
 void HAL_SetMovingUpLED(const bool state) {
   digitalWrite(LED_LEFT_PIN, state ? HIGH : LOW);
   upLedState = state;
@@ -170,17 +208,19 @@ bool HAL_GetErrorLED(void)      { return errorLedState; }
 
 /* Motor commands (defensive) */
 void HAL_MoveUp(const uint8_t speed) {
+  const uint8_t s = (speed > 255u) ? 255u : speed;
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
-  analogWrite(ENA, speed);
+  analogWrite(ENA, s);
   HAL_SetMovingUpLED(true);
   HAL_SetMovingDownLED(false);
 }
 
 void HAL_MoveDown(const uint8_t speed) {
+  const uint8_t s = (speed > 255u) ? 255u : speed;
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
-  analogWrite(ENA, speed);
+  analogWrite(ENA, s);
   HAL_SetMovingDownLED(true);
   HAL_SetMovingUpLED(false);
 }

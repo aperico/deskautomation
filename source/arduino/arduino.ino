@@ -23,8 +23,8 @@ static DeskAppInputs_t inputs;
 static DeskAppOutputs_t outputs;
 
 // Debounce states for buttons
-static DebounceState upDebounce = {false, 0};
-static DebounceState downDebounce = {false, 0};
+static DebounceState upDebounce = { .lastReading = false, .stableState = false, .changed = false, .lastDebounceMs = 0 };
+static DebounceState downDebounce = { .lastReading = false, .stableState = false, .changed = false, .lastDebounceMs = 0 };
 const unsigned long DEBOUNCE_DELAY = 50; // ms
 
 // -----------------------------------------------------------------------------
@@ -33,11 +33,12 @@ const unsigned long DEBOUNCE_DELAY = 50; // ms
 // -----------------------------------------------------------------------------
 
 void setup() {
-  HAL_Init(); // Initialize hardware abstraction layer
-  delay(1000); // Allow time before any motion
-  DeskApp_task_init(&inputs, &outputs); // Initialize application logic
+  HAL_init(); // Initialize hardware abstraction layer (FUNC-001)
+  HAL_wait_startup(); // Allow time before any motion (non-blocking via HAL_Task)
+  DeskApp_task_init(&inputs, &outputs); // Initialize application logic (FUNC-016)
 #ifdef DEBUG
   Serial.begin(9600);  // Initialize serial communication for debugging
+  HAL_set_logger([](const char *msg){ Serial.println(msg); });
 #endif
 }
 

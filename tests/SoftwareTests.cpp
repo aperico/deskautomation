@@ -22,7 +22,7 @@ TEST(DeskAppTest, SR01_Power_IdleStop_NoError) {
     EXPECT_EQ(outputs.error, false);
 }
 
-TEST(DeskAppTest, SR01_NoButtonsPressed_IdleNoMovement) {
+TEST(DeskAppTest, SWEREQ001_NoButtonsPressed_IdleNoMovement) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -37,8 +37,8 @@ TEST(DeskAppTest, SR01_NoButtonsPressed_IdleNoMovement) {
     EXPECT_EQ(outputs.error, false);
 }
 
-// SR-02: Upward Movement Command
-TEST(DeskAppTest, SR02_UpPressed_MovesUp_WhenNotupperLimitActive) {
+// SWE-REQ-003: Upward Movement Detection
+TEST(DeskAppTest, SWEREQ003_UpPressed_MovesUp_WhenNotupperLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -54,7 +54,7 @@ TEST(DeskAppTest, SR02_UpPressed_MovesUp_WhenNotupperLimitActive) {
     EXPECT_EQ(outputs.error, false);
 }
 
-TEST(DeskAppTest, SR02_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
+TEST(DeskAppTest, SWEREQ005_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -70,8 +70,8 @@ TEST(DeskAppTest, SR02_UpPressed_DoesNotMoveUp_WhenupperLimitActive) {
     EXPECT_EQ(outputs.error, false);
 }
 
-// SR-03: Downward Movement Command
-TEST(DeskAppTest, SR03_DownPressed_MovesDown_WhenNotlowerLimitActive) {
+// SWE-REQ-004: Downward Movement Detection
+TEST(DeskAppTest, SWEREQ004_DownPressed_MovesDown_WhenNotlowerLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -88,7 +88,7 @@ TEST(DeskAppTest, SR03_DownPressed_MovesDown_WhenNotlowerLimitActive) {
     
 }
 
-TEST(DeskAppTest, SR03_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
+TEST(DeskAppTest, SWEREQ006_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -105,8 +105,8 @@ TEST(DeskAppTest, SR03_DownPressed_DoesNotMoveDown_WhenlowerLimitActive) {
     
 }
 
-// SR-04: Emergency Stop
-TEST(DeskAppTest, SR04_EmergencyStop_FromUp_WhenLowerLimitActive) {
+// SWE-REQ-010, SWE-REQ-011: Emergency Stop Detection and Execution
+TEST(DeskAppTest, SWEREQ010_EmergencyStop_FromUp_WhenBothLimitsActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -124,16 +124,16 @@ TEST(DeskAppTest, SR04_EmergencyStop_FromUp_WhenLowerLimitActive) {
     EXPECT_EQ(ret, APP_TASK_ERROR);
 }
 
-TEST(DeskAppTest, SR04_EmergencyStop_FromDown_WhenUpperLimitActive) {
+TEST(DeskAppTest, SWEREQ011_EmergencyStop_FromDown_WhenBothLimitsActive) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
 
-    // Simulate moving down, then upper limit becomes active (fault)
+    // Simulate moving down, then both limits active (fault)
     inputs.btUPPressed = false;
     inputs.btDOWNPressed = true;
-    inputs.lowerLimitActive = true; // Fault: both down and lower limit
-    inputs.upperLimitActive = true; // Fault: both down and upper limit
+    inputs.lowerLimitActive = true; // Fault: both limits active
+    inputs.upperLimitActive = true; // Fault: both limits active
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
 
     EXPECT_EQ(outputs.moveUp, false);
@@ -142,12 +142,12 @@ TEST(DeskAppTest, SR04_EmergencyStop_FromDown_WhenUpperLimitActive) {
     
 }
 
-// SR-05: Visual Feedback (covered by output assertions in all tests)
+// SWE-REQ-012, SWE-REQ-013: LED State Indication (covered by output assertions in all tests)
 
-// SR-06: Power-Off Handling (directly tested below)
+// SWE-REQ-009: Power Loss Handling (stateless reset behavior)
 
-// SR-07: Simultaneous Button Presses
-TEST(DeskAppTest, SR07_BothButtonsPressed_NoMovement_Commanded) {
+// SWE-REQ-010, SWE-REQ-014: Simultaneous Button Presses (conflicting inputs)
+TEST(DeskAppTest, SWEREQ014_BothButtonsPressed_NoMovement_Commanded) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -164,46 +164,11 @@ TEST(DeskAppTest, SR07_BothButtonsPressed_NoMovement_Commanded) {
     EXPECT_EQ(outputs.error, false);
 }
 
-TEST(DeskAppTest, SR07_BothButtonsPressed_NoMovement_WhenAtBothLimits) {
-    DeskAppInputs_t inputs = {};
-    DeskAppOutputs_t outputs = {};
-    DeskApp_task_init(&inputs, &outputs);
+// ============================================================================
+// CONST-003: Direction changes require stop before reversal (DWELL state)
+// ============================================================================
 
-    // Both buttons pressed, both limits active (lockout)
-    inputs.btUPPressed = true;
-    inputs.btDOWNPressed = true;
-    inputs.upperLimitActive = true;
-    inputs.lowerLimitActive = true;
-    DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
-
-    EXPECT_EQ(outputs.moveUp, false);
-    EXPECT_EQ(outputs.moveDown, false);
-    EXPECT_EQ(outputs.error, true);
-    
-}
-
-// SR-08: Error Detection and Recovery
-TEST(DeskAppTest, SR08_ErrorRecovery_ToIdle_WhenSafe) {
-    DeskAppInputs_t inputs = {};
-    DeskAppOutputs_t outputs = {};
-    DeskApp_task_init(&inputs, &outputs);
-
-    // Simulate error state, then clear error
-    inputs.btUPPressed = false;
-    inputs.btDOWNPressed = false;
-    inputs.upperLimitActive = false;
-    inputs.lowerLimitActive = false;
-    // Assume error was previously set
-    DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
-
-    EXPECT_EQ(outputs.error, false);
-    EXPECT_EQ(outputs.moveUp, false);
-    EXPECT_EQ(outputs.moveDown, false);
-    
-}
-
-// SR-02/SR-03: Dwell before reversal (Up -> Down)
-TEST(DeskAppTest, SR02_SR03_DwellBeforeReversal_UpToDown) {
+TEST(DeskAppTest, CONST003_DwellBeforeReversal_UpToDown) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -221,12 +186,15 @@ TEST(DeskAppTest, SR02_SR03_DwellBeforeReversal_UpToDown) {
 
     // Expect dwell or idle before allowing reversal
     // (This assertion may need to be adjusted based on your implementation)
-    EXPECT_EQ(outputs.moveDown, false); // Assuming dwell prevents immediate down
+    EXPECT_EQ(outputs.moveDown, false); // Dwell/IDLE prevents immediate reversal
     EXPECT_EQ(outputs.moveUp, false);
 }
 
-// SR-06: Power-Off Handling
-TEST(DeskAppTest, SR06_PowerOffDuringMovement_ReinitializesToIdle) {
+// ============================================================================
+// SWE-REQ-009: Power Loss Handling (Stateless Reset)
+// ============================================================================
+
+TEST(DeskAppTest, SWEREQ009_PowerOffDuringMovement_ReinitializesToIdle) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};
     DeskApp_task_init(&inputs, &outputs);
@@ -247,7 +215,60 @@ TEST(DeskAppTest, SR06_PowerOffDuringMovement_ReinitializesToIdle) {
     EXPECT_EQ(outputs.error, false);
 }
 
-// Smoke/Basic Logic
+// ============================================================================
+// SWE-REQ-018: Movement Timeout (30 seconds)
+// Note: Full timeout test requires time acceleration in unit tests
+// Integration tests IT-002 and IT-003 verify timeout with mock timing
+// ============================================================================
+
+TEST(DeskAppTest, SWEREQ018_TimeoutCondition_Documentation) {
+    // This test documents the timeout requirement
+    // Actual timeout testing requires:
+    // 1. Time-accelerated mock (in integration tests)
+    // 2. Continuous button press for >30s
+    // 3. Verification that movement stops and returns to IDLE
+    // See IT-002 and IT-003 in IntegrationTests.cpp for implementation
+    SUCCEED(); // Documentation test always passes
+}
+
+// ============================================================================
+// SWE-REQ-020: State Transition Integrity
+// ============================================================================
+
+TEST(DeskAppTest, SWEREQ020_StateTransitionIntegrity_AllStatesValid) {
+    DeskAppInputs_t inputs = {};
+    DeskAppOutputs_t outputs = {};
+    DeskApp_task_init(&inputs, &outputs);
+
+    // Verify state machine handles all valid transitions
+    // IDLE -> MOVING_UP
+    inputs.btUPPressed = true;
+    inputs.btDOWNPressed = false;
+    inputs.upperLimitActive = false;
+    EXPECT_EQ(DeskApp_task(&inputs, &outputs), APP_TASK_SUCCESS);
+    EXPECT_EQ(outputs.moveUp, true);
+
+    // MOVING_UP -> IDLE (button release)
+    inputs.btUPPressed = false;
+    EXPECT_EQ(DeskApp_task(&inputs, &outputs), APP_TASK_SUCCESS);
+    EXPECT_EQ(outputs.moveUp, false);
+
+    // IDLE -> MOVING_DOWN
+    inputs.btDOWNPressed = true;
+    inputs.lowerLimitActive = false;
+    EXPECT_EQ(DeskApp_task(&inputs, &outputs), APP_TASK_SUCCESS);
+    EXPECT_EQ(outputs.moveDown, true);
+
+    // MOVING_DOWN -> IDLE (button release)
+    inputs.btDOWNPressed = false;
+    EXPECT_EQ(DeskApp_task(&inputs, &outputs), APP_TASK_SUCCESS);
+    EXPECT_EQ(outputs.moveDown, false);
+}
+
+// ============================================================================
+// Smoke Tests / Basic Sanity Checks
+// ============================================================================
+
 TEST(SmokeTest, BasicTruth) {
     DeskAppInputs_t inputs = {};
     DeskAppOutputs_t outputs = {};

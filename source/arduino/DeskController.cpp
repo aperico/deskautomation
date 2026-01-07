@@ -3,8 +3,12 @@
 #if defined(ARDUINO)
   #include <Arduino.h>
 #else
-  #include <time.h>
-  static unsigned long now_ms_host(void) { return (unsigned long)(clock() * 1000 / CLOCKS_PER_SEC); }
+  #include <chrono>
+  static unsigned long now_ms_host(void) {
+    using namespace std::chrono;
+    static const steady_clock::time_point start = steady_clock::now();
+    return static_cast<unsigned long>(duration_cast<milliseconds>(steady_clock::now() - start).count());
+  }
 #endif
 
 typedef enum {
@@ -18,6 +22,8 @@ typedef enum {
 static AppState_t appState = APP_STATE_IDLE;
 static unsigned long dwellStartMs = 0;
 static const unsigned long kDwellMs = 300UL;
+static unsigned long movementStartMs = 0;
+static const unsigned long kMovementTimeoutMs = 30000UL; // 30 seconds per SWE-REQ-018
 
 static unsigned long now_ms(void) {
 #if defined(ARDUINO)
@@ -109,6 +115,7 @@ static void handle_idle(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs
     } else {
       outputs->moveUp = true;
       appState = APP_STATE_MOVE_UP;
+      movementStartMs = now_ms(); // Start timeout timer (SWE-REQ-018)
     }
   } else if (inputs->btDOWNPressed) {
     if (inputs->lowerLimitActive) {
@@ -116,6 +123,7 @@ static void handle_idle(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs
     } else {
       outputs->moveDown = true;
       appState = APP_STATE_MOVE_DOWN;
+      movementStartMs = now_ms(); // Start timeout timer (SWE-REQ-018)
     }
   } else {
     outputs->stop = true;
@@ -123,6 +131,13 @@ static void handle_idle(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs
 }
 
 static void handle_move_up(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
+  // Check timeout first (SWE-REQ-018)
+  if ((now_ms() - movementStartMs) >= kMovementTimeoutMs) {
+    outputs->stop = true;
+    appState = APP_STATE_IDLE;
+    return;
+  }
+  
   if (inputs->upperLimitActive) {
     outputs->stop = true;
     appState = APP_STATE_DWELL;
@@ -136,6 +151,13 @@ static void handle_move_up(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outp
 }
 
 static void handle_move_down(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
+  // Check timeout first (SWE-REQ-018)
+  if ((now_ms() - movementStartMs) >= kMovementTimeoutMs) {
+    outputs->stop = true;
+    appState = APP_STATE_IDLE;
+    return;
+  }
+  
   if (inputs->lowerLimitActive) {
     outputs->stop = true;
     appState = APP_STATE_DWELL;

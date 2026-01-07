@@ -1,0 +1,49 @@
+PID	Process Name	Assessment Score
+SWE.1	Software Requirements Analysis	50%
+	The purpose is to establish a structured and analyzed set of software requirements consistent with the system requirements, and the system architecture.	BP1: Specify software requirements
+		BP2: Structure software requirements
+		BP3: Analyze software requirements
+		BP4: Analyze the impact on the operating environment
+		"BP5: Ensure consistency and establish bidirectional 
+traceability"
+		"BP6: Communicate agreed software requirements and impact 
+on the operating environment"
+SWE.2 	Software Architectural Design	0%
+	"The purpose is to establish an analyzed software architecture, comprising static and dynamic 
+aspects, consistent with the software requirements."	BP1: Specify static aspects of software architecture
+		BP2: Specify dynamic aspects of software architecture
+		BP3: Analyze software architecture
+		BP4: Ensure consistency and establish bidirectional traceability
+		BP5: Communicate agreed software architecture
+SWE.3	Software Detailed Design and Unit Construction	40%
+	"The purpose is to establish a software detailed design, comprising static and dynamic aspects, consistent with the software architecture, and to construct software units consistent with the 
+software detailed design."	BP1: Specify the static aspects of the detailed design
+		BP2: Specify the dynamic aspects of the detailed design
+		BP3: Develop software units
+		BP4: Ensure consistency and establish bidirectional traceability
+		"BP5: Communicate agreed software detailed design and developed 
+software units"
+SWE.4	Software Unit Verification	80%
+	The purpose is to verify that software units are consistent with the software detailed design.	BP1: Specify software unit verification measures
+		BP2: Select software unit verification measures
+		BP3: Verify software units
+		"BP4: Ensure consistency and establish bidirectional traceability for 
+software unit verification"
+		BP5: Summarize and communicate results
+SWE.5	Software Component Verification and Integration Verification	57%
+	The purpose is to verify that software components are consistent with the software architectural design, and to integrate software elements and verify that the integrated software elements are consistent with the software architecture and software detailed design.	BP1: Specify software integration verification measures
+		"BP2: Specify verification measures for verifying software 
+component behavior"
+		BP3: Select verification measures
+		"BP4: Integrate software elements and perform 
+integration verification"
+		BP5: Perform software component verification
+		"BP6: Ensure consistency and establish bidirectional 
+traceability"
+		BP7: Summarize and communicate results
+SWE.6	 Software Verification	100%
+	The purpose of the Software Verification process is to ensure that the integrated software is verified to be consistent with the software requirements	BP1: Specify verification measures for software verification
+		BP2: Select verification measures
+		BP3: Verify the integrated software
+		BP4: Ensure consistency and establish bidirectional traceability.
+		BP5: Summarize and communicate results

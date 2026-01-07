@@ -293,22 +293,6 @@ For more issues, check existing [GitHub Issues](https://github.com/aperico/deska
 | [tests/Integration_SmokeTests.cpp](tests/Integration_SmokeTests.cpp)                          | Additional integration smoke tests (gtest).             |
 | [build/](build/)                                                                              | CMake build output and test execution artifacts (CI).   |
 
-### Integration Test Artifacts
-
-- Integration test source:
-  - tests/IntegrationTests.cpp
-  - tests/Integration_SmokeTests.cpp
-  - documentation/SoftwareIntegrationTestsSpecification.md
-- Traceability & mapping:
-  - documentation/TraceabilityMatrix.md
-- CI / build artifacts (created by CI / ctest):
-  - build/test-results-integration.xml
-  - build/Testing/**/Test.xml (Integration labeled runs)
-- How to run integration tests locally:
-  1. cmake -S . -B build
-  2. cmake --build build --config Release
-  3. ctest --test-dir build -C Release -L Integration --output-on-failure
-
 ---
 
 ## License
