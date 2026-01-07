@@ -61,7 +61,23 @@ See the [ASPICE Assessment](documentation/aspiceassessments.md) for a detailed c
 **Overall ASPICE Maturity Level: Level 2 (Managed Process)**
 Processes are planned, monitored, and managed, with requirements, architecture, and testing well documented and traceable. Some integration and validation steps remain partially manual, so full Level 3 (Defined Process) is not yet achieved. To reach higher maturity, further automation, standardization, and continuous improvement are recommended.
 
+## Documentation Index
 
+Below is a table listing all major `.md` documents in this project, with direct links and brief descriptions:
+
+| Document                                                                 | Description                                                                                   |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| [README.md](README.md)                                                   | Project overview, quick start, file map, glossary, and contribution guidelines.               |
+| [HardwareConnections.md](documentation/HardwareConnections.md)           | Hardware setup, wiring, and pin assignments for the desk lift system.                         |
+| [SoftwareRequirements.md](documentation/SoftwareRequirements.md)         | Functional, safety, and interface requirements for the software.                              |
+| [SoftwareTestCasesSpecification.md](documentation/SoftwareTestCasesSpecification.md) | Detailed test cases mapped to requirements, with steps and expected results.                  |
+| [SystemUseCases.md](documentation/SystemUseCases.md)                     | Main user scenarios and flows driving requirements and tests.                                 |
+| [TraceabilityMatrix.md](documentation/TraceabilityMatrix.md)             | Mapping between use cases, requirements, and test cases for traceability.                     |
+| [SoftwareArchitecture.md](documentation/SoftwareArchitecture.md)         | High-level software structure, modules, and architectural principles.                         |
+| [SoftwareDetailedDesign.md](documentation/SoftwareDetailedDesign.md)     | In-depth design details, rationale, and compliance notes for developers and testers.          |
+| [aspiceassessments.md](documentation/aspiceassessments.md)               | ASPICE process maturity assessment and checklist for the project.                             |
+
+---
 ## Project File Overview
 
 This table provides an overview and description of the main project files and folders, with direct links for easy navigation.
@@ -82,6 +98,7 @@ This table provides an overview and description of the main project files and fo
 | Term            | Definition                                                                 |
 |-----------------|---------------------------------------------------------------------------|
 | ECU             | Electronic Control Unit; the microcontroller managing desk logic           |
+| Debounce        | The process of filtering out rapid, unintended changes in a button's electrical signal caused by mechanical bounce, ensuring only deliberate presses/releases are registered. Implemented in this project via the `HAL_debounceButton` function. |
 | Desk Controller | The software and hardware module responsible for desk movement and safety  |
 | Motor Driver    | Hardware component (e.g., L298N) that powers and controls the motor        |
 | State Machine   | Software logic managing system states and transitions                      |
