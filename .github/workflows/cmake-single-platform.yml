@@ -39,6 +39,10 @@ jobs:
         name: cppcheck-report
         path: cppcheck-report.xml
 
+    - name: Clean build directory
+      run: |
+        rm -rf build
+
     - name: Configure CMake with coverage flags
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_C_FLAGS="--coverage"
@@ -56,6 +60,7 @@ jobs:
         lcov --capture --directory build --output-file coverage.info
         lcov --remove coverage.info '/usr/*' 'tests/*' --output-file coverage.info
         lcov --list coverage.info
+        geninfo --ignore-errors mismatch coverage.info
 
     - name: Upload test results
       if: always()
