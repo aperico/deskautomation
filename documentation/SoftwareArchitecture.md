@@ -19,8 +19,9 @@ Defines the structure, principles, and key components of the desk lift software.
 
 ---
 
+
 ## Architectural Overview
-- **PinConfig.h:** Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.
+- See [Hardware Connections & Pin Assignments](HardwareConnections.md) for pin mapping and wiring details.
 - **HAL.h / HAL.cpp:** Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
 - **DeskController.h / DeskController.cpp:** Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
 - **arduino.ino:** Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
@@ -42,6 +43,7 @@ Defines the structure, principles, and key components of the desk lift software.
 
 ---
 
+
 ## Design Constraints
 - Must operate on Arduino UNO or compatible ECU
 - Motor driver: L298N
@@ -49,7 +51,7 @@ Defines the structure, principles, and key components of the desk lift software.
 - Indicator LEDs: digital outputs
 - Power supply: regulated, office environment
 - Timing: non-blocking, responsive (<100ms reaction)
-- Regulatory: must comply with ISO 25119, ASPICE
+- Regulatory: must comply with ISO 25119, ASPICE (see [Safety Notes](SafetyNotes.md) and [Software Detailed Design](SoftwareDetailedDesign.md#compliance-statement) for details)
 
 ---
 

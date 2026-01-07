@@ -5,22 +5,6 @@ This document provides the detailed design for the Automated Mechanical Desk Lif
 
 ---
 
-## Navigation
-- [Software Requirements](SoftwareRequirements.md)
-- [Software Architecture](SoftwareArchitecture.md)
-- [System Use Cases](SystemUseCases.md)
-- [Traceability Matrix](TraceabilityMatrix.md)
-- [Software Test Cases Specification](SoftwareTestCasesSpecification.md)
-
----
-
-## Purpose and Scope
-Describes the implementation, rationale, and compliance for all embedded software running on the ECU, covering hardware abstraction, control logic, error handling, and testability.
-
----
-
-## References
-- ISO 25119: Tractors and machinery for agriculture and forestry – Safety-related parts of control systems
 
 ## Navigation
 - [System Use Cases](SystemUseCases.md)
@@ -28,11 +12,6 @@ Describes the implementation, rationale, and compliance for all embedded softwar
 - [Software Architecture](SoftwareArchitecture.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
 - [Software Test Cases Specification](SoftwareTestCasesSpecification.md)
-
----
-
-## Overview
-This document provides a detailed design for the Automated Mechanical Desk Lift software, aligned with the Software Requirements and Architecture. It describes modules, interfaces, data structures, control flow, and error handling according to industry standards.
 
 ---
 

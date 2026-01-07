@@ -13,9 +13,9 @@ Follow these safety guidelines when assembling, wiring, and operating the Automa
 
 ---
 
+
 ## Compliance
-- Designed to meet ISO 25119 (agricultural machinery safety) and ASPICE standards.
-- If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
+See [Software Detailed Design](SoftwareDetailedDesign.md#compliance-statement) for full compliance details. If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
 
 ---
 
