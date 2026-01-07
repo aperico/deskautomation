@@ -1,3 +1,14 @@
+# [Glossary](documentation/Glossary.md)
+Refer to the glossary for clarification of terms in all documentation artifacts.
+
+# [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
+
+# [Safety Notes](documentation/SafetyNotes.md)
+
+# [Planned Enhancements (Roadmap)](documentation/Roadmap.md)
+
+# Application States and State Transitions
+See [Software Detailed Design](documentation/SoftwareDetailedDesign.md#state-machine-diagram) for the full state machine and transitions.
 # Glossary
 
 This glossary defines key terms used throughout the documentation to ensure clarity and consistency.
@@ -86,12 +97,14 @@ See the state diagram above for a visual representation.
 
 ---
 
-[System Use Cases](SystemUseCases.md)
-[Software Requirements](SoftwareRequirements.md)
-[Software Architecture](SoftwareArchitecture.md)
-[Software Detailed Design](SoftwareDetailedDesign.md)
-[Software Test Cases Specification](SoftwareTestCasesSpecification.md)
-[Traceability Matrix](TraceabilityMatrix.md)
+
+
+- [System Use Cases](documentation/SystemUseCases.md)
+- [Software Requirements](documentation/SoftwareRequirements.md)
+- [Software Architecture](documentation/SoftwareArchitecture.md)
+- [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
+- [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
+- [Traceability Matrix](documentation/TraceabilityMatrix.md)
 
 
 
@@ -127,23 +140,18 @@ See the state diagram above for a visual representation.
 | Motor IN2               | 9           |
 | Motor ENA (PWM)         | 10          |
 
-*Edit `PinConfig.h` to change hardware pin mappings.*
+
+*Edit [`PinConfig.h`](PinConfig.h) to change hardware pin mappings.*
 
 ---
 
 ## Architecture
 
-- **PinConfig.h**  
-  Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.
 
-- **HAL.h / HAL.cpp**  
-  Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
-
-- **DeskController.h / DeskController.cpp**  
-  Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
-
-- **arduino.ino**  
-  Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
+- [`PinConfig.h`](PinConfig.h): Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.
+- [`HAL.h`](HAL.h) / [`HAL.cpp`](HAL.cpp): Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
+- [`DeskController.h`](DeskController.h) / [`DeskController.cpp`](DeskController.cpp): Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
+- [`arduino.ino`](arduino.ino): Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
 
 ---
 

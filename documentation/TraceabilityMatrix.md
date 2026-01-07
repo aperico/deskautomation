@@ -5,7 +5,7 @@
 
 All requirements are referenced by their unique IDs (SR-01, SR-02, etc.) throughout the documentation, diagrams, and design sections. This ensures clear traceability and alignment with ASPICE standards.
 
-Refer to SoftwareRequirements.md for full requirement text and rationale.
+Refer to [Software Requirements](SoftwareRequirements.md) for full requirement text and rationale.
 
 ## Use Cases <-> Software Requirements
 

@@ -1,6 +1,7 @@
 # Software Test Cases
 
-Test cases are derived from the Software Requirements (SR-01 to SR-08) and are designed to be clear, repeatable, and verifiable.
+
+Test cases are derived from the [Software Requirements](SoftwareRequirements.md) (SR-01 to SR-08) and are designed to be clear, repeatable, and verifiable.
 
 ---
 
