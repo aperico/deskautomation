@@ -25,7 +25,7 @@ static DeskAppOutputs_t outputs;
 // Debounce states for buttons
 static DebounceState upDebounce = {false, 0};
 static DebounceState downDebounce = {false, 0};
-const unsigned long debounceDelay = 50; // ms
+const unsigned long DEBOUNCE_DELAY = 50; // ms
 
 // -----------------------------------------------------------------------------
 // Arduino setup function
@@ -49,13 +49,22 @@ void setup() {
 void loop() {
   static DeskAppTask_Return_t ret;
 
-  // read debounced buttons
-  inputs.btUPPressed   = HAL_debounceButton(BUTTON_UP_PIN, &upDebounce, debounceDelay);
-  inputs.btDOWNPressed = HAL_debounceButton(BUTTON_DOWN_PIN, &downDebounce, debounceDelay);
+  // PRE-Process inputs
+  {
+    // read debounced buttons
+    inputs.btUPPressed   = HAL_debounceButton(BUTTON_UP_PIN, &upDebounce, DEBOUNCE_DELAY);
+    inputs.btDOWNPressed = HAL_debounceButton(BUTTON_DOWN_PIN, &downDebounce, DEBOUNCE_DELAY);
+  }
 
   // Run application logic and update hardware state
-  ret = DeskApp_task(&inputs, &outputs);
-  HAL_ProcessAppState(ret, &outputs); // Ensure all outputs are processed
+  {
+    ret = DeskApp_task(&inputs, &outputs);
+  }
+
+  // POST-Process outputs
+  {
+    HAL_ProcessAppState(ret, &outputs); // Ensure all outputs are processed
+  }
 
 #ifdef DEBUG
   Serial.print("App State: ");
