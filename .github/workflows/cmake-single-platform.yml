@@ -10,7 +10,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug  # Use Debug for coverage
 
 jobs:
   build-and-test:
@@ -23,25 +23,40 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ gcc
+        sudo apt-get install -y cmake g++ gcc gcov lcov
         sudo apt-get install -y libgtest-dev
         cd /usr/src/gtest && sudo cmake . && sudo make
         sudo cp lib/*.a /usr/lib
 
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Configure CMake with coverage flags
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_C_FLAGS="--coverage"
 
     - name: Build
       run: cmake --build build --config ${{env.BUILD_TYPE}}
 
-    - name: Run unit tests
+    - name: Run unit tests and output results (JUnit XML)
       working-directory: build
-      run: ctest --output-on-failure -C ${{env.BUILD_TYPE}}
+      run: |
+        ctest --output-on-failure -C ${{env.BUILD_TYPE}} --gtest_output=xml:test-results.xml || true
 
-    - name: Upload test results (optional)
+    - name: Generate coverage report
+      run: |
+        lcov --capture --directory build --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' 'tests/*' --output-file coverage.info
+        lcov --list coverage.info
+
+    - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: build/Testing
+        path: build/test-results.xml
+
+    - name: Upload coverage report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.info
 
