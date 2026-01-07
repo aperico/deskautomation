@@ -6,20 +6,20 @@
 #ifndef DESKCONTROLLER_H
 #define DESKCONTROLLER_H
 
-typedef enum { TRUE = 1, FALSE = 0 } Boolean_t;
+
 
 typedef struct {
-  Boolean_t btUPPressed;
-  Boolean_t btDOWNPressed;
-  Boolean_t upperLimitActive;
-  Boolean_t lowerLimitActive;
+  bool btUPPressed;
+  bool btDOWNPressed;
+  bool upperLimitActive;
+  bool lowerLimitActive;
 } DeskAppInputs_t;
 
 typedef struct {
-  Boolean_t moveUp;
-  Boolean_t moveDown;
-  Boolean_t stop;
-  Boolean_t error;
+  bool moveUp;
+  bool moveDown;
+  bool stop;
+  bool error;
 } DeskAppOutputs_t;
 
 typedef enum {

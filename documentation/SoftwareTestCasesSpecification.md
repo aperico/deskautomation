@@ -221,6 +221,34 @@ Each test case includes preconditions, steps, and expected results. Update this 
   - Error state is cleared.
   - System returns to IDLE.
 
+## SR-09: Button Debouncing
+
+**Requirement:**  
+All button inputs shall be debounced using the `HAL_debounceButton` function to ensure reliable detection.
+
+**Test Case: SR09_TC01_Debounce_PreventsFalseTrigger**
+- Precondition: Button is connected to the specified pin.
+- Steps:
+  1. Simulate rapid toggling of the button pin within the debounce delay.
+  2. Call `HAL_debounceButton` for each toggle.
+- Expected Result:
+  - `HAL_debounceButton` returns the stable state only after the debounce delay has elapsed.
+  - No false triggers are detected.
+
+**Test Case: SR09_TC02_Debounce_StableAfterDelay**
+- Precondition: Button is pressed and held longer than the debounce delay.
+- Steps:
+  1. Call `HAL_debounceButton` repeatedly while holding the button.
+- Expected Result:
+  - The function returns the new stable state after the debounce delay.
+
+**Test Case: SR09_TC03_DebounceState_TracksState**
+- Precondition: `DebounceState` struct is initialized.
+- Steps:
+  1. Use `HAL_debounceButton` with the struct for multiple button events.
+- Expected Result:
+  - The struct correctly tracks `lastState` and `lastDebounceTime` for each button.
+
 ---
 
 ## Notes

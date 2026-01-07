@@ -33,6 +33,8 @@ Refer to [Software Requirements](SoftwareRequirements.md) for full requirement t
 | UC-07: Simultaneous Button Presses | [SR-07](SoftwareRequirements.md#sr-07) |
 | UC-08: Error Indication and Recovery | [SR-08](SoftwareRequirements.md#sr-08) |
 | UC-10: Dwell before reversal (Up → Down) | [SR-02](SoftwareRequirements.md#sr-02), [SR-03](SoftwareRequirements.md#sr-03) |
+| **All button-related use cases** | [SR-09](SoftwareRequirements.md#sr-09) |
+
 
 ---
 
@@ -47,6 +49,9 @@ Refer to [Software Requirements](SoftwareRequirements.md) for full requirement t
 | [SR-06: Power-Off Handling](SoftwareRequirements.md#sr-06) | [SR06_TC01_PowerOffDuringMovement_StopsMovement](SoftwareTestCasesSpecification.md#sr06_tc01_poweroffduringmovement_stopsmovement); [SR06_TC02_PowerRestore_ReinitializesToIdle](SoftwareTestCasesSpecification.md#sr06_tc02_powerrestore_reinitializestoidle) |
 | [SR-07: Simultaneous Button Presses](SoftwareRequirements.md#sr-07) | [SR07_TC01_BothButtonsPressed_NoMovement](SoftwareTestCasesSpecification.md#sr07_tc01_bothbuttonspressed_nomovement); [SR07_TC02_BothButtonsPressed_WhileMoving_StopsMovement](SoftwareTestCasesSpecification.md#sr07_tc02_bothbuttonspressed_whilemoving_stopsmovement); [SR07_TC03_ReleaseBothButtons_ResumesNormalOperation](SoftwareTestCasesSpecification.md#sr07_tc03_releasebothbuttons_resumesnormaloperation) |
 | [SR-08: Error Detection and Recovery](SoftwareRequirements.md#sr-08) | [SR08_TC01_BothLimitsActive_ErrorState](SoftwareTestCasesSpecification.md#sr08_tc01_bothlimitsactive_errorstate); [SR08_TC02_Overcurrent_ErrorState](SoftwareTestCasesSpecification.md#sr08_tc02_overcurrent_errorstate); [SR08_TC03_ClearErrorByPowerCycle](SoftwareTestCasesSpecification.md#sr08_tc03_clearerrorbypowercycle) |
+| [SR-09: Button Debouncing](SoftwareRequirements.md#sr-09) | [SR09_TC01_Debounce_PreventsFalseTrigger](SoftwareTestCasesSpecification.md#sr09_tc01_debounce_preventsfalsetrigger); [SR09_TC02_Debounce_StableAfterDelay](SoftwareTestCasesSpecification.md#sr09_tc02_debounce_stableafterdelay); [SR09_TC03_DebounceState_TracksState](SoftwareTestCasesSpecification.md#sr09_tc03_debouncestate_tracksstate) |
+
+
 
 ---
 

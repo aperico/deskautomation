@@ -127,6 +127,17 @@ Each requirement is traceable to a use case and test case. Update this section a
 - The software shall activate the error indicator LED during an error state.
 - The software shall allow the user to attempt recovery by cycling power.
 
+### SR-09: Button Debouncing (Functional)
+
+**ID:** SR-09  
+**Source:** All button-related use cases  
+**Assumptions:** Mechanical buttons may bounce, causing false triggers.
+
+- The software shall use a debouncing mechanism for all button inputs.
+- The debouncing shall be implemented via the `HAL_debounceButton` function.
+- The debouncing logic shall ensure only stable button presses/releases are recognized by the application logic.
+- The debounce delay shall be configurable.
+
 ---
 
 ## Traceability

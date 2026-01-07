@@ -1,3 +1,4 @@
+
 // HAL.h
 // -----------------------------------------------------------------------------
 // Hardware Abstraction Layer for Desk Automation Project
@@ -42,5 +43,13 @@ void HAL_StopMotor();
 void HAL_BlinkErrorLED();
 void HAL_BlinkUPLED();
 void HAL_BlinkDOWNLED();
+
+// Debounce state for buttons
+typedef struct {
+  bool lastState;
+  unsigned long lastDebounceTime;
+} DebounceState;
+
+bool HAL_debounceButton(const int pin, DebounceState &state, const unsigned long debounceDelay);
 
 #endif

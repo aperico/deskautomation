@@ -1,7 +1,35 @@
-#include "HAL.h"
 #if defined(ARDUINO)
 #include <Arduino.h>
 #endif
+#include "HAL.h"
+
+// Debounce helper function moved from arduino.ino
+/**
+ * @brief Debounces a button input on a specified pin.
+ *
+ * This function checks the state of a button connected to the given pin and applies a debounce algorithm
+ * to filter out noise caused by mechanical button presses. It uses the provided DebounceState structure
+ * to track the last stable state and the last time the state changed. If the button state remains stable
+ * for longer than the specified debounce delay, the function returns the new state.
+ *
+ * @param pin The digital pin number where the button is connected.
+ * @param state Reference to a DebounceState structure holding the last state and last debounce time.
+ * @param debounceDelay The minimum time (in milliseconds) the button state must remain stable to be considered valid.
+ * @return true if the button state has changed and is stable; false otherwise.
+ */
+bool HAL_debounceButton(const int pin, DebounceState &state, const unsigned long debounceDelay) {
+  bool reading = digitalRead(pin) == LOW ? false : true;
+  unsigned long currentTime = millis();
+  if (reading != state.lastState) {
+    state.lastDebounceTime = currentTime;
+  }
+  if ((currentTime - state.lastDebounceTime) > debounceDelay) {
+    state.lastState = reading;
+    return reading;
+  }
+  state.lastState = reading;
+  return false;
+}
 
 void HAL_Init() {
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
@@ -31,15 +59,15 @@ void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t 
   
   
   if (ret == APP_TASK_SUCCESS) {
-    if (outputs->moveUp == TRUE) {
+    if (outputs->moveUp == true) {
       HAL_SetErrorLED(false);
       HAL_MoveUp(MOTOR_SPEED);
     }
-    if (outputs->moveDown == TRUE) {
+    if (outputs->moveDown == true) {
       HAL_SetErrorLED(false);
       HAL_MoveDown(MOTOR_SPEED);
     }
-    if (outputs->stop == TRUE) {
+    if (outputs->stop == true) {
       HAL_SetErrorLED(false);
       HAL_SetMovingUpLED(false);
       HAL_SetMovingDownLED(false);
