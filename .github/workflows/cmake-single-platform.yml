@@ -53,24 +53,35 @@ jobs:
     - name: Run unit tests and output results (JUnit XML)
       working-directory: build
       run: |
-        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -T Test || true
-        # Move the JUnit XML to the expected location if it exists
+        # run only Unit-labelled tests
+        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -L "Unit" || true
         if [ -f Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml ]; then
-          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results.xml
+          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results-unit.xml
         fi
 
-    - name: Generate coverage report
+    - name: Run integration tests and output results (JUnit XML)
+      working-directory: build
       run: |
-        geninfo build --output-filename coverage.info --ignore-errors mismatch --base-directory source/arduino --no-external || true
-        lcov --extract coverage.info "*/source/arduino/*" --output-file coverage.info
-        lcov --list coverage.info
+        # run only Integration-labelled tests
+        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -L "Integration" || true
+        if [ -f Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml ]; then
+          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results-integration.xml
+        fi
 
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: build/test-results.xml
+        path: |
+          build/test-results-unit.xml
+          build/test-results-integration.xml
+
+    - name: Generate coverage report
+      run: |
+        geninfo build --output-filename coverage.info --ignore-errors mismatch --base-directory source/arduino --no-external || true
+        lcov --extract coverage.info "*/source/arduino/*" --output-file coverage.info
+        lcov --list coverage.info
 
     - name: Upload coverage report
       if: always()
