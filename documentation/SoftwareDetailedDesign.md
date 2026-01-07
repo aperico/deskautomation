@@ -68,11 +68,8 @@ sequenceDiagram
 
 ---
 
+
 *For questions or suggestions, open an issue or contact the project maintainers.*
-	HAL-->>ECU: Status
-	ECU->>HAL: Set LED State
-	HAL->>LEDs: Update Indicator
-```
 
 ---
 
