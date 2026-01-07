@@ -1,5 +1,11 @@
 
 
+# ASPICE Maturity Classification
+
+**Overall ASPICE Maturity Level: Level 2 (Managed Process)**
+
+This project demonstrates most base practices at Level 2 maturity, meaning processes are planned, monitored, and managed, with requirements, architecture, and testing well documented and traceable. Some integration and validation steps remain partially manual, so full Level 3 (Defined Process) is not yet achieved. To reach higher maturity, further automation, standardization, and continuous improvement are recommended.
+
 # ASPICE Assessment Checklist
 
 **Assessment Date:** January 6, 2026
