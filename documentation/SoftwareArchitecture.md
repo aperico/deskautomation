@@ -95,20 +95,22 @@ See detailed diagrams and rationale in [Software Detailed Design](SoftwareDetail
 
 ## Inputs and Outputs Table
 
-| Name                | Direction | Data Type | Acceptable Range / Values         | Description                       |
-| btUPPressed         | Input     | Boolean   | TRUE (1), FALSE (0)               | Up button pressed state           |
-| moveUp              | Output    | Boolean   | TRUE (1), FALSE (0)               | Command to move desk up           |
-| moveDown            | Output    | Boolean   | TRUE (1), FALSE (0)               | Command to move desk down         |
-| stop                | Output    | Boolean   | TRUE (1), FALSE (0)               | Command to stop motor             |
-| error               | Output    | Boolean   | TRUE (1), FALSE (0)               | Error state indicator             |
-| ERROR_LED           | Output    | Digital   | HIGH (1), LOW (0)                 | Error indicator LED               |
-| LED_LEFT_PIN        | Output    | Digital   | HIGH (1), LOW (0)                 | Left position LED                 |
-| LED_RIGHT_PIN       | Output    | Digital   | HIGH (1), LOW (0)                 | Right position LED                |
-| BUTTON_UP_PIN       | Input     | Digital   | HIGH (1), LOW (0)                 | Up button hardware pin            |
-| BUTTON_DOWN_PIN     | Input     | Digital   | HIGH (1), LOW (0)                 | Down button hardware pin          |
-| IN1                 | Output    | Digital   | HIGH (1), LOW (0)                 | Motor direction 1                 |
-| IN2                 | Output    | Digital   | HIGH (1), LOW (0)                 | Motor direction 2                 |
-| ENA                 | Output    | PWM       | 0–255 (Arduino PWM range)         | Motor speed (PWM)                 |
+
+| Name            | Direction | Data Type | Acceptable Range / Values     | Description                   |
+|-----------------|-----------|-----------|------------------------------|-------------------------------|
+| btUPPressed     | Input     | Boolean   | TRUE (1), FALSE (0)          | Up button pressed state       |
+| moveUp          | Output    | Boolean   | TRUE (1), FALSE (0)          | Command to move desk up       |
+| moveDown        | Output    | Boolean   | TRUE (1), FALSE (0)          | Command to move desk down     |
+| stop            | Output    | Boolean   | TRUE (1), FALSE (0)          | Command to stop motor         |
+| error           | Output    | Boolean   | TRUE (1), FALSE (0)          | Error state indicator         |
+| ERROR_LED       | Output    | Digital   | HIGH (1), LOW (0)            | Error indicator LED           |
+| LED_LEFT_PIN    | Output    | Digital   | HIGH (1), LOW (0)            | Left position LED             |
+| LED_RIGHT_PIN   | Output    | Digital   | HIGH (1), LOW (0)            | Right position LED            |
+| BUTTON_UP_PIN   | Input     | Digital   | HIGH (1), LOW (0)            | Up button hardware pin        |
+| BUTTON_DOWN_PIN | Input     | Digital   | HIGH (1), LOW (0)            | Down button hardware pin      |
+| IN1             | Output    | Digital   | HIGH (1), LOW (0)            | Motor direction 1             |
+| IN2             | Output    | Digital   | HIGH (1), LOW (0)            | Motor direction 2             |
+| ENA             | Output    | PWM       | 0–255 (Arduino PWM range)    | Motor speed (PWM)             |
 
 ---
 
