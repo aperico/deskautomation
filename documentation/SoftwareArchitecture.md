@@ -1,22 +1,28 @@
 
-
 # Software Architecture
 
-## Overview
-This document describes the software architecture for the Automated Mechanical Desk Lift system. The architecture is designed to ensure safety, modularity, testability, and maintainability, and is traceable to the Software Requirements and System Use Cases.
+This document describes the architecture of the Automated Mechanical Desk Lift system. It is designed to help developers, testers, and stakeholders understand the structure, principles, and key components for safe, modular, and maintainable development.
 
 ---
 
-## Purpose
-Defines the structure, principles, and key components of the desk lift software for developers, testers, and stakeholders.
-
----
-
-## References
+## Navigation
 - [Software Requirements](SoftwareRequirements.md)
 - [Software Detailed Design](SoftwareDetailedDesign.md)
 - [System Use Cases](SystemUseCases.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
+
+---
+
+## Purpose
+Defines the structure, principles, and key components of the desk lift software. Use this document to onboard, extend, or maintain the system.
+
+---
+
+## Architectural Overview
+- **PinConfig.h:** Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.
+- **HAL.h / HAL.cpp:** Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
+- **DeskController.h / DeskController.cpp:** Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
+- **arduino.ino:** Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
 
 ---
 
@@ -28,6 +34,13 @@ Defines the structure, principles, and key components of the desk lift software 
 
 ---
 
+## Code Structure
+- **Modular Design:** Hardware, logic, and configuration are separated for clarity and maintainability.
+- **State Management:** Uses input/output structs to pass data between layers.
+- **Non-blocking Loop:** The main loop is designed to be responsive and non-blocking.
+
+---
+
 ## Design Constraints
 - Must operate on Arduino UNO or compatible ECU
 - Motor driver: L298N
@@ -35,13 +48,16 @@ Defines the structure, principles, and key components of the desk lift software 
 - Indicator LEDs: digital outputs
 - Power supply: regulated, office environment
 - Timing: non-blocking, responsive (<100ms reaction)
-- Regulatory: must comply with ISO 26262, ASPICE
+- Regulatory: must comply with ISO 25119, ASPICE
 
 ---
 
 ## Layered Architecture
+See detailed diagrams and rationale in [Software Detailed Design](SoftwareDetailedDesign.md).
 
-### 1. Hardware Abstraction Layer (HAL)
+---
+
+*For questions or suggestions, open an issue or contact the project maintainers.*
 	- Abstracts direct hardware access (LEDs, buttons, motor driver).
 	- Provides initialization and control functions for hardware components.
 	- Enables hardware replacement without changes to control logic.
@@ -110,6 +126,17 @@ Defines the structure, principles, and key components of the desk lift software 
 ## Traceability
 - All architectural decisions and components are traceable to Software Requirements and System Use Cases.
 - See [Software Requirements](SoftwareRequirements.md) and [Traceability Matrix](TraceabilityMatrix.md).
+
+---
+
+## System Actors
+| Actor              | Description                    |
+|--------------------|-------------------------------|
+| User               | Operates the desk              |
+| Arduino Controller | Executes control logic         |
+| DC Motor           | Provides mechanical movement   |
+| Motor Driver       | Controls motor direction/power |
+| Power Source       | Battery or external supply     |
 
 ---
 

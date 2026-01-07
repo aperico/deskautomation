@@ -1,190 +1,151 @@
-# Automated Mechanical Desk Lift
-**Arduino-Based Control System**
+# Automated Mechanical Desk Lift System
+
+Welcome! This project implements a motorized height adjustment system for a mechanical desk using an Arduino-based controller. It is designed for safety, modularity, and future extensibility.
 
 ---
 
-## Quick Reference
-- [Glossary](documentation/Glossary.md)
+## Project Overview
+- **Purpose:** Automate desk movement (up/down) with safety and reliability.
+- **Technologies:** Arduino UNO, L298N motor driver, modular C++ codebase.
+- **Features:**
+	- Up/Down movement with button control
+	- Indicator LEDs for status
+	- Safety checks and error handling
+	- Modular hardware abstraction
+	- Host-based unit testing
+- **Compliance:** ISO 25119, ASPICE
+
+---
+
+## Quick Start
+1. **Clone the repository:**
+	 ```sh
+	 git clone https://github.com/aperico/deskatuomation.git
+	 ```
+2. **Install prerequisites:**
+	 - Arduino IDE or PlatformIO
+	 - CMake (for build/test automation)
+	 - [Hardware setup](documentation/HardwareConnections.md)
+3. **Build the project:**
+	 - Use CMake tasks in VS Code or run:
+		 ```sh
+		 cmake -S . -B build
+		 cmake --build build --config Release
+		 ```
+4. **Flash to Arduino:**
+	 - Open `source/arduino/arduino.ino` in Arduino IDE and upload.
+5. **Run unit tests:**
+	 - Use CTest tasks or run:
+		 ```sh
+		 ctest --test-dir build -C Release --output-on-failure
+		 ```
+
+---
+
+## Documentation Index
+- [Glossary](documentation/Glossary.md) – Review terminology before starting
 - [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
 - [Safety Notes](documentation/SafetyNotes.md)
-- [Planned Enhancements (Roadmap)](documentation/Roadmap.md)
+- [Software Requirements](documentation/SoftwareRequirements.md)
+- [Software Architecture](documentation/SoftwareArchitecture.md)
+- [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
+- [System Use Cases](documentation/SystemUseCases.md)
+- [Traceability Matrix](documentation/TraceabilityMatrix.md)
+- [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
+- [Roadmap](documentation/Roadmap.md)
 
 ---
 
-## Overview
+## Development & Contribution
+- **Code Structure:**
+	- `source/arduino/PinConfig.h` – Pin assignments
+	- `source/arduino/HAL.cpp/.h` – Hardware Abstraction Layer
+	- `source/arduino/DeskController.cpp/.h` – Main logic & state machine
+	- `source/arduino/arduino.ino` – Application entry point
+- **Modular Design:** Follow the existing structure for new features.
+- **How to contribute:**
+	- Fork, branch, and submit pull requests.
+	- See [Roadmap](documentation/Roadmap.md) for open tasks.
+	- Document any new hardware or features.
+- **Coding standards:** Use clear, modular C++ and document public interfaces.
+
+---
+
+## Planned Enhancements
+See [Roadmap](documentation/Roadmap.md) for details:
+- Upper and lower limit switches
+- Current sensing for stall detection
+- Height presets
+- EEPROM-based calibration
+- Soft-start/stop PWM control
+
+---
+
+## Compliance & Safety
+- Designed for ISO 25119 (agricultural machinery safety) and ASPICE (automotive software process improvement)
+- See [Safety Notes](documentation/SafetyNotes.md) for wiring and operational safety
+
+---
+
+## License
+This project is open-source under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Contact & Support
+- **Questions or issues?** Open an issue on GitHub.
+- **Glossary:** See [Glossary](documentation/Glossary.md) for terminology.
+# Automated Mechanical Desk Lift
+
 This project implements a **motorized height adjustment system** for a mechanical desk using an **Arduino-based controller**.  
 The architecture is designed for:
 - Temporary hardware during early development (JGY370 + L298N)
 - Future extensibility (limit switches, current sensing, height presets)
 
-**Software is structured to allow hardware replacement without rewriting control logic.**
-
 ---
 
-## Project Goals
-- Electrically raise and lower a mechanical desk
-- Enable safe prototyping without limit switches
-- Abstract hardware dependencies via a HAL (Hardware Abstraction Layer)
-- Allow host-based unit testing using `g++`
 
+- [Glossary](documentation/Glossary.md)
+- [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
+- [Safety Notes](documentation/SafetyNotes.md)
+- [Planned Enhancements (Roadmap)](documentation/Roadmap.md)
 ---
+
+
 
 ## Out of Scope (Initial Phase)
-- Automatic height presets
-- User profiles
-- Wireless or network connectivity
 - Closed-loop position control
 
 ---
 
-## Components
-- L298N motor driver
-- JGY370 DC motor (12V)
-- 9V–12V battery
-- Elitek ON/OFF switch
-
----
-
 ## System Actors
-| Actor              | Description                    |
-|--------------------|-------------------------------|
-| User               | Operates the desk              |
-| Arduino Controller | Executes control logic         |
-| DC Motor           | Provides mechanical movement   |
-| Motor Driver       | Controls motor direction/power |
-| Power Source       | Battery or external supply     |
-
+See [Software Architecture](documentation/SoftwareArchitecture.md#system-actors) for a description of the main actors and their roles in the system.
 ---
 
-## Documentation
-- [System Use Cases](documentation/SystemUseCases.md)
-- [Software Requirements](documentation/SoftwareRequirements.md)
 - [Software Architecture](documentation/SoftwareArchitecture.md)
 - [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
 - [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
 - [Traceability Matrix](documentation/TraceabilityMatrix.md)
-
 ---
 
-## Key Design Constraints
-- Initial operation without limit switches
-- Motor must stop on reset or fault
-- Direction changes require a stop before reversal
-- Motor must never start automatically on power-up
-
----
-
-## Planned Enhancements
 - Upper and lower limit switches
 - Current sensing for stall detection
 - Height presets
 - EEPROM-based calibration
-- Soft-start and soft-stop PWM control
-
 ---
-
-## Hardware Connections
-| Function                | Arduino Pin |
-|-------------------------|-------------|
-| Error Indicator LED     | 13          |
-| Left Position LED       | 5           |
-| Right Position LED      | 4           |
-| Button Up               | 3           |
-| Button Down             | 2           |
-| Motor IN1               | 8           |
-| Motor IN2               | 9           |
-| Motor ENA (PWM)         | 10          |
-
-*Edit [`PinConfig.h`](source/arduino/PinConfig.h) to change hardware pin mappings.*
-
----
-
 ## Architecture
-- [`PinConfig.h`](source/arduino/PinConfig.h): Centralizes all Arduino pin assignments for LEDs, buttons, and the motor driver.
-- [`HAL.h`](source/arduino/HAL.h) / [`HAL.cpp`](source/arduino/HAL.cpp): Hardware Abstraction Layer. Provides functions to initialize and control hardware components (LEDs, buttons, motor driver) without exposing low-level details to the main application logic.
-- [`DeskController.h`](source/arduino/DeskController.h) / [`DeskController.cpp`](source/arduino/DeskController.cpp): Contains the main application logic and state machine for desk movement. Processes user inputs and determines outputs for hardware control.
-- [`arduino.ino`](source/arduino/arduino.ino): Entry point for the application. Handles setup, main loop, and high-level control flow. Reads inputs, runs application logic, and updates outputs.
+See [Software Architecture](documentation/SoftwareArchitecture.md) for a detailed description of the system's modular structure, hardware abstraction, and control logic.
 
----
 
-## Code Structure
-- **Modular Design:**  
-  Hardware, logic, and configuration are separated for clarity and maintainability.
-- **State Management:**  
-  Uses input/output structs to pass data between layers.
-- **Non-blocking Loop:**  
-  The main loop is designed to be responsive and non-blocking.
-
----
-
-## Operation
-- Use the UP and DOWN buttons to control desk movement.
-- LEDs indicate desk position and errors.
-
----
 
 ## Application States and State Transitions
-The application uses a simple state machine to manage desk movement and safety.  
-Below are the main states and their transitions:
-
-### States
-- **IDLE**: Desk is stationary, waiting for user input.
-- **MOVING_UP**: Desk is moving upward.
-- **MOVING_DOWN**: Desk is moving downward.
-- **ERROR**: A fault or unsafe condition has occurred; movement is disabled.
-
-### State Transitions
-- **IDLE → MOVING_UP**:  
-  User presses the Up button (and not at upper limit).
-- **IDLE → MOVING_DOWN**:  
-  User presses the Down button (and not at lower limit).
-- **MOVING_UP → IDLE**:  
-  Up button released, timeout occurs, or upper limit reached.
-- **MOVING_DOWN → IDLE**:  
-  Down button released, timeout occurs, or lower limit reached.
-- **MOVING_UP or MOVING_DOWN → ERROR**:  
-  Fault detected (e.g., overcurrent, both limits active).
-- **ERROR → IDLE**:  
-  Error condition cleared (e.g., reset or safe state detected).
-
-See [Software Detailed Design](documentation/SoftwareDetailedDesign.md#state-machine-diagram) for the full state machine and transitions.
-
 ---
-
 ## Wiring Diagrams
-### Safety Notes
-- Always disconnect power before wiring.
-- Motor power must **never** pass through the Arduino.
-- The ON/OFF switch must be placed **between the battery and the motor driver**.
-- Arduino GND and motor driver GND **must be common**.
-
----
-
-## Pin Assignments (Current Code)
-| Signal             | Arduino Pin | Notes                |
-|--------------------|-------------|----------------------|
-| ERROR_LED          | 13          | On-board LED         |
-| LED_LEFT_PIN       | 5           | Left position LED    |
-| LED_RIGHT_PIN      | 4           | Right position LED   |
-| BUTTON_UP_PIN      | 3           | Up button            |
-| BUTTON_DOWN_PIN    | 2           | Down button          |
-| IN1                | 8           | Motor direction 1    |
-| IN2                | 9           | Motor direction 2    |
-| ENA                | 10 (PWM)    | Motor speed (PWM)    |
-
----
-
+See [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md#wiring-diagrams) for wiring diagrams and safety notes.
 ## Traceability
-
 See [Traceability Matrix](documentation/TraceabilityMatrix.md) for requirement-to-test mapping and use case coverage.
 
 ---
 
-## Contributing
 - Document any new hardware or features.
 - Follow the existing modular structure for new code.
-
----
-
-## License
-MIT License (add your license text here if needed)

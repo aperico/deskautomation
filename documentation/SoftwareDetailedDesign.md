@@ -1,35 +1,46 @@
-# Purpose and Scope
 
-This document provides the detailed design for the Automated Mechanical Desk Lift software. It is intended for developers, testers, and stakeholders to understand the implementation, rationale, and compliance with safety and industry standards. Scope includes all embedded software running on the ECU, covering hardware abstraction, control logic, error handling, and testability.
+# Software Detailed Design
+
+This document provides the detailed design for the Automated Mechanical Desk Lift software. It is intended for developers, testers, and stakeholders to understand the implementation, rationale, and compliance with safety and industry standards.
 
 ---
 
-# References
-
+## Navigation
 - [Software Requirements](SoftwareRequirements.md)
 - [Software Architecture](SoftwareArchitecture.md)
 - [System Use Cases](SystemUseCases.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
 - [Software Test Cases Specification](SoftwareTestCasesSpecification.md)
-- ISO 26262: Road Vehicles – Functional Safety
+
+---
+
+## Purpose and Scope
+Describes the implementation, rationale, and compliance for all embedded software running on the ECU, covering hardware abstraction, control logic, error handling, and testability.
+
+---
+
+## References
+- ISO 25119: Tractors and machinery for agriculture and forestry – Safety-related parts of control systems
 - ASPICE: Automotive SPICE
 
 ---
 
-# Design Constraints
-
+## Design Constraints
+- Initial operation without limit switches
+- Motor must stop on reset or fault
+- Direction changes require a stop before reversal
+- Motor must never start automatically on power-up
 - Must operate on Arduino UNO or compatible ECU
 - Motor driver: L298N
 - Limit switches and buttons: digital inputs
 - Indicator LEDs: digital outputs
 - Power supply: regulated, office environment
 - Timing: non-blocking, responsive (<100ms reaction)
-- Regulatory: must comply with ISO 26262, ASPICE
+- Regulatory: must comply with ISO 25119, ASPICE
 
 ---
 
-# Design Rationale
-
+## Design Rationale
 - State machine chosen for clarity, safety, and traceability
 - Non-blocking loop ensures responsiveness and safety
 - Modular decomposition supports maintainability and extensibility
@@ -37,22 +48,27 @@ This document provides the detailed design for the Automated Mechanical Desk Lif
 
 ---
 
-# Interface Diagrams
+## Interface Diagrams
+Sequence diagrams and other visuals illustrate key interactions. Update these as the design evolves.
 
 ### Sequence Diagram (Desk Movement)
-
 ```mermaid
 sequenceDiagram
-	participant User
-	participant ECU
-	participant HAL
-	participant MotorDriver
-	User->>ECU: Press Up/Down Button
-	ECU->>HAL: Read Button State
-	HAL->>ECU: Button State
-	ECU->>HAL: Set Motor Direction/Speed
-	HAL->>MotorDriver: Drive Motor
-	MotorDriver-->>HAL: Status
+    participant User
+    participant ECU
+    participant HAL
+    participant MotorDriver
+    User->>ECU: Press Up/Down Button
+    ECU->>HAL: Read Button State
+    HAL->>ECU: Button State
+    ECU->>HAL: Set Motor Direction/Speed
+    HAL->>MotorDriver: Drive Motor
+    MotorDriver-->>HAL: Status
+```
+
+---
+
+*For questions or suggestions, open an issue or contact the project maintainers.*
 	HAL-->>ECU: Status
 	ECU->>HAL: Set LED State
 	HAL->>LEDs: Update Indicator
@@ -109,7 +125,7 @@ sequenceDiagram
 
 # Compliance Statement
 
-This design complies with ISO 26262 (Functional Safety for Road Vehicles) and ASPICE (Automotive SPICE) for software engineering best practices, including traceability, safety analysis, and testability.
+This design complies with ISO 25119 (Safety-related parts of control systems for agricultural and forestry machinery) and ASPICE (Automotive SPICE) for software engineering best practices, including traceability, safety analysis, and testability.
 
 ---
 
@@ -124,6 +140,34 @@ This design complies with ISO 26262 (Functional Safety for Road Vehicles) and AS
 ---
 
 # Software Detailed Design
+
+## Application States and State Transitions
+The application uses a simple state machine to manage desk movement and safety.  
+Below are the main states and their transitions:
+
+### States
+- **IDLE**: Desk is stationary, waiting for user input.
+- **MOVING_UP**: Desk is moving upward.
+- **MOVING_DOWN**: Desk is moving downward.
+- **ERROR**: A fault or unsafe condition has occurred; movement is disabled.
+
+### State Transitions
+- **IDLE → MOVING_UP**:  
+  User presses the Up button (and not at upper limit).
+- **IDLE → MOVING_DOWN**:  
+  User presses the Down button (and not at lower limit).
+- **MOVING_UP → IDLE**:  
+  Up button released, timeout occurs, or upper limit reached.
+- **MOVING_DOWN → IDLE**:  
+  Down button released, timeout occurs, or lower limit reached.
+- **MOVING_UP or MOVING_DOWN → ERROR**:  
+  Fault detected (e.g., overcurrent, both limits active).
+- **ERROR → IDLE**:  
+  Error condition cleared (e.g., reset or safe state detected).
+
+See [Software Detailed Design](SoftwareDetailedDesign.md#state-machine-diagram) for the full state machine and transitions.
+
+---
 
 ## Overview
 This document provides a detailed design for the Automated Mechanical Desk Lift software, aligned with the Software Requirements and Architecture. It describes modules, interfaces, data structures, control flow, and error handling according to industry standards.

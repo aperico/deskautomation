@@ -1,9 +1,18 @@
-# Software Test Cases
 
+# Software Test Cases Specification
 
-Test cases are derived from the [Software Requirements](SoftwareRequirements.md) (SR-01 to SR-08) and are designed to be clear, repeatable, and verifiable.
+This document lists the test cases for the Automated Mechanical Desk Lift system. Test cases are derived from [Software Requirements](SoftwareRequirements.md) and are designed to be clear, repeatable, and verifiable.
 
 ---
+
+## Navigation
+- [Software Requirements](SoftwareRequirements.md)
+- [Traceability Matrix](TraceabilityMatrix.md)
+
+---
+
+## Test Case Structure
+Each test case includes preconditions, steps, and expected results. Update this section as requirements and implementation evolve.
 
 ## SR-01: System Initialization
 **Test Case: SR01_TC01_PowerOn_InitializesToIdle**
@@ -38,6 +47,10 @@ Test cases are derived from the [Software Requirements](SoftwareRequirements.md)
 **Test Case: SR02_TC02_UpPressed_AtUpperLimit_NoMovement**
 - Precondition: System is in IDLE, upper limit is active.
 - Steps:
+
+---
+
+*For questions or suggestions, open an issue or contact the project maintainers.*
   1. Press Up button.
 - Expected Result:
   - No movement is commanded.

@@ -1,23 +1,28 @@
 
+
 # System Use Cases
 
-See also: [Software Requirements](SoftwareRequirements.md), [Traceability Matrix](TraceabilityMatrix.md)
+This document describes the main use cases for the Automated Mechanical Desk Lift system. Use cases help clarify user interactions and drive requirements and test cases.
+
+---
+
+## Navigation
+- [Software Requirements](SoftwareRequirements.md)
+- [Traceability Matrix](TraceabilityMatrix.md)
+
+---
 
 ## UC-01: Power-On the Desk Control System
-
-**Actor:** User  
+**Actor:** User
 **Main Flow:**
-
 1. User toggles the power switch to ON.
 2. Motor driver receives power.
 3. ECU powers up (regulated supply).
 4. System enters IDLE state; indicator LED shows ready status.
 
 ## UC-02: Raise Desk
-
-**Actor:** User  
+**Actor:** User
 **Main Flow:**
-
 1. User presses the “Up” button.
 2. ECU sets motor direction to UP.
 3. Motor driver energizes the motor.
@@ -27,10 +32,8 @@ See also: [Software Requirements](SoftwareRequirements.md), [Traceability Matrix
 7. Indicator LED returns to IDLE state.
 
 ## UC-03: Lower Desk
-
-**Actor:** User  
+**Actor:** User
 **Main Flow:**
-
 1. User presses the “Down” button.
 2. ECU sets motor direction to DOWN.
 3. Motor driver energizes the motor.
@@ -38,6 +41,10 @@ See also: [Software Requirements](SoftwareRequirements.md), [Traceability Matrix
 5. Down indicator LED is ON.
 6. Motor stops when button is released, timeout occurs, or lower limit is reached.
 7. Indicator LED returns to IDLE state.
+
+---
+
+*For questions or suggestions, open an issue or contact the project maintainers.*
 
 ## UC-04: Emergency Stop (Software-Based or Manual)
 
