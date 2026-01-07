@@ -43,23 +43,7 @@ Welcome! This project implements a motorized height adjustment system for a mech
 ---
 
 
-## Documentation Index
 
-## Documentation Index
-
-| Document | Description |
-|----------|-------------|
-| [Glossary](documentation/Glossary.md) | Key terminology used throughout the project. |
-| [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md) | Pin mapping, wiring diagrams, and hardware setup instructions. |
-| [Safety Notes](documentation/SafetyNotes.md) | Safety standards, compliance, and operational safety guidelines. |
-| [Software Requirements](documentation/SoftwareRequirements.md) | Functional and non-functional requirements for the system. |
-| [Software Architecture](documentation/SoftwareArchitecture.md) | High-level architecture, code structure, and system actors. |
-| [Software Detailed Design](documentation/SoftwareDetailedDesign.md) | Module decomposition, interfaces, state machine, and compliance details. |
-| [System Use Cases](documentation/SystemUseCases.md) | User scenarios and system interactions. |
-| [Traceability Matrix](documentation/TraceabilityMatrix.md) | Mapping of use cases, requirements, and test cases for traceability. |
-| [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md) | Detailed test cases for verifying requirements. |
-| [Roadmap](documentation/Roadmap.md) | Planned features and future enhancements. |
-| [ASPICE Assessment](documentation/aspiceassessments.md) | ASPICE compliance checklist, process maturity classification, and improvement recommendations. |
 
 
 ---
@@ -77,8 +61,6 @@ See the [ASPICE Assessment](documentation/aspiceassessments.md) for a detailed c
 **Overall ASPICE Maturity Level: Level 2 (Managed Process)**
 Processes are planned, monitored, and managed, with requirements, architecture, and testing well documented and traceable. Some integration and validation steps remain partially manual, so full Level 3 (Defined Process) is not yet achieved. To reach higher maturity, further automation, standardization, and continuous improvement are recommended.
 
-**Overall Process Maturity Statement:**
-Most base practices for system and software engineering are fully or largely achieved, with strong evidence in requirements, architecture, and testing. Integration and validation steps are partially manual; further automation and documentation improvements are recommended for full ASPICE compliance.
 
 ## Project File Overview
 
