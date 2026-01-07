@@ -64,6 +64,7 @@ Welcome! This project implements a motorized height adjustment system for a mech
 
 ---
 
+
 ## ASPICE Assessment Overview
 
 See the [ASPICE Assessment](documentation/aspiceassessments.md) for a detailed checklist of compliance with ASPICE base practices, including system and software engineering. This document provides:
@@ -72,6 +73,9 @@ See the [ASPICE Assessment](documentation/aspiceassessments.md) for a detailed c
 - Evidence mapping to project documentation
 - Action items and recommendations for improvement
 - Overall process maturity classification
+
+**Overall ASPICE Maturity Level: Level 2 (Managed Process)**
+Processes are planned, monitored, and managed, with requirements, architecture, and testing well documented and traceable. Some integration and validation steps remain partially manual, so full Level 3 (Defined Process) is not yet achieved. To reach higher maturity, further automation, standardization, and continuous improvement are recommended.
 
 **Overall Process Maturity Statement:**
 Most base practices for system and software engineering are fully or largely achieved, with strong evidence in requirements, architecture, and testing. Integration and validation steps are partially manual; further automation and documentation improvements are recommended for full ASPICE compliance.
