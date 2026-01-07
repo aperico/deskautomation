@@ -6,6 +6,7 @@ This document lists the requirements for the Automated Mechanical Desk Lift syst
 
 ---
 
+
 ## Navigation
 - [System Use Cases](SystemUseCases.md)
 - [Traceability Matrix](TraceabilityMatrix.md)

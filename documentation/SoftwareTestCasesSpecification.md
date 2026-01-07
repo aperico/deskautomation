@@ -5,7 +5,9 @@ This document lists the test cases for the Automated Mechanical Desk Lift system
 
 ---
 
+
 ## Navigation
+- [System Use Cases](SystemUseCases.md)
 - [Software Requirements](SoftwareRequirements.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
 

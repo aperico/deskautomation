@@ -104,22 +104,23 @@ sequenceDiagram
 
 ---
 
+
 # Glossary
 
-| Term                | Definition |
-|---------------------|------------|
-| ECU                 | Electronic Control Unit; the microcontroller managing desk logic |
-| Desk Controller     | The software and hardware module responsible for desk movement and safety |
-| Motor Driver        | Hardware component (e.g., L298N) that powers and controls the motor |
-| State Machine       | Software logic managing system states and transitions |
-| Error               | A detected fault or unsafe condition that disables movement |
-| Fault               | A hardware or software abnormality (e.g., overcurrent, both limits active) |
-| Indicator LED       | Visual feedback device showing system state (IDLE, MOVING_UP, MOVING_DOWN, ERROR) |
-| Limit Switch        | Hardware sensor indicating upper or lower desk position |
-| Dwell               | A short waiting period before reversing desk direction |
-| Test Case           | A repeatable procedure to verify requirement compliance |
-| Requirement         | A statement of system behavior, function, or constraint |
-| Use Case            | A scenario describing user interaction with the system |
+| Term            | Definition                                                                 |
+|-----------------|---------------------------------------------------------------------------|
+| ECU             | Electronic Control Unit; the microcontroller managing desk logic           |
+| Desk Controller | The software and hardware module responsible for desk movement and safety  |
+| Motor Driver    | Hardware component (e.g., L298N) that powers and controls the motor        |
+| State Machine   | Software logic managing system states and transitions                      |
+| Error           | A detected fault or unsafe condition that disables movement                |
+| Fault           | A hardware or software abnormality (e.g., overcurrent, both limits active)|
+| Indicator LED   | Visual feedback device showing system state (IDLE, MOVING_UP, MOVING_DOWN, ERROR) |
+| Limit Switch    | Hardware sensor indicating upper or lower desk position                    |
+| Dwell           | A short waiting period before reversing desk direction                     |
+| Test Case       | A repeatable procedure to verify requirement compliance                    |
+| Requirement     | A statement of system behavior, function, or constraint                   |
+| Use Case        | A scenario describing user interaction with the system                     |
 
 ---
 
@@ -190,26 +191,28 @@ These assumptions are considered in module decomposition, control flow, error ha
 
 ---
 
-## Traceability to Software Requirements
+
+# Traceability to Software Requirements
 
 This section maps each design module, feature, and behavioral logic to the corresponding requirements in SoftwareRequirements.md. This ensures every design element is justified and traceable.
 
-| Design Element / Module                | Requirement ID(s) | Description / Rationale |
-|----------------------------------------|-------------------|------------------------|
-| PinConfig.h (hardware mapping)         | SR-01, SR-02      | Hardware abstraction, pin assignments for safety and flexibility |
-| HAL (hardware abstraction)             | SR-01, SR-03      | Safe hardware control, error handling, modularity |
-| DeskController (state machine logic)   | SR-04, SR-05, SR-06| Implements state transitions, error handling, and control logic |
-| DeskAppInputs_t / DeskAppOutputs_t     | SR-02, SR-04      | Structured data for inputs/outputs, supports testability |
-| Main Loop (arduino.ino integration)    | SR-01, SR-07      | Non-blocking, event-driven control, integrates all modules |
-| Error Handling (emergency stop, faults)| SR-03, SR-06      | Ensures safety, disables movement on fault |
-| Dwell Timing / Non-blocking Design     | SR-07             | Responsive, safe reversal, prevents unsafe direction changes |
-| Testability (unit tests, coverage)     | SR-08             | All logic is unit tested and mapped to requirements |
+| Design Element / Module                | Requirement ID(s)      | Description / Rationale                                         |
+|----------------------------------------|------------------------|-----------------------------------------------------------------|
+| PinConfig.h (hardware mapping)         | SR-01, SR-02           | Hardware abstraction, pin assignments for safety and flexibility |
+| HAL (hardware abstraction)             | SR-01, SR-03           | Safe hardware control, error handling, modularity                |
+| DeskController (state machine logic)   | SR-04, SR-05, SR-06    | Implements state transitions, error handling, and control logic  |
+| DeskAppInputs_t / DeskAppOutputs_t     | SR-02, SR-04           | Structured data for inputs/outputs, supports testability         |
+| Main Loop (arduino.ino integration)    | SR-01, SR-07           | Non-blocking, event-driven control, integrates all modules       |
+| Error Handling (emergency stop, faults)| SR-03, SR-06           | Ensures safety, disables movement on fault                       |
+| Dwell Timing / Non-blocking Design     | SR-07                  | Responsive, safe reversal, prevents unsafe direction changes     |
+| Testability (unit tests, coverage)     | SR-08                  | All logic is unit tested and mapped to requirements              |
 
 Refer to [Software Requirements](SoftwareRequirements.md) for full requirement text and rationale. All design elements are reviewed for compliance and traceability.
 
 ---
 
-## Safety Analysis and Rationale
+
+# Safety Analysis and Rationale
 
 This section provides explicit safety analysis and rationale for each safety-related requirement, supporting ASPICE CL2+ compliance.
 

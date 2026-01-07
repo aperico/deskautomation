@@ -6,7 +6,9 @@ This document describes the main use cases for the Automated Mechanical Desk Lif
 
 ---
 
+
 ## Navigation
+- [System Use Cases](SystemUseCases.md)
 - [Software Requirements](SoftwareRequirements.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
 

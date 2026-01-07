@@ -5,10 +5,11 @@ This document describes the architecture of the Automated Mechanical Desk Lift s
 
 ---
 
+
 ## Navigation
+- [System Use Cases](SystemUseCases.md)
 - [Software Requirements](SoftwareRequirements.md)
 - [Software Detailed Design](SoftwareDetailedDesign.md)
-- [System Use Cases](SystemUseCases.md)
 - [Traceability Matrix](TraceabilityMatrix.md)
 
 ---
