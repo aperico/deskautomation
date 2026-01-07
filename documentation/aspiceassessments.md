@@ -399,6 +399,31 @@
    - Execute integration tests on hardware
    - Document hardware test results
 
+---
+
+## Additional Findings and Actionable Notes
+
+- **Formal review evidence absent:** Repository contains reviewer names and "Approved" markers inside `SoftwareRequirements.md` and `SoftwareDetailedDesign.md`, however no independent review artifacts (meeting minutes, signed approvals, or decision logs) were found. This is a required evidence gap for several SYS/SWE base practices. The assessor used the AI prompt file `documentation/aspice-assessment-ai-prompt.md` as a systematic checklist for evidence collection.
+
+- **Suggested immediate actions:**
+  - Add `documentation/reviews/Requirements_Review_Template.md` and `documentation/reviews/Architecture_Review_Template.md` as templates.
+  - Perform reviews and store filled meeting minutes as `documentation/reviews/Requirements_Review_YYYYMMDD.md` and `documentation/reviews/Architecture_Review_YYYYMMDD.md` with attendee lists and signatures (or email approvals).
+  - After collecting approvals, update `aspiceassessments.md` to reference the newly added review minutes and update statuses where appropriate.
+
+- **Baseline tagging urgency:** To fix the evidence snapshot for audits, create a semantic baseline tag for commit `d784c71` (example tag `v1.0.0`). Add `documentation/Baselines.md` describing the baseline contents and pointer to artifacts (test XML, coverage, release notes).
+
+---
+
+## Small Templates (examples to add)
+
+- `documentation/reviews/Requirements_Review_Template.md` — fields: Date, Attendees, Documents Reviewed, Key Decisions, Action Items, Signatures
+- `documentation/reviews/Architecture_Review_Template.md` — fields: Date, Attendees, Architecture Version, Changes Reviewed, Decisions, Action Items, Signatures
+- `documentation/Test_Execution_Report_Template.md` — fields: Release Tag, Test Run Date, Test Platform, JUnit XML reference, Coverage summary, Pass/Fail counts, Approver Signature
+
+---
+
+**Assessment updated:** This document was updated to explicitly record the absence of formal review records and to recommend concrete templates and baseline steps to close the gap. Once review minutes are added and baseline tagging performed, re-run the assessment steps in `documentation/aspice-assessment-ai-prompt.md` and update this file with links to created evidence.
+
 5. **Safety Documentation**
    - Conduct FMEA for motor control safety
    - Create safety verification report
