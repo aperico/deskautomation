@@ -94,58 +94,7 @@ This project is open-source under the MIT License. See [LICENSE](LICENSE) for de
 
 ## Contact & Support
 - **Questions or issues?** Open an issue on GitHub.
-- **Glossary:** See [Glossary](documentation/Glossary.md) for terminology.
-# Automated Mechanical Desk Lift
-
-This project implements a **motorized height adjustment system** for a mechanical desk using an **Arduino-based controller**.  
-The architecture is designed for:
-- Temporary hardware during early development (JGY370 + L298N)
-- Future extensibility (limit switches, current sensing, height presets)
-
----
-
-
-- [Glossary](documentation/Glossary.md)
-- [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md)
-- [Safety Notes](documentation/SafetyNotes.md)
-- [Planned Enhancements (Roadmap)](documentation/Roadmap.md)
----
-
 
 
 ## Out of Scope (Initial Phase)
 - Closed-loop position control
-
----
-
-## System Actors
-See [Software Architecture](documentation/SoftwareArchitecture.md#system-actors) for a description of the main actors and their roles in the system.
----
-
-- [Software Architecture](documentation/SoftwareArchitecture.md)
-- [Software Detailed Design](documentation/SoftwareDetailedDesign.md)
-- [Software Test Cases Specification](documentation/SoftwareTestCasesSpecification.md)
-- [Traceability Matrix](documentation/TraceabilityMatrix.md)
----
-
-- Upper and lower limit switches
-- Current sensing for stall detection
-- Height presets
-- EEPROM-based calibration
----
-## Architecture
-See [Software Architecture](documentation/SoftwareArchitecture.md) for a detailed description of the system's modular structure, hardware abstraction, and control logic.
-
-
-
-## Application States and State Transitions
----
-## Wiring Diagrams
-See [Hardware Connections & Pin Assignments](documentation/HardwareConnections.md#wiring-diagrams) for wiring diagrams and safety notes.
-## Traceability
-See [Traceability Matrix](documentation/TraceabilityMatrix.md) for requirement-to-test mapping and use case coverage.
-
----
-
-- Document any new hardware or features.
-- Follow the existing modular structure for new code.
