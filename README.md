@@ -2,6 +2,10 @@
 
 Welcome! This project implements a motorized height adjustment system for a mechanical desk using an Arduino-based controller. It is designed for safety, modularity, and future extensibility.
 
+<p align="center">
+  <img src="documentation/deskcrank.png" alt="Desk Crank System" width="220"/>
+</p>
+
 ---
 
 ## Project Overview
