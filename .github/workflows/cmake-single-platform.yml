@@ -23,10 +23,21 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ gcc gcov lcov
+        sudo apt-get install -y cmake g++ gcc lcov cppcheck
         sudo apt-get install -y libgtest-dev
         cd /usr/src/gtest && sudo cmake . && sudo make
         sudo cp lib/*.a /usr/lib
+
+    - name: Run Cppcheck (MISRA-like linting)
+      run: |
+        cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem --xml --xml-version=2 source 2> cppcheck-report.xml || true
+
+    - name: Upload Cppcheck report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cppcheck-report
+        path: cppcheck-report.xml
 
     - name: Configure CMake with coverage flags
       run: |
