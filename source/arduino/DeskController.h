@@ -40,7 +40,7 @@ typedef enum {
  * @param inputs Pointer to inputs structure (may be NULL)
  * @param outputs Pointer to outputs structure to initialize (must not be NULL)
  */
-void DeskApp_task_init(DeskAppInputs_t *inputs,
+void DeskApp_task_init(const DeskAppInputs_t *inputs,
                                   DeskAppOutputs_t *outputs);
 
 /**

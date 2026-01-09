@@ -56,7 +56,7 @@ TEST_EXPORT void handle_move_up(const DeskAppInputs_t *inputs, DeskAppOutputs_t 
 TEST_EXPORT void handle_move_down(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
 TEST_EXPORT void handle_dwell(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
 
-void DeskApp_task_init(DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
+void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
   (void)inputs;
   if (outputs != NULL) {
     outputs->moveUp = false;
