@@ -67,20 +67,19 @@ void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs)
   appState = APP_STATE_IDLE;
   dwellStartMs = 0;
 }
-
 DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  /* defensive: require valid pointers */
+  /* Defensive: require valid pointers */
   if (inputs == NULL || outputs == NULL) {
     return APP_TASK_ERROR;
   }
 
-  /* default outputs */
+  /* Default outputs */
   outputs->moveUp = false;
   outputs->moveDown = false;
   outputs->stop = false;
   outputs->error = false;
 
-  /* invalid sensor combination -> fatal error state */
+  /* Invalid sensor combination -> fatal error state */
   if (inputs->upperLimitActive && inputs->lowerLimitActive) {
     outputs->stop = true;
     outputs->error = true;
@@ -88,7 +87,22 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_
     return APP_TASK_ERROR;
   }
 
-  /* simultaneous buttons -> safe stop, remain non-fatal (IDLE) */
+  /* If in error state, check for recovery */
+  if (appState == APP_STATE_ERROR) {
+    // If either limiter is released, recover to idle
+    if (!(inputs->upperLimitActive && inputs->lowerLimitActive)) {
+      appState = APP_STATE_IDLE;
+      outputs->stop = true;
+      outputs->error = false;
+      return APP_TASK_SUCCESS;
+    } else {
+      outputs->stop = true;
+      outputs->error = true;
+      return APP_TASK_ERROR;
+    }
+  }
+
+  /* Simultaneous buttons -> safe stop, remain non-fatal (IDLE) */
   if (inputs->btUPPressed && inputs->btDOWNPressed) {
     outputs->stop = true;
     outputs->error = false;
@@ -96,7 +110,7 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_
     return APP_TASK_SUCCESS;
   }
 
-  /* dispatch to per-state handler for clarity */
+  /* Dispatch to per-state handler for clarity */
   switch (appState) {
     case APP_STATE_IDLE:
       handle_idle(inputs, outputs);
@@ -114,7 +128,6 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_
       handle_dwell(inputs, outputs);
       break;
 
-    case APP_STATE_ERROR:
     default:
       outputs->stop = true;
       outputs->error = true;
