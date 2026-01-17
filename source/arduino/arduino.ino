@@ -66,8 +66,6 @@ void loop() {
     ret = DeskApp_task(&inputs, &outputs);
   }
 
-  
-
   // POST-Process outputs
   {
     HAL_ProcessAppState(ret, &outputs); // Ensure all outputs are processed
