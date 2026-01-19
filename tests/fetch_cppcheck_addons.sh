@@ -2,8 +2,6 @@
 # Download and extract cppcheck addons (misra.py, cert.py)
 # Usage: ./fetch_cppcheck_addons.sh [target_dir]
 
-set -e  # Exit on any error
-
 TARGET_DIR="${1:-/tmp/cppcheck-addons}"
 mkdir -p "$TARGET_DIR"
 
@@ -23,28 +21,27 @@ for URL in "${URLS[@]}"; do
   # Remove any previous failed download
   rm -f "$TARGET_DIR/cppcheck.zip"
   
-  # Download with fail-on-error and show progress
-  HTTP_CODE=$(curl -sL -w "%{http_code}" -f --max-time 60 "$URL" -o "$TARGET_DIR/cppcheck.zip" 2>&1 | tail -1 || echo "000")
-  
-  if [ "$HTTP_CODE" = "200" ] && [ -f "$TARGET_DIR/cppcheck.zip" ]; then
-    # Check file size (should be > 1MB) - Linux compatible
-    FILE_SIZE=$(stat -c%s "$TARGET_DIR/cppcheck.zip" 2>/dev/null || stat -f%z "$TARGET_DIR/cppcheck.zip" 2>/dev/null || echo "0")
-    
-    if [ "$FILE_SIZE" -gt 1000000 ]; then
-      # Verify zip integrity
-      if unzip -t "$TARGET_DIR/cppcheck.zip" > /dev/null 2>&1; then
-        echo "✓ Download successful (${FILE_SIZE} bytes, HTTP $HTTP_CODE)"
-        SUCCESS=1
-        break
+  # Download with better error handling
+  if curl -sL -f --max-time 60 "$URL" -o "$TARGET_DIR/cppcheck.zip"; then
+    # Check file exists and has reasonable size
+    if [ -f "$TARGET_DIR/cppcheck.zip" ]; then
+      FILE_SIZE=$(stat -c%s "$TARGET_DIR/cppcheck.zip" 2>/dev/null || echo "0")
+      
+      if [ "$FILE_SIZE" -gt 1000000 ]; then
+        # Verify zip integrity
+        if unzip -t "$TARGET_DIR/cppcheck.zip" > /dev/null 2>&1; then
+          echo "✓ Download successful (${FILE_SIZE} bytes)"
+          SUCCESS=1
+          break
+        else
+          echo "✗ Zip file corrupted"
+        fi
       else
-        echo "✗ Zip file corrupted (integrity check failed)"
+        echo "✗ File too small ($FILE_SIZE bytes)"
       fi
-    else
-      echo "✗ File too small ($FILE_SIZE bytes), likely error page"
-      cat "$TARGET_DIR/cppcheck.zip" | head -5 || true
     fi
   else
-    echo "✗ Download failed (HTTP $HTTP_CODE)"
+    echo "✗ Download failed"
   fi
   
   rm -f "$TARGET_DIR/cppcheck.zip"
@@ -52,8 +49,6 @@ done
 
 if [ $SUCCESS -eq 0 ]; then
   echo "✗ Failed to download cppcheck addons from all sources"
-  echo "Attempted URLs:"
-  printf '%s\n' "${URLS[@]}"
   exit 1
 fi
 
@@ -62,30 +57,40 @@ rm -rf "$TARGET_DIR"/cppcheck-*
 
 # Extract
 echo "Extracting addons..."
-unzip -q "$TARGET_DIR/cppcheck.zip" -d "$TARGET_DIR"
+if ! unzip -q "$TARGET_DIR/cppcheck.zip" -d "$TARGET_DIR"; then
+  echo "✗ Extraction failed"
+  exit 1
+fi
 
 echo "Contents after extraction:"
 ls -la "$TARGET_DIR" | head -20
 
 # Find extracted directory
-EXTRACTED_DIR=$(find "$TARGET_DIR" -maxdepth 1 -type d -name "cppcheck-*" | head -1)
+EXTRACTED_DIR=$(find "$TARGET_DIR" -maxdepth 1 -type d -name "cppcheck-*" 2>/dev/null | head -1)
 if [ -z "$EXTRACTED_DIR" ]; then
-  echo "✗ Failed to find extracted cppcheck directory"
-  echo "Contents of $TARGET_DIR:"
-  ls -la "$TARGET_DIR"
+  echo "✗ No cppcheck-* directory found after extraction"
   exit 1
 fi
 
+echo "Found extracted directory: $EXTRACTED_DIR"
+
 ADDON_DIR="$EXTRACTED_DIR/addons"
-echo "Found addons directory: $ADDON_DIR"
+
+# Check if addons directory exists
+if [ ! -d "$ADDON_DIR" ]; then
+  echo "✗ Addons directory does not exist: $ADDON_DIR"
+  echo "Contents of extracted directory:"
+  ls -la "$EXTRACTED_DIR" | head -20
+  exit 1
+fi
 
 # Verify addons exist
 if [ -f "$ADDON_DIR/misra.py" ]; then
   echo "✓ Found misra.py"
 else
-  echo "✗ misra.py not found at $ADDON_DIR/misra.py"
-  echo "Contents of $ADDON_DIR:"
-  ls -la "$ADDON_DIR" || echo "Directory does not exist"
+  echo "✗ misra.py not found"
+  echo "Contents of addons directory:"
+  ls -la "$ADDON_DIR" | head -20
   exit 1
 fi
 
