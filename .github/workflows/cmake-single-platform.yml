@@ -38,11 +38,33 @@ jobs:
 
         ADDON_DIR="/usr/share/cppcheck/addons"
         if [ ! -f "$ADDON_DIR/misra.py" ] || [ ! -f "$ADDON_DIR/cert.py" ]; then
-          echo "Fetching cppcheck addons (misra.py, cert.py)..."
+          echo "System addons not found; fetching from GitHub..."
           mkdir -p /tmp/cppcheck-addons
-          curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o /tmp/cppcheck-addons/main.zip
-          unzip -q /tmp/cppcheck-addons/main.zip -d /tmp/cppcheck-addons
-          ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
+          cd /tmp/cppcheck-addons
+          
+          # Download and extract if not already cached
+          if [ ! -f main.zip ]; then
+            echo "Downloading cppcheck addons archive..."
+            curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o main.zip
+          else
+            echo "Using cached cppcheck addons archive..."
+          fi
+          
+          # Extract to directory (will create cppcheck-main/)
+          unzip -q main.zip
+          
+          # Verify addon files exist
+          if [ -f cppcheck-main/addons/cert.py ] && [ -f cppcheck-main/addons/misra.py ]; then
+            ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
+            echo "✓ Found addons at: $ADDON_DIR"
+          else
+            echo "✗ Addons not found after extraction!"
+            echo "Contents of /tmp/cppcheck-addons:"
+            ls -la /tmp/cppcheck-addons/
+            exit 1
+          fi
+          
+          cd -
         fi
 
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
