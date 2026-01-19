@@ -40,31 +40,42 @@ jobs:
         if [ ! -f "$ADDON_DIR/misra.py" ] || [ ! -f "$ADDON_DIR/cert.py" ]; then
           echo "System addons not found; fetching from GitHub..."
           mkdir -p /tmp/cppcheck-addons
-          cd /tmp/cppcheck-addons
           
           # Download and extract if not already cached
-          if [ ! -f main.zip ]; then
+          if [ ! -f /tmp/cppcheck-addons/main.zip ]; then
             echo "Downloading cppcheck addons archive..."
-            curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o main.zip
+            curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o /tmp/cppcheck-addons/main.zip
           else
             echo "Using cached cppcheck addons archive..."
           fi
           
-          # Extract to directory (will create cppcheck-main/)
-          unzip -q main.zip
+          # Remove old extraction if it exists
+          rm -rf /tmp/cppcheck-addons/cppcheck-main
           
-          # Verify addon files exist
-          if [ -f cppcheck-main/addons/cert.py ] && [ -f cppcheck-main/addons/misra.py ]; then
+          # Extract to absolute path
+          echo "Extracting addons archive..."
+          unzip -q /tmp/cppcheck-addons/main.zip -d /tmp/cppcheck-addons
+          
+          # Verify addon files exist using absolute paths
+          if [ -f /tmp/cppcheck-addons/cppcheck-main/addons/cert.py ] && [ -f /tmp/cppcheck-addons/cppcheck-main/addons/misra.py ]; then
             ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
             echo "✓ Found addons at: $ADDON_DIR"
           else
             echo "✗ Addons not found after extraction!"
+            echo "Expected paths:"
+            echo "  /tmp/cppcheck-addons/cppcheck-main/addons/cert.py"
+            echo "  /tmp/cppcheck-addons/cppcheck-main/addons/misra.py"
+            echo ""
             echo "Contents of /tmp/cppcheck-addons:"
             ls -la /tmp/cppcheck-addons/
+            echo ""
+            echo "Contents of cppcheck-main directory:"
+            ls -la /tmp/cppcheck-addons/cppcheck-main/ 2>/dev/null || echo "cppcheck-main not found!"
+            echo ""
+            echo "Contents of addons subdirectory:"
+            ls -la /tmp/cppcheck-addons/cppcheck-main/addons/ 2>/dev/null || echo "addons subdirectory not found!"
             exit 1
           fi
-          
-          cd -
         fi
 
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
