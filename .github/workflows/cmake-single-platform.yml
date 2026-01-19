@@ -347,7 +347,6 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const core = require('@actions/core');
           const report = fs.readFileSync('quality-report.md', 'utf8');
           
           try {
