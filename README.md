@@ -27,8 +27,11 @@ Automated height adjustment system for a mechanical desk using an Arduino-based 
 This project automates desk height adjustment using:
 - **Arduino UNO** microcontroller
 - **BTS7960/IBT-2** motor driver (12V/24V)
-- **Rocker switch** input (3-position)
+- **31ZY-5840 DC Worm Gear Motor** (12V/24V)
+- **Rocker switch** input (3-position: UP/OFF/DOWN)
 - **Modular C++ architecture** with comprehensive tests
+
+**Design Philosophy:** Minimal hardware, maximum safety - no LEDs or visual indicators needed.
 
 **Compliance:** ISO 25119 (safety), ASPICE (software process)
 
@@ -42,8 +45,11 @@ This project automates desk height adjustment using:
 - Arduino UNO board
 - BTS7960/IBT-2 motor driver
 - 31ZY-5840 DC Worm Gear Motor (12V/24V)
-- Rocker switch (3-position)
-- Power supply (12V or 24V, 5A+)
+- Rocker switch (3-position: UP/OFF/DOWN)
+- Power supply (12V or 24V, 5A+ recommended)
+- Basic wiring components (jumper wires, connectors)
+
+**Note:** This is a minimal hardware setup - no LEDs or additional indicators required.
 
 ### Getting Started
 1. Review [Hardware Schematic](documentation/Schematic.md) for wiring
