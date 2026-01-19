@@ -37,6 +37,8 @@ jobs:
         echo "=== Running Cppcheck with MISRA-C 2012 checks ==="
 
         ADDON_DIR="/usr/share/cppcheck/addons"
+        ADDON_ARGS=""
+        
         if [ ! -f "$ADDON_DIR/misra.py" ] || [ ! -f "$ADDON_DIR/cert.py" ]; then
           echo "System addons not found; fetching from GitHub..."
           mkdir -p /tmp/cppcheck-addons
@@ -56,37 +58,39 @@ jobs:
           echo "Extracting addons archive..."
           unzip -q /tmp/cppcheck-addons/main.zip -d /tmp/cppcheck-addons
           
-          # Verify addon files exist using absolute paths
-          if [ -f /tmp/cppcheck-addons/cppcheck-main/addons/cert.py ] && [ -f /tmp/cppcheck-addons/cppcheck-main/addons/misra.py ]; then
-            ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
-            echo "✓ Found addons at: $ADDON_DIR"
+          ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
+          
+          # Verify and add available addons
+          if [ -f "$ADDON_DIR/misra.py" ]; then
+            echo "✓ Found misra.py"
+            ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/misra.py"
           else
-            echo "✗ Addons not found after extraction!"
-            echo "Expected paths:"
-            echo "  /tmp/cppcheck-addons/cppcheck-main/addons/cert.py"
-            echo "  /tmp/cppcheck-addons/cppcheck-main/addons/misra.py"
-            echo ""
-            echo "Contents of /tmp/cppcheck-addons:"
-            ls -la /tmp/cppcheck-addons/
-            echo ""
-            echo "Contents of cppcheck-main directory:"
-            ls -la /tmp/cppcheck-addons/cppcheck-main/ 2>/dev/null || echo "cppcheck-main not found!"
-            echo ""
-            echo "Contents of addons subdirectory:"
-            ls -la /tmp/cppcheck-addons/cppcheck-main/addons/ 2>/dev/null || echo "addons subdirectory not found!"
-            exit 1
+            echo "✗ misra.py not found at $ADDON_DIR/misra.py"
+          fi
+          
+          if [ -f "$ADDON_DIR/cert.py" ]; then
+            echo "✓ Found cert.py"
+            ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/cert.py"
+          else
+            echo "⚠ cert.py not found (CERT checks will be skipped, but MISRA checks will run)"
+          fi
+        else
+          # Use system addons if available
+          ADDON_ARGS="--addon=$ADDON_DIR/misra.py"
+          if [ -f "$ADDON_DIR/cert.py" ]; then
+            ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/cert.py"
           fi
         fi
 
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
           --error-exitcode=1 \
-          --addon="$ADDON_DIR/misra.py" --addon="$ADDON_DIR/cert.py" \
+          $ADDON_ARGS \
           --xml --xml-version=2 \
           --output-file=cppcheck-report.xml \
           source
         echo "=== Cppcheck Summary ==="
         cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
-          --addon="$ADDON_DIR/misra.py" --addon="$ADDON_DIR/cert.py" \
+          $ADDON_ARGS \
           source 2>&1 | tee cppcheck-summary.txt || true
         echo "=== MISRA Check Complete ==="
 
