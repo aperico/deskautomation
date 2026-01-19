@@ -68,7 +68,7 @@ Base Practices (BPs)
 - BP8 Conduct architecture reviews and record outcomes (meeting minutes, approvals)
 
 Evidence (example)
-- SoftwareArchitecture.md
+- 08_SoftwareArchitecture.md
 - ADR-### files
 - Architecture review records
 
@@ -150,7 +150,7 @@ Base Practices (BPs)
 - BP9 Conduct architecture reviews and record approvals
 
 Evidence (example)
-- SoftwareArchitecture.md
+- 08_SoftwareArchitecture.md
 - Interface definition documents
 - Architecture review minutes
 
@@ -171,7 +171,7 @@ Base Practices (BPs)
 - BP9 Manage unit-level configuration and control
 
 Evidence (example)
-- SoftwareDetailedDesign.md
+- 09_SoftwareDetailedDesign.md
 - Source files under `source/arduino/`
 - Unit test code `tests/SoftwareTests.cpp`
 - Code review records and static analysis results

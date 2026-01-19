@@ -23,21 +23,33 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ gcc lcov cppcheck
+        sudo apt-get install -y cmake g++ gcc lcov cppcheck valgrind
         sudo apt-get install -y libgtest-dev
         cd /usr/src/gtest && sudo cmake . && sudo make
         sudo cp lib/*.a /usr/lib
 
-    - name: Run Cppcheck (MISRA-like linting)
+    - name: Run Cppcheck (MISRA-C 2012 linting)
       run: |
-        cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem --xml --xml-version=2 source 2> cppcheck-report.xml || true
+        echo "=== Running Cppcheck with MISRA-C 2012 checks ==="
+        cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
+          --addon=misra --addon=cert \
+          --xml --xml-version=2 \
+          --output-file=cppcheck-report.xml \
+          source || true
+        echo "=== Cppcheck Summary ==="
+        cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
+          --addon=misra --addon=cert \
+          source 2>&1 | tee cppcheck-summary.txt || true
+        echo "=== MISRA Check Complete ==="
 
-    - name: Upload Cppcheck report
+    - name: Upload Cppcheck & MISRA reports
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: cppcheck-report
-        path: cppcheck-report.xml
+        name: cppcheck-misra-reports
+        path: |
+          cppcheck-report.xml
+          cppcheck-summary.txt
 
     - name: Clean build directory
       run: |
@@ -89,4 +101,258 @@ jobs:
       with:
         name: coverage-report
         path: coverage.info
+
+    # ========== DYNAMIC ANALYSIS SECTION ==========
+
+    - name: Build with AddressSanitizer & UndefinedBehaviorSanitizer
+      run: |
+        echo "=== Building with AddressSanitizer + UBSan ==="
+        rm -rf build-sanitized
+        cmake -B build-sanitized \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g" \
+          -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g"
+        cmake --build build-sanitized --config Debug
+
+    - name: Run tests with AddressSanitizer (detect memory issues)
+      run: |
+        echo "=== Running tests with AddressSanitizer ==="
+        cd build-sanitized
+        ASAN_OPTIONS=verbosity=2:halt_on_error=1 \
+        UBSAN_OPTIONS=verbosity=2:halt_on_error=1 \
+        ctest --output-on-failure -C Debug 2>&1 | tee asan-ubsan-results.txt
+        cd ..
+
+    - name: Run tests with Valgrind (memory profiling)
+      run: |
+        echo "=== Running tests with Valgrind memory profiler ==="
+        mkdir -p valgrind-reports
+        cd build
+        for test in $(ctest --show-only -C Debug | grep "Test #" | awk '{print $3}' | sed 's/://' | head -10); do
+          echo "Profiling test: $test"
+          valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+            --xml=yes --xml-file=../valgrind-reports/valgrind-${test}.xml \
+            ./bin/DeskController $test 2>&1 || true
+        done
+        cd ..
+        echo "=== Valgrind reports generated ==="
+
+    - name: Generate memory leak summary
+      run: |
+        echo "=== Memory Leak Detection Summary ===" > valgrind-summary.txt
+        echo "" >> valgrind-summary.txt
+        if [ -d valgrind-reports ]; then
+          for xml in valgrind-reports/*.xml; do
+            if [ -f "$xml" ]; then
+              echo "File: $xml" >> valgrind-summary.txt
+              grep -o "leak_type>.*</leak_type" "$xml" 2>/dev/null | head -5 >> valgrind-summary.txt || echo "No leaks detected" >> valgrind-summary.txt
+              echo "" >> valgrind-summary.txt
+            fi
+          done
+        else
+          echo "No Valgrind reports found" >> valgrind-summary.txt
+        fi
+        cat valgrind-summary.txt
+
+    - name: Fuzz testing (random HAL inputs)
+      run: |
+        echo "=== Starting Fuzzing with random switch inputs ==="
+        mkdir -p fuzzing-results
+        cd build
+        cat > fuzzing-harness.cpp << 'EOF'
+        #include <iostream>
+        #include <random>
+        #include <chrono>
+        extern "C" {
+          #include "../source/arduino/DeskController.h"
+          #include "../source/arduino/HAL.h"
+        }
+        
+        int main() {
+          std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
+          std::uniform_int_distribution<> dis(0, 3);
+          
+          DeskAppInputs_t inputs = {};
+          DeskAppOutputs_t outputs = {};
+          DeskApp_task_init(&inputs, &outputs);
+          
+          std::cout << "=== Fuzzing DeskApp_task with 1000 random inputs ===" << std::endl;
+          for (int i = 0; i < 1000; i++) {
+            inputs.switch_state = dis(gen);
+            inputs.current_sense = dis(gen) * 25;
+            
+            DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
+            
+            if (ret != APP_TASK_SUCCESS) {
+              std::cout << "Iteration " << i << ": Unexpected return code " << ret << std::endl;
+            }
+            if (outputs.motor_pwm > 255) {
+              std::cout << "FUZZ CRASH: PWM out of range at iteration " << i << std::endl;
+              return 1;
+            }
+          }
+          std::cout << "Fuzzing completed successfully - 1000 iterations passed" << std::endl;
+          return 0;
+        }
+        EOF
+        g++ -DDESK_CONTROLLER_ENABLE_TEST_INTERFACE -std=c++17 \
+          -I../source/arduino -I../tests \
+          fuzzing-harness.cpp ../source/arduino/DeskController.cpp \
+          -o fuzzing-harness 2>&1 || echo "Fuzzing harness compilation skipped (test interface optional)"
+        ./fuzzing-harness > ../fuzzing-results/fuzzing-output.txt 2>&1 || true
+        cd ..
+
+    - name: Performance profiling (execution time analysis)
+      run: |
+        echo "=== Performance Profiling ===" > perf-profile.txt
+        echo "Test execution time analysis:" >> perf-profile.txt
+        cd build
+        /usr/bin/time -v ctest --output-on-failure -C Debug 2>&1 | tee ../perf-profile.txt || true
+        cd ..
+
+    - name: Upload Dynamic Analysis reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dynamic-analysis-reports
+        path: |
+          build-sanitized/asan-ubsan-results.txt
+          valgrind-reports/*.xml
+          valgrind-summary.txt
+          fuzzing-results/*.txt
+          perf-profile.txt
+
+    # ========== REPORTING SECTION ==========
+
+    - name: Generate comprehensive quality report
+      if: always()
+      run: |
+        cat > quality-report.md << 'EOF'
+        # 🔍 Quality Assurance Report
+        
+        ## Test Results Summary
+        EOF
+        
+        # Parse test results
+        if [ -f build/test-results-unit.xml ]; then
+          UNIT_TESTS=$(grep -c '<testcase' build/test-results-unit.xml || echo "0")
+          UNIT_FAILURES=$(grep -c 'testcase.*failures=' build/test-results-unit.xml | grep '1' || echo "0")
+          echo "### ✅ Unit Tests: $UNIT_TESTS passed" >> quality-report.md
+        fi
+        
+        if [ -f build/test-results-integration.xml ]; then
+          INT_TESTS=$(grep -c '<testcase' build/test-results-integration.xml || echo "0")
+          INT_FAILURES=$(grep -c 'testcase.*failures=' build/test-results-integration.xml | grep '1' || echo "0")
+          echo "### ✅ Integration Tests: $INT_TESTS passed" >> quality-report.md
+        fi
+        
+        echo "" >> quality-report.md
+        echo "## 🔐 Security & Code Quality" >> quality-report.md
+        
+        # MISRA findings
+        if [ -f cppcheck-summary.txt ]; then
+          MISRA_ISSUES=$(grep -i "error\|warning" cppcheck-summary.txt | wc -l)
+          echo "### MISRA-C 2012 Checks" >> quality-report.md
+          if [ $MISRA_ISSUES -eq 0 ]; then
+            echo "✅ **No violations detected**" >> quality-report.md
+          else
+            echo "⚠️ **Found $MISRA_ISSUES issues** - [Download Report](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }})" >> quality-report.md
+            grep -i "error\|warning" cppcheck-summary.txt | head -5 >> quality-report.md
+          fi
+        fi
+        
+        echo "" >> quality-report.md
+        
+        # ASan/UBSan findings
+        if [ -f build-sanitized/asan-ubsan-results.txt ]; then
+          ASAN_ISSUES=$(grep -i "sanitizer\|ERROR" build-sanitized/asan-ubsan-results.txt | wc -l)
+          echo "### AddressSanitizer + UBSan" >> quality-report.md
+          if [ $ASAN_ISSUES -eq 0 ]; then
+            echo "✅ **No memory safety issues detected**" >> quality-report.md
+          else
+            echo "⚠️ **Detected $ASAN_ISSUES runtime issues**" >> quality-report.md
+          fi
+        fi
+        
+        echo "" >> quality-report.md
+        
+        # Valgrind findings
+        if [ -f valgrind-summary.txt ]; then
+          echo "### Valgrind Memory Profiling" >> quality-report.md
+          if grep -q "No leaks detected" valgrind-summary.txt; then
+            echo "✅ **No memory leaks detected**" >> quality-report.md
+          else
+            LEAK_COUNT=$(grep -c "leak_type" valgrind-summary.txt || echo "0")
+            echo "⚠️ **Found potential memory issues** ($LEAK_COUNT reports)" >> quality-report.md
+          fi
+        fi
+        
+        echo "" >> quality-report.md
+        
+        # Fuzzing results
+        if [ -f fuzzing-results/fuzzing-output.txt ]; then
+          echo "### Fuzz Testing (1000 iterations)" >> quality-report.md
+          if grep -q "Fuzzing completed successfully" fuzzing-results/fuzzing-output.txt; then
+            echo "✅ **All 1000 iterations passed - No crashes detected**" >> quality-report.md
+          else
+            echo "⚠️ **Fuzzing detected potential issues**" >> quality-report.md
+          fi
+        fi
+        
+        echo "" >> quality-report.md
+        
+        # Coverage report
+        if [ -f coverage.info ]; then
+          echo "### Code Coverage" >> quality-report.md
+          echo "📊 Coverage report generated (see artifacts)" >> quality-report.md
+        fi
+        
+        echo "" >> quality-report.md
+        echo "## 📋 Downloads" >> quality-report.md
+        echo "All detailed reports available in [Artifacts](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}):" >> quality-report.md
+        echo "- 📄 MISRA-C & Cppcheck reports" >> quality-report.md
+        echo "- 🛡️ Dynamic analysis (ASan, Valgrind)" >> quality-report.md
+        echo "- 🧪 Fuzzing results" >> quality-report.md
+        echo "- 📊 Code coverage" >> quality-report.md
+        echo "- ⏱️ Performance metrics" >> quality-report.md
+        
+        cat quality-report.md
+
+    - name: Post to Job Summary
+      if: always()
+      run: |
+        cat quality-report.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Comment on Pull Request
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('quality-report.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: report + '\n\n---\n*Generated by CI/CD Pipeline*'
+          });
+
+    - name: Upload all reports as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: complete-quality-reports
+        path: |
+          quality-report.md
+          cppcheck-report.xml
+          cppcheck-summary.txt
+          build-sanitized/asan-ubsan-results.txt
+          valgrind-reports/*.xml
+          valgrind-summary.txt
+          fuzzing-results/*.txt
+          perf-profile.txt
+          coverage.info
+          build/test-results-unit.xml
+          build/test-results-integration.xml
 

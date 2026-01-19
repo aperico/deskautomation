@@ -9,6 +9,16 @@
 
 ---
 
+## Document Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|----------|
+| 1.0 | 2025-12-15 | Development Team | Initial detailed design |
+| 2.0 | 2026-01-07 | Development Team | Complete restructuring: added design element IDs, detailed specifications, testability criteria, complete traceability |
+
+
+---
+
 ## Overview
 
 This document provides the detailed design for the Automated Mechanical Desk Lift software. It specifies all modules, functions, data structures, and algorithms with unique identifiers for complete traceability. Each design element is:
@@ -23,12 +33,12 @@ This document provides the detailed design for the Automated Mechanical Desk Lif
 
 ## Navigation
 
-- [System Use Cases](SystemUseCases.md)
-- [Software Requirements](SoftwareRequirements.md)
-- [Software Architecture](SoftwareArchitecture.md)
-- [Traceability Matrix](TraceabilityMatrix.md)
-- [Software Test Cases Specification](SoftwareTestCasesSpecification.md)
-- [Software Integration Tests Specification](SoftwareIntegrationTestsSpecification.md)
+- [05_SystemUseCases.md](05_SystemUseCases.md)
+- [07_SoftwareRequirements.md](07_SoftwareRequirements.md)
+- [08_SoftwareArchitecture.md](08_SoftwareArchitecture.md)
+- [TraceabilityMatrix.md](12_TraceabilityMatrix.md)
+- [SoftwareTestCasesSpecification.md](10_ComponentTestCasesSpecification.md)
+- [SoftwareIntegrationTestsSpecification.md](11_SoftwareIntegrationTestsSpecification.md)
 
 ---
 
@@ -50,7 +60,7 @@ All design elements trace to:
 
 ## Design Assumptions
 
-The following assumptions are derived from [Software Requirements](SoftwareRequirements.md) and reflected throughout this design:
+The following assumptions are derived from [Software Requirements](07_SoftwareRequirements.md) and reflected throughout this design:
 
 | Assumption ID | Description | Source | Impact if Changed |
 |--------------|-------------|--------|-------------------|
@@ -75,9 +85,9 @@ Any change in assumptions may require design updates and re-verification.
 | CONST-003 | Direction changes require stop before reversal | Safety | ADR-002 | TC-009, TC-010 |
 | CONST-004 | Motor never starts automatically on power-up | Safety | SWE-REQ-001, SWE-REQ-002 | TC-001, IT-001 |
 | CONST-005 | Arduino UNO compatibility (ATmega328P) | Hardware | ARCH-COMP-004 | Build verification |
-| CONST-006 | L298N motor driver interface | Hardware | ARCH-IF-002 | IT-002, IT-003 |
-| CONST-007 | Digital inputs: switches and buttons | Hardware | ARCH-IF-002 | IT-001 to IT-010 |
-| CONST-008 | Digital outputs: LEDs | Hardware | ARCH-IF-002 | IT-005 |
+| CONST-006 | IBT-2/BTS7960 motor driver interface | Hardware | ARCH-IF-002 | IT-002, IT-003 |
+| CONST-007 | Inputs: ON/OFF/ON rocker, current sense (analog) | Hardware | ARCH-IF-002 | IT-001 to IT-010 |
+| CONST-008 | LEDs: none in v1.0 (reserved v2.0) | Hardware | ARCH-IF-002 | - |
 | CONST-009 | Non-blocking execution, response < 100ms | Performance | SWE-REQ-013, SWE-REQ-019 | IT-004, IT-005 |
 | CONST-010 | ISO 25119, ASPICE compliance | Regulatory | Architecture | Documentation review |
 
@@ -85,7 +95,7 @@ Any change in assumptions may require design updates and re-verification.
 
 ## Design Rationale
 
-This design implements the architectural decisions documented in [Software Architecture](SoftwareArchitecture.md):
+This design implements the architectural decisions documented in [Software Architecture](08_SoftwareArchitecture.md):
 
 | Design Decision | Rationale | Architecture Reference | Impact |
 |----------------|-----------|----------------------|--------|
@@ -357,7 +367,7 @@ Implements core application logic including state machine, safety interlocks, er
 
 **State Machine Specification:**
 
-See [Software Architecture - ARCH-COMP-005](SoftwareArchitecture.md#arch-comp-005-state-machine-specification) for detailed state definitions (ARCH-STATE-001 to 004) and transitions (ARCH-TRANS-001 to 007).
+See [Software Architecture - ARCH-COMP-005](08_SoftwareArchitecture.md#arch-comp-005-state-machine-specification) for detailed state definitions (ARCH-STATE-001 to 004) and transitions (ARCH-TRANS-001 to 007).
 
 
 **Function Specifications:**
@@ -1064,61 +1074,52 @@ This section provides detailed interface contracts for traceability and testabil
 
 ### HAL <-> Application Logic
 
-Application logic interacts with the HAL using the following interface functions (as defined in `HAL.h`):
+Application logic interacts with the HAL using the following interface (from [source/arduino/HAL.h](source/arduino/HAL.h)):
 
 ```cpp
-// PinConfig.h
-extern const int ERROR_LED;
-extern const int LED_LEFT_PIN;
-extern const int LED_RIGHT_PIN;
-extern const int BUTTON_UP_PIN;
-extern const int BUTTON_DOWN_PIN;
-extern const int IN1;
-extern const int IN2;
-extern const int ENA;
+// HAL initialization and timing helpers
+void HAL_init(void);
+void HAL_wait_startup(void);
 
-// HAL.h
-void HAL_init();
-void HAL_SetErrorLED(bool state);
-void HAL_SetMovingUpLED(bool state);
-void HAL_SetMovingDownLED(bool state);
-void HAL_SetWarningLED(bool state);
-void HAL_SetPowerLED(bool state);
-void HAL_SetMotorDirection(int direction);
-void HAL_MoveUp(const unsigned char speed);
-void HAL_MoveDown(const unsigned char speed);
-void HAL_StopMotor();
-void HAL_BlinkErrorLED();
-void HAL_BlinkUPLED();
-void HAL_BlinkDOWNLED();
-bool HAL_GetMovingDownLED();
-bool HAL_GetMovingUpLED();
-bool HAL_GetErrorLED();
-bool HAL_readButton(int pin);
-bool HAL_debounceButton(const int pin, DebounceState &state, const unsigned long debounceDelay);
+// Input reading
+SwitchState_t HAL_ReadSwitchState(void);
+
+// Error state handling
+bool HAL_HasError(void);
+void HAL_ClearError(void);
+
+// Periodic HAL processing and application output application
+void HAL_Task(HAL_Ouputs_t *hal_outputs, bool motor_enable, uint8_t motor_pwm);
+void HAL_ProcessAppState(DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs, HAL_Ouputs_t *hal_outputs);
+
+// Motor controls for IBT-2/BTS7960
+void HAL_MoveUp(uint8_t speed);
+void HAL_MoveDown(uint8_t speed);
+void HAL_StopMotor(void);
+
+// Utilities
+float HAL_adc_to_amps(int adc_value, float vref = 5.0, float volts_per_amp = 1.0);
+using HAL_Logger_t = void (*)(const char *msg);
+void HAL_set_logger(HAL_Logger_t logger);
 ```
 
 ### Application Logic <-> Main Loop
 
-The main loop passes input and output structs to the application logic (as defined in `DeskController.h`):
+The main loop passes input and output structs to the application logic (as defined in [source/arduino/DeskController.h](source/arduino/DeskController.h)):
 
 ```cpp
 typedef struct {
-    bool btUPPressed;
-    bool btDOWNPressed;
-    bool upperLimitActive;
-    bool lowerLimitActive;
+  SwitchState_t switch_state; // ON/OFF/ON rocker
 } DeskAppInputs_t;
 
 typedef struct {
-    bool moveUp;
-    bool moveDown;
-    bool stop;
-    bool error;
+  bool motor_enable;      // Enable motor driver
+  bool motor_direction;   // false=up, true=down
+  uint8_t motor_pwm;      // 0-255
 } DeskAppOutputs_t;
 
-void DeskApp_task_init(DeskAppInputs_t* inputs, DeskAppOutputs_t* outputs);
-DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t* inputs, DeskAppOutputs_t* outputs);
+void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
+DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
 ```
 
 ### Data Types
@@ -1152,7 +1153,7 @@ The application uses a simple state machine to manage desk movement and safety. 
 - **MOVING_UP or MOVING_DOWN → ERROR**: Fault detected (e.g., overcurrent, both limits active).
 - **ERROR → IDLE**: Error condition cleared (e.g., reset or safe state detected).
 
-See [Software Detailed Design](SoftwareDetailedDesign.md#state-machine-diagram) for the full state machine and transitions.
+See [Software Detailed Design](09_SoftwareDetailedDesign.md#state-machine-diagram) for the full state machine and transitions.
 
 ---
 
@@ -1534,7 +1535,7 @@ if (TimeoutExpired(30000)) {  // 30 seconds
 - **ISO 25119-2:** Safety-related parts of control systems ✓
 - **ISO 25119-3:** Development process requirements ✓
 - **Target SIL:** SIL 1 (Agricultural Machinery Category) ✓
-- **ASPICE:** SWE.1 to SWE.6 base practices (see [ASPICE Assessment](aspiceassessments.md)) ✓
+- **ASPICE:** SWE.1 to SWE.6 base practices (see [ASPICE Assessment](aspice/aspiceassessments.md)) ✓
 
 ### Residual Risks
 
@@ -1631,7 +1632,7 @@ This section documents formal design patterns applied in this design.
 
 ## Control Flow and Timing Diagrams
 
-See [Software Architecture](SoftwareArchitecture.md#sequence-diagrams) for detailed sequence diagrams showing component interactions.
+See [Software Architecture](08_SoftwareArchitecture.md#sequence-diagrams) for detailed sequence diagrams showing component interactions.
 
 **Key Flows:**
 1. **Initialization:** FUNC-025 → FUNC-001 → FUNC-016
@@ -1686,7 +1687,7 @@ This section provides guidance for future modifications.
 
 ### Coding Standards
 
-- **Style:** Follow existing code conventions (see codingguidelines.md)
+- **Style:** Follow existing code conventions (see [14_Codingguidelines.md](14_Codingguidelines.md))
 - **Naming:** Use descriptive names, prefixes for modules (HAL_, DeskApp_)
 - **Comments:** Document all functions with purpose, parameters, return values
 - **Safety:** Mark safety-critical functions with `// SAFETY-CRITICAL` comment
@@ -1732,14 +1733,6 @@ This detailed design complies with:
 
 ---
 
-## Document Revision History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|----------|
-| 1.0 | 2025-12-15 | Development Team | Initial detailed design |
-| 2.0 | 2026-01-07 | Development Team | Complete restructuring: added design element IDs, detailed specifications, testability criteria, complete traceability |
-
----
 
 ## Diagrams
 
@@ -1748,19 +1741,16 @@ This detailed design complies with:
 ```mermaid
 sequenceDiagram
     participant User
-    participant ECU
-    participant DeskController
+    participant MainLoop as Main Loop
     participant HAL
-    participant MotorDriver
-    User->>ECU: Press Up/Down Button
-    ECU->>HAL: HAL_debounceButton (read debounced button)
-    HAL->>ECU: Debounced Button State
-    ECU->>DeskController: DeskApp_task(inputs, outputs)
-    DeskController->>HAL: HAL_MoveUp / HAL_MoveDown / HAL_StopMotor
-    HAL->>MotorDriver: Set Motor Pins/Speed
-    DeskController->>HAL: HAL_SetMovingUpLED / HAL_SetMovingDownLED / HAL_SetErrorLED
-    HAL->>ECU: LED State Feedback
-    MotorDriver-->>HAL: Status
+    participant Desk as DeskController
+    participant Driver as MotorDriver
+    User->>MainLoop: Move rocker (UP/DOWN)
+    MainLoop->>HAL: HAL_ReadSwitchState()
+    MainLoop->>Desk: DeskApp_task(inputs, outputs)
+    MainLoop->>HAL: HAL_ProcessAppState(ret, outputs, hal_outputs)
+    HAL->>Driver: MoveUp/MoveDown/Stop (PWM/EN pins)
+    HAL->>HAL: HAL_Task(...): read currents/log
 ```
 
 ### State Machine Diagram
@@ -1789,60 +1779,42 @@ stateDiagram-v2
 classDiagram
     class PinConfig {
         <<static>>
-        +int ERROR_LED
-        +int LED_LEFT_PIN
-        +int LED_RIGHT_PIN
-        +int BUTTON_UP_PIN
-        +int BUTTON_DOWN_PIN
-        +int IN1
-        +int IN2
-        +int ENA
-    }
-    class DebounceState {
-        +lastState: bool
-        +lastDebounceTime: unsigned long
+        +int RPWM_PIN
+        +int LPWM_PIN
+        +int R_EN_PIN
+        +int L_EN_PIN
+        +int SWITCH_UP_PIN
+        +int SWITCH_DOWN_PIN
+        +int R_IS_PIN
+        +int L_IS_PIN
     }
     class HAL {
-        +HAL_Init()
-        +HAL_ProcessAppState(ret, outputs)
-        +HAL_SetErrorLED(state)
-        +HAL_SetWarningLED(state)
-        +HAL_SetPowerLED(state)
-        +HAL_SetMotorDirection(state)
-        +HAL_SetMovingDownLED(state)
-        +HAL_SetMovingUpLED(state)
-        +HAL_GetMovingDownLED()
-        +HAL_GetMovingUpLED()
-        +HAL_GetErrorLED()
+        +HAL_init()
+        +HAL_wait_startup()
+        +HAL_ReadSwitchState()
+        +HAL_HasError()
+        +HAL_ClearError()
+        +HAL_Task(hal_outputs, enable, pwm)
+        +HAL_ProcessAppState(ret, outputs, hal_outputs)
         +HAL_MoveUp(speed)
         +HAL_MoveDown(speed)
         +HAL_StopMotor()
-        +HAL_BlinkErrorLED()
-        +HAL_BlinkUPLED()
-        +HAL_BlinkDOWNLED()
-        +HAL_debounceButton(pin, state, debounceDelay)
+        +HAL_adc_to_amps(adc, vref, vpa)
+        +HAL_set_logger(cb)
     }
     class DeskAppInputs_t {
-        +bool btUPPressed
-        +bool btDOWNPressed
-        +bool upperLimitActive
-        +bool lowerLimitActive
+        +switch_state: SwitchState_t
     }
     class DeskAppOutputs_t {
-        +bool moveUp
-        +bool moveDown
-        +bool stop
-        +bool error
+        +motor_enable: bool
+        +motor_direction: bool
+        +motor_pwm: uint8_t
     }
     class DeskController {
         +DeskApp_task_init(inputs, outputs)
         +DeskApp_task(inputs, outputs)
-        -process_move_up()
-        -process_move_down()
-        -process_stop()
-        -process_dwell()
-        -now_ms()
         -appState: AppState_t
+        -movementStartMs: unsigned long
         -dwellStartMs: unsigned long
     }
     class DeskAppTask_Return_t {

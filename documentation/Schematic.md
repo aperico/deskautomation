@@ -3,7 +3,7 @@
 **Purpose:** Visual and textual reference for hardware connections in the Automated Mechanical Desk Lift system.
 
 **Referenced documents:**
-- [HardwareConnections.md](HardwareConnections.md) — detailed pin assignments and component specifications
+- [Schematic.md](Schematic.md) — detailed pin assignments and component specifications
 - [PinConfig.h](../source/arduino/PinConfig.h) — software pin definitions
 
 ---
@@ -194,9 +194,9 @@ Refer to [PinConfig.h](../source/arduino/PinConfig.h) for software definitions.
 
 ## Additional Resources
 
-- **Detailed wiring and troubleshooting:** [HardwareConnections.md](HardwareConnections.md)
+- **Detailed wiring and troubleshooting:** [Schematic.md](Schematic.md)
 - **Bill of Materials (BOM):** See project README
-- **Testing procedures:** [SoftwareIntegrationTestsSpecification.md](SoftwareIntegrationTestsSpecification.md)
+- **Testing procedures:** [11_SoftwareIntegrationTestsSpecification.md](11_SoftwareIntegrationTestsSpecification.md)
 - **BTS7960/IBT-2 datasheet:** [Example link](https://www.electronicwings.com/nodemcu/bts7960-motor-driver-interfacing-with-nodemcu)
 
 ---

@@ -1,3 +1,29 @@
+/**
+ * @file DeskController.cpp
+ * @brief Desk Controller Application Logic Implementation
+ * 
+ * @module MODULE-003
+ * @implements ARCH-COMP-001, ARCH-COMP-005
+ * @see DeskController.h for interface documentation
+ * @see 09_SoftwareDetailedDesign.md for detailed design
+ * 
+ * IMPLEMENTATION NOTE (v1.0):
+ * This version implements minimal switch-to-motor control logic.
+ * Full state machine (IDLE/MOVING_UP/MOVING_DOWN/DWELL/ERROR), timeout enforcement,
+ * and safety interlocks are planned for v2.0.
+ * 
+ * Current v1.0 features:
+ * - Direct rocker switch to motor mapping
+ * - Safe initialization
+ * - Basic state enum defined but not fully used
+ * 
+ * Deferred to v2.0:
+ * - 30-second movement timeout (SWE-REQ-018)
+ * - Direction reversal dwell period
+ * - Emergency stop detection (SWE-REQ-010, 011)
+ * - Error state machine (SWE-REQ-015, 016)
+ */
+
 #include "DeskController.h"
 
 #if defined(ARDUINO)
@@ -51,7 +77,11 @@ static unsigned long now_ms(void) {
 }
 
 
-
+/**
+ * @brief Initialize application logic to safe default state
+ * @function FUNC-016
+ * @implements SWE-REQ-001, SWE-REQ-002
+ */
 void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
   (void)inputs;
   if (outputs != NULL) {
@@ -62,7 +92,17 @@ void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs)
   appState = APP_STATE_IDLE;
 }
 
-
+/**
+ * @brief Execute one step of application logic (v1.0 minimal implementation)
+ * @function FUNC-017
+ * @implements SWE-REQ-003, SWE-REQ-004, SWE-REQ-005, SWE-REQ-006
+ * @algorithm ALG-001
+ * 
+ * Current v1.0 implementation:
+ * - Reads rocker switch position
+ * - Commands motor based on switch state
+ * - No timeout, dwell, or complex FSM (planned for v2.0)
+ */
 DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
   if (outputs == NULL || inputs == NULL) {
     return APP_TASK_ERROR;

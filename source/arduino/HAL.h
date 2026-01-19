@@ -1,3 +1,19 @@
+/**
+ * @file HAL.h
+ * @brief Hardware Abstraction Layer for Desk Automation Project
+ * 
+ * @module MODULE-002
+ * @implements ARCH-COMP-002
+ * @requirements SWE-REQ-001, SWE-REQ-003, SWE-REQ-004, SWE-REQ-012, SWE-REQ-013, SWE-REQ-017
+ * @architecture 08_SoftwareArchitecture.md
+ * @detailed_design 09_SoftwareDetailedDesign.md
+ * 
+ * Provides hardware abstraction for:
+ * - IBT-2/BTS7960 motor driver control
+ * - ON/OFF/ON rocker switch input
+ * - Current sensing (analog inputs)
+ * - Error detection and handling
+ */
 
 #ifndef HAL_H
 #define HAL_H
@@ -19,16 +35,24 @@
 
 /**
  * @brief Read the ON/OFF/ON switch state (UP, OFF, DOWN)
+ * @function FUNC-002
+ * @implements SWE-REQ-003, SWE-REQ-004
+ * @returns SwitchState_t - SWITCH_STATE_UP, SWITCH_STATE_OFF, or SWITCH_STATE_DOWN
  */
 #include "DeskController.h" // for SwitchState_t
 SwitchState_t HAL_ReadSwitchState(void);
 /**
  * @brief Query if HAL has detected a hardware error (overcurrent, stall, no-load)
+ * @function FUNC-008
+ * @implements SWE-REQ-015, SWE-REQ-021
+ * @returns true if error detected, false otherwise
  */
 bool HAL_HasError(void);
 
 /**
  * @brief Clear the HAL error state (after user/application acknowledges)
+ * @function FUNC-009
+ * @implements SWE-REQ-016
  */
 void HAL_ClearError(void);
 // HAL.h
@@ -48,6 +72,12 @@ typedef struct {
 
 /**
  * @brief Initialize HAL subsystem and configure pins
+ * @function FUNC-001
+ * @implements SWE-REQ-001
+ * @architecture ARCH-IF-002
+ * 
+ * Configures all GPIO pins for motor driver, switch inputs, and current sensing.
+ * Sets all outputs to safe default states (motor stopped).
  */
 void HAL_init(void);
 
@@ -69,7 +99,12 @@ void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t 
 float HAL_adc_to_amps(int adc_value, float vref = 5.0, float volts_per_amp = 1.0);
 
 
-/* Motor controls for IBT-2 */
+/**
+ * @brief Motor controls for IBT-2/BTS7960 driver
+ * @function FUNC-003 (MoveUp), FUNC-004 (MoveDown), FUNC-005 (StopMotor)
+ * @implements SWE-REQ-005, SWE-REQ-006, SWE-REQ-007, SWE-REQ-008
+ * @param speed PWM value (0-255) for MoveUp/MoveDown
+ */
 void HAL_MoveUp(const uint8_t speed);
 void HAL_MoveDown(const uint8_t speed);
 void HAL_StopMotor(void);

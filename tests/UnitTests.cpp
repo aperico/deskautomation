@@ -14,7 +14,7 @@ protected:
 };
 
 // Test: OFF state (center)
-TEST_F(DeskControllerMinimalTest, OutputsOffWhenSwitchOff) {
+TEST_F(DeskControllerMinimalTest, Unit_OutputsOffWhenSwitchOff) {
     inputs.switch_state = SWITCH_STATE_OFF;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
     EXPECT_FALSE(outputs.motor_enable);
@@ -24,7 +24,7 @@ TEST_F(DeskControllerMinimalTest, OutputsOffWhenSwitchOff) {
 }
 
 // Test: UP state
-TEST_F(DeskControllerMinimalTest, OutputsUpWhenSwitchUp) {
+TEST_F(DeskControllerMinimalTest, Unit_OutputsUpWhenSwitchUp) {
     inputs.switch_state = SWITCH_STATE_UP;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
     EXPECT_TRUE(outputs.motor_enable);
@@ -34,7 +34,7 @@ TEST_F(DeskControllerMinimalTest, OutputsUpWhenSwitchUp) {
 }
 
 // Test: DOWN state
-TEST_F(DeskControllerMinimalTest, OutputsDownWhenSwitchDown) {
+TEST_F(DeskControllerMinimalTest, Unit_OutputsDownWhenSwitchDown) {
     inputs.switch_state = SWITCH_STATE_DOWN;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
     EXPECT_TRUE(outputs.motor_enable);

@@ -3,16 +3,16 @@
 **Scope:** Integration-level tests exercising Application (DeskController) together with HAL (production HAL or HALMock).  
 **Standards:** ISTQB-style test case format (ID, Title, Objective, Preconditions, Test Data, Steps, Expected Results, Traceability, Priority, Severity).
 
-**Architecture Coverage:** These tests verify architectural components (ARCH-COMP-XXX), interfaces (ARCH-IF-XXX), states (ARCH-STATE-XXX), and state transitions (ARCH-TRANS-XXX) as defined in [Software Architecture](SoftwareArchitecture.md).
+**Architecture Coverage:** These tests verify architectural components (ARCH-COMP-XXX), interfaces (ARCH-IF-XXX), states (ARCH-STATE-XXX), and state transitions (ARCH-TRANS-XXX) as defined in [Software Architecture](08_SoftwareArchitecture.md).
 
 ---
 
 ## Navigation
 
-- [System Use Cases](SystemUseCases.md)
-- [Software Requirements](SoftwareRequirements.md)
-- [Software Architecture](SoftwareArchitecture.md)
-- [Traceability Matrix](TraceabilityMatrix.md)
+- [System Use Cases](05_SystemUseCases.md)
+- [Software Requirements](07_SoftwareRequirements.md)
+- [Software Architecture](08_SoftwareArchitecture.md)
+- [Traceability Matrix](12_TraceabilityMatrix.md)
 
 ## Test Harness & Environment
 - Host tests: g++/gtest with hal_mock (hal_mock/HALMock.*).
@@ -85,6 +85,252 @@ These integration tests verify the following architectural elements:
 2. **Timeout Enforcement**
    - **SWE-REQ-018:** Movement timeout 30s → IT-002, IT-003
    - **Test Method:** Simulate 30s+ button press
+
+---
+
+## Integration Test Example for Testers
+
+**Purpose:** Integration tests verify that multiple software components work correctly together as an integrated system, validating component interactions, interfaces, and complete workflows.
+
+**What Integration Tests Verify:**
+- Component interactions (DeskController ↔ HAL)
+- Interface contracts (ARCH-IF-001: Task API, ARCH-IF-002: HAL API)
+- Data flow between components
+- State machine transitions across the system
+- Complete end-to-end workflows
+- Architectural requirements (ARCH-COMP-XXX, ARCH-STATE-XXX, ARCH-TRANS-XXX)
+
+**Test Characteristics:**
+- **Test Level:** Integration (System Level)
+- **Scope:** Multiple components working together
+- **Test Naming:** `Integration_IT###_DescriptiveName`
+- **Framework:** Google Test (gtest)
+- **Fixture:** Uses `IntegrationTestFixture` with SetUp/TearDown
+- **Structure:** Multi-phase testing with clear state transitions
+
+### Example Integration Test Case
+
+Below is a complete example showing how to write an integration test that verifies upward movement workflow:
+
+```cpp
+/**
+ * @test Integration_IT002_UpwardMovement_TransitionsAndControl
+ * @req SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-017, SWE-REQ-020
+ * @usecase UC-02 (Raise Desk)
+ * @architecture ARCH-COMP-001 (DeskController), ARCH-COMP-002 (HAL), ARCH-COMP-005 (State Machine)
+ * @architecture ARCH-IF-001 (Task API), ARCH-IF-002 (HAL API)
+ * @architecture ARCH-STATE-001 (IDLE), ARCH-STATE-002 (MOVING_UP)
+ * @architecture ARCH-TRANS-001 (IDLE → MOVING_UP), ARCH-TRANS-003 (MOVING_UP → IDLE)
+ * @priority High
+ * @severity Major
+ * 
+ * Objective: Verify complete upward movement workflow integrating 
+ *            DeskController and HAL components
+ * 
+ * Test Approach:
+ * - Verify initial IDLE state
+ * - Trigger state transition to MOVING_UP
+ * - Verify sustained movement
+ * - Trigger return to IDLE state
+ * - Validate all state transitions and component interactions
+ */
+TEST_F(IntegrationTestFixture, Integration_IT002_UpwardMovement_TransitionsAndControl) {
+    DeskAppTask_Return_t ret;
+    
+    // ========================================================================
+    // PHASE 1: Verify Initial IDLE State (ARCH-STATE-001)
+    // ========================================================================
+    // Precondition: System initialized to safe IDLE state
+    inputs.switch_state = SWITCH_STATE_OFF;
+    
+    ret = DeskApp_task(&inputs, &outputs);
+    
+    // Verify task execution successful
+    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed in IDLE state";
+    
+    // Verify IDLE state characteristics (motor disabled)
+    VerifyMotorStopped();  // Helper: checks motor_enable=false, pwm=0
+    
+    // ========================================================================
+    // PHASE 2: Trigger Upward Movement (ARCH-TRANS-001: IDLE → MOVING_UP)
+    // ========================================================================
+    // Action: User presses UP switch
+    inputs.switch_state = SWITCH_STATE_UP;
+    
+    ret = DeskApp_task(&inputs, &outputs);
+    
+    // Verify task continues to succeed during movement
+    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed during upward movement";
+    
+    // Verify ARCH-STATE-002: MOVING_UP state characteristics
+    VerifyMotorMovingUp();  // Helper: checks enable=true, direction=UP, pwm=255
+    
+    // Additional state-specific checks
+    EXPECT_TRUE(outputs.motor_enable) << "Motor should be enabled for upward movement";
+    EXPECT_FALSE(outputs.motor_direction) << "Direction should be UP (false)";
+    EXPECT_EQ(outputs.motor_pwm, 255) << "PWM should be at full speed";
+    
+    // ========================================================================
+    // PHASE 3: Verify Sustained Movement (Hold UP Switch)
+    // ========================================================================
+    // Action: Keep UP switch pressed (simulate sustained user input)
+    // inputs.switch_state remains SWITCH_STATE_UP
+    
+    ret = DeskApp_task(&inputs, &outputs);
+    
+    // Verify system maintains MOVING_UP state
+    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should continue succeeding";
+    VerifyMotorMovingUp();  // Motor should still be moving up
+    
+    // ========================================================================
+    // PHASE 4: Return to IDLE (ARCH-TRANS-003: MOVING_UP → IDLE)
+    // ========================================================================
+    // Action: User releases UP switch
+    inputs.switch_state = SWITCH_STATE_OFF;
+    
+    ret = DeskApp_task(&inputs, &outputs);
+    
+    // Verify successful transition back to IDLE
+    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed when returning to IDLE";
+    
+    // Verify ARCH-STATE-001: IDLE state restored
+    VerifyMotorStopped();  // Motor should be disabled again
+    
+    // Final verification: system ready for next command
+    EXPECT_FALSE(outputs.motor_enable) << "Motor should be disabled in IDLE";
+    EXPECT_EQ(outputs.motor_pwm, 0) << "PWM should be zero in IDLE";
+}
+```
+
+### Test Structure Breakdown
+
+**1. Test Documentation Header:**
+```cpp
+/**
+ * @test Integration_IT002_...          // Unique test identifier
+ * @req SWE-REQ-XXX                      // Requirements covered
+ * @usecase UC-XX                        // Use case reference
+ * @architecture ARCH-COMP-XXX           // Architecture elements verified
+ * @priority High/Medium/Low             // Test priority
+ * @severity Critical/Major/Minor        // Failure severity
+ * 
+ * Objective: Clear statement of what is being tested
+ */
+```
+
+**2. Test Fixture:**
+```cpp
+TEST_F(IntegrationTestFixture, Integration_IT002_...) {
+    // IntegrationTestFixture provides:
+    // - DeskAppInputs_t inputs;
+    // - DeskAppOutputs_t outputs;
+    // - SetUp() for initialization
+    // - Helper functions (VerifyMotorStopped, VerifyMotorMovingUp, etc.)
+}
+```
+
+**3. Multi-Phase Structure:**
+- **Phase 1:** Verify preconditions and initial state
+- **Phase 2:** Trigger state change and verify transition
+- **Phase 3:** Verify behavior during sustained state
+- **Phase 4:** Trigger return transition and verify final state
+
+**4. Assertions:**
+```cpp
+EXPECT_EQ(actual, expected) << "Descriptive failure message";
+EXPECT_TRUE(condition) << "Explain what should be true";
+EXPECT_FALSE(condition) << "Explain what should be false";
+```
+
+### Key Points for Writing Integration Tests
+
+1. **Naming Convention:**
+   - Prefix: `Integration_IT###_`
+   - Format: `Integration_IT002_UpwardMovement_TransitionsAndControl`
+   - Use descriptive names that explain the workflow being tested
+
+2. **Comprehensive Documentation:**
+   - Include all traceability tags (@test, @req, @usecase, @architecture)
+   - Reference all architectural elements being verified
+   - State objective clearly
+   - Include priority and severity
+
+3. **Multi-Phase Testing:**
+   - Break complex workflows into logical phases
+   - Use clear phase comments (PHASE 1, PHASE 2, etc.)
+   - Each phase should have a clear purpose
+
+4. **State Verification:**
+   - Explicitly verify each state (ARCH-STATE-XXX)
+   - Verify state transitions (ARCH-TRANS-XXX)
+   - Check state invariants and characteristics
+
+5. **Helper Functions:**
+   - Use helper functions for common checks (VerifyMotorStopped, VerifyMotorMovingUp)
+   - Keep test code readable and maintainable
+   - Reduce duplication across tests
+
+6. **Complete Workflows:**
+   - Test entire end-to-end scenarios
+   - Verify component interactions, not just individual components
+   - Validate data flows correctly between components
+
+7. **Architecture Focus:**
+   - Verify interface contracts (ARCH-IF-001, ARCH-IF-002)
+   - Test component integration (ARCH-COMP-001 ↔ ARCH-COMP-002)
+   - Validate state machine behavior (ARCH-COMP-005)
+
+8. **Descriptive Messages:**
+   - Every assertion should have a clear failure message
+   - Messages should explain what is expected and why
+   - Makes debugging failed tests much easier
+
+### Difference Between Test Levels
+
+| Aspect | Integration Test | Component Test | Unit Test |
+|--------|-----------------|----------------|-----------|
+| **Scope** | Multiple components | Single component | Single function |
+| **Focus** | Component interaction | Function logic | Basic behavior |
+| **Prefix** | `Integration_IT###` | `Component_TC###` | `Unit_` |
+| **Example** | DeskController + HAL | DeskController alone | Simple input→output |
+| **Verifies** | Workflows, interfaces | Requirements, design | Minimal functionality |
+| **Architecture** | ARCH-COMP, IF, STATE, TRANS | MODULE, FUNC | N/A |
+| **Complexity** | High (multi-phase) | Medium (arrange-act-assert) | Low (simple checks) |
+
+### Helper Functions Available in IntegrationTestFixture
+
+```cpp
+// Verify motor is completely stopped
+void VerifyMotorStopped() {
+    EXPECT_FALSE(outputs.motor_enable);
+    EXPECT_EQ(outputs.motor_pwm, 0);
+}
+
+// Verify motor is moving upward
+void VerifyMotorMovingUp() {
+    EXPECT_TRUE(outputs.motor_enable);
+    EXPECT_FALSE(outputs.motor_direction);  // UP = false
+    EXPECT_EQ(outputs.motor_pwm, 255);
+}
+
+// Verify motor is moving downward
+void VerifyMotorMovingDown() {
+    EXPECT_TRUE(outputs.motor_enable);
+    EXPECT_TRUE(outputs.motor_direction);   // DOWN = true
+    EXPECT_EQ(outputs.motor_pwm, 255);
+}
+```
+
+### Tips for Testers
+
+1. **Start Simple:** Begin with the example above and modify for your test case
+2. **Copy Pattern:** Use existing tests as templates for new tests
+3. **Verify Incrementally:** Check each phase works before moving to next
+4. **Clear Comments:** Explain what each phase does and why
+5. **Run Frequently:** Execute tests often during development
+6. **Use Helpers:** Leverage helper functions to keep tests readable
+7. **Test Both Paths:** Verify both successful and failure scenarios
+8. **Document Thoroughly:** Future testers (including yourself) will thank you
 
 ---
 
@@ -281,7 +527,7 @@ These integration tests verify the following architectural elements:
 
 ## Traceability Matrix (excerpt)
 
-For complete traceability, see [Traceability Matrix](TraceabilityMatrix.md).
+For complete traceability, see [Traceability Matrix](12_TraceabilityMatrix.md).
 
 - IT-001 → UC-01 → SWE-REQ-001, SWE-REQ-002 → ARCH-COMP-001 to 004
 - IT-002 → UC-02 → SWE-REQ-003, 005, 007, 017, 018 → ARCH-COMP-001, 002, 005; ARCH-TRANS-001, 003

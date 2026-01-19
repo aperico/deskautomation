@@ -1,4 +1,28 @@
-
+/**
+ * @file HAL.cpp
+ * @brief Hardware Abstraction Layer Implementation
+ * 
+ * @module MODULE-002
+ * @implements ARCH-COMP-002
+ * @see HAL.h for interface documentation
+ * @see 09_SoftwareDetailedDesign.md for detailed design
+ * 
+ * IMPLEMENTATION NOTE (v1.0):
+ * Core HAL functions implemented for IBT-2/BTS7960 motor driver and rocker switch.
+ * Current sensing and error detection logic present but not yet consumed by application.
+ * 
+ * v1.0 Complete:
+ * - Pin initialization (FUNC-001)
+ * - Switch reading (FUNC-002)
+ * - Motor control (FUNC-003, 004, 005)
+ * - Current sensing and logging (FUNC-006, 010)
+ * - Error flag mechanism (FUNC-008, 009)
+ * 
+ * Deferred to v2.0:
+ * - LED control functions (no LEDs in v1.0 hardware)
+ * - Button debouncing (hardware rocker is stable)
+ * - Application-level error consumption and recovery
+ */
 
 #include "HAL.h"
 
@@ -24,7 +48,11 @@ static HAL_Logger_t    hal_logger = NULL;
 #  define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { /* no-op on host by default */ } } while(0)
 #endif
 
-// Read ON/OFF/ON switch state (UP, OFF, DOWN)
+/**
+ * @brief Read ON/OFF/ON switch state (UP, OFF, DOWN)
+ * @function FUNC-002
+ * @implements SWE-REQ-003, SWE-REQ-004
+ */
 SwitchState_t HAL_ReadSwitchState(void) {
 #if defined(ARDUINO)
   bool up = digitalRead(SWITCH_UP_PIN) == LOW;
@@ -66,10 +94,18 @@ static inline void HAL_motorEnable(bool enable) {
  * @return Current in Amps
  */
 float HAL_adc_to_amps(int adc_value, float vref, float volts_per_amp) {
+  if(volts_per_amp == 0) {
+    return 0.0f; // Prevent division by zero
+  }
   float v_sense = (adc_value / 1023.0f) * vref;
   return v_sense / volts_per_amp;
 }
 
+/**
+ * @brief Initialize HAL subsystem and configure pins
+ * @function FUNC-001
+ * @implements SWE-REQ-001
+ */
 void HAL_init(void) {
 #if defined(ARDUINO)
   Serial.begin(9600);
@@ -158,7 +194,12 @@ void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t 
   if (hal_outputs) HAL_Task(hal_outputs, outputs->motor_enable, outputs->motor_pwm);
 }
 
-
+/**
+ * @brief Move motor upward at specified speed
+ * @function FUNC-003
+ * @implements SWE-REQ-005, SWE-REQ-007
+ * @param speed PWM value (0-255)
+ */
 void HAL_MoveUp(const uint8_t speed) {
 #if defined(ARDUINO)
   HAL_motorEnable(true);
@@ -167,7 +208,12 @@ void HAL_MoveUp(const uint8_t speed) {
 #endif
 }
 
-
+/**
+ * @brief Move motor downward at specified speed
+ * @function FUNC-004
+ * @implements SWE-REQ-006, SWE-REQ-008
+ * @param speed PWM value (0-255)
+ */
 void HAL_MoveDown(const uint8_t speed) {
 #if defined(ARDUINO)
   HAL_motorEnable(true);
@@ -176,7 +222,11 @@ void HAL_MoveDown(const uint8_t speed) {
 #endif
 }
 
-
+/**
+ * @brief Stop motor immediately
+ * @function FUNC-005
+ * @implements SWE-REQ-007, SWE-REQ-008, SWE-REQ-011
+ */
 void HAL_StopMotor(void) {
 #if defined(ARDUINO)
   analogWrite(RPWM_PIN, 0);

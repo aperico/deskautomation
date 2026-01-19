@@ -15,7 +15,7 @@ Follow these safety guidelines when assembling, wiring, and operating the Automa
 
 
 ## Compliance
-See [Software Detailed Design](SoftwareDetailedDesign.md#compliance-statement) for full compliance details. If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
+See [Software Detailed Design](09_SoftwareDetailedDesign.md#compliance-statement) for full compliance details. If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
 
 ---
 

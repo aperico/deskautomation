@@ -18,7 +18,7 @@ add_library(DeskController STATIC source/arduino/DeskController.cpp)
 target_include_directories(DeskController PUBLIC source/arduino source/arduino/hal_mock)
 
 add_executable(SoftwareTests
-  tests/SoftwareTests.cpp
+  tests/ComponentTests.cpp
   tests/IntegrationTests.cpp
 )
 

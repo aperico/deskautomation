@@ -34,8 +34,8 @@ For each process area, systematically search for and document evidence of the fo
 
 #### 1. Work Products (Artifacts)
 - [ ] **Requirements documents:** SystemUseCases.md, SoftwareRequirements.md
-- [ ] **Architecture documents:** SoftwareArchitecture.md with components, interfaces, states
-- [ ] **Design documents:** SoftwareDetailedDesign.md with algorithms, data structures
+- [ ] **Architecture documents:** 08_SoftwareArchitecture.md with components, interfaces, states
+- [ ] **Design documents:** 09_SoftwareDetailedDesign.md with algorithms, data structures
 - [ ] **Test specifications:** SoftwareTestCasesSpecification.md, SoftwareIntegrationTestsSpecification.md
 - [ ] **Test implementations:** tests/SoftwareTests.cpp, tests/IntegrationTests.cpp
 - [ ] **Traceability matrix:** TraceabilityMatrix.md with UC→REQ→ARCH→TEST links
@@ -148,8 +148,8 @@ identify emergency stop and fault handling tests
 For each document type:
 - Read full content of SystemUseCases.md
 - Read full content of SoftwareRequirements.md
-- Read full content of SoftwareArchitecture.md
-- Read full content of SoftwareDetailedDesign.md
+- Read full content of 08_SoftwareArchitecture.md
+- Read full content of 09_SoftwareDetailedDesign.md
 - Read full content of TraceabilityMatrix.md
 - Read test specifications
 - Read SafetyNotes.md
@@ -361,7 +361,7 @@ list_dir(tests/)
 # Documentation review
 read_file(documentation/SystemUseCases.md, 1, 100)
 read_file(documentation/SoftwareRequirements.md, 1, 200)
-read_file(documentation/SoftwareArchitecture.md, 1, 300)
+read_file(documentation/08_SoftwareArchitecture.md, 1, 300)
 read_file(documentation/TraceabilityMatrix.md, 1, 500)
 read_file(documentation/SoftwareTestCasesSpecification.md, 1, 200)
 

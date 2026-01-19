@@ -1,24 +1,30 @@
-/*
-3-Position Rocker Switch (ON-OFF-ON) to Arduino Wiring
-
-    [ 7 ]---+         +---[ GND ]
-            |         |
-    [ 8 ]---+         +---[ GND ]
-
-Legend:
-  [ 7 ] = SWITCH_UP_PIN (Arduino digital input, e.g. D7)
-  [ 8 ] = SWITCH_DOWN_PIN (Arduino digital input, e.g. D8)
-  [ GND ] = Arduino GND
-
-Switch positions:
-  - UP:   [ 7 ] connected to GND (LOW), [ 8 ] HIGH
-  - DOWN: [ 8 ] connected to GND (LOW), [ 7 ] HIGH
-  - OFF:  both [ 7 ] and [ 8 ] HIGH (not connected)
-
-Wire both GND terminals of the switch to Arduino GND.
-Wire each signal terminal to its respective Arduino input pin.
-Use INPUT_PULLUP in code for both pins.
-*/
+/**
+ * @file arduino.ino
+ * @brief Main application file for Desk Automation Project
+ * 
+ * @module MODULE-004
+ * @implements ARCH-COMP-004
+ * @requirements SWE-REQ-001, SWE-REQ-009
+ * @architecture 08_SoftwareArchitecture.md
+ * @detailed_design 09_SoftwareDetailedDesign.md
+ * 
+ * Handles:
+ * - System initialization (FUNC-025)
+ * - Main control loop (FUNC-026)
+ * - Integration of HAL and application logic
+ * - Debug output and diagnostics
+ * 
+ * Hardware Wiring:
+ * 3-Position Rocker Switch (ON-OFF-ON) to Arduino:
+ *   [ 7 ]---+         +---[ GND ]
+ *           |         |
+ *   [ 8 ]---+         +---[ GND ]
+ * 
+ * Switch positions:
+ *   - UP:   Pin 7 LOW, Pin 8 HIGH
+ *   - DOWN: Pin 8 LOW, Pin 7 HIGH
+ *   - OFF:  Both pins HIGH
+ */
 // arduino.ino
 // -----------------------------------------------------------------------------
 // Main application file for Desk Automation Project
@@ -47,8 +53,17 @@ static HAL_Ouputs_t hal_outputs;
 
 
 // -----------------------------------------------------------------------------
-// Arduino setup function
-// Initializes hardware and application state
+/**
+ * @brief Arduino initialization entry point
+ * @function FUNC-025
+ * @implements SWE-REQ-001
+ * 
+ * Initialization sequence:
+ * 1. HAL_init() - Configure hardware pins (FUNC-001)
+ * 2. HAL_wait_startup() - Brief settling delay
+ * 3. DeskApp_task_init() - Initialize application to safe state (FUNC-016)
+ * 4. Serial debug setup (if DEBUG defined)
+ */
 // -----------------------------------------------------------------------------
 
 void setup() {
@@ -62,6 +77,20 @@ void setup() {
 
 }
 
+/**
+ * @brief Main control loop, executes continuously
+ * @function FUNC-026
+ * @implements SWE-REQ-013, SWE-REQ-019
+ * 
+ * Loop sequence:
+ * 1. Read switch state via HAL_ReadSwitchState() (FUNC-002)
+ * 2. Populate application inputs (DATA-001)
+ * 3. Execute application logic via DeskApp_task() (FUNC-017)
+ * 4. Apply outputs to hardware via HAL_ProcessAppState()
+ * 5. Debug logging (if DEBUG defined)
+ * 
+ * Timing: Target loop time 10-50ms for responsive control
+ */
 void loop() {
   static DeskAppTask_Return_t ret;
   // Read ON/OFF/ON switch (active low: pressed = LOW)
