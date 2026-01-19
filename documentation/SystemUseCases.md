@@ -37,9 +37,6 @@ This document describes the main use cases for the Automated Mechanical Desk Lif
 | UC-06 | Power-Off During Movement | Medium | Low | Approved | SWE-REQ-001, SWE-REQ-009, SWE-REQ-016, SWE-REQ-020 |
 | UC-07 | Simultaneous Button Presses | High | Low | Approved | SWE-REQ-010, SWE-REQ-014, SWE-REQ-017, SWE-REQ-020 |
 | UC-08 | Error Indication and Recovery | High | Low | Approved | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016, SWE-REQ-018, SWE-REQ-020 |
-``
-
-
 ---
 
 ## System Use Case Diagram

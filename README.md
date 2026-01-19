@@ -6,303 +6,315 @@
 [![CMake](https://img.shields.io/badge/CMake-4.2+-064F8C.svg)](https://cmake.org/)
 [![Arduino](https://img.shields.io/badge/Arduino-UNO-00979D.svg)](https://www.arduino.cc/)
 
-Welcome! This project implements a motorized height adjustment system for a mechanical desk using an Arduino-based controller. It is designed for safety, modularity, and future extensibility.
+Automated height adjustment system for a mechanical desk using an Arduino-based controller. Designed for safety, modularity, and extensibility.
 
-<p align="center">
-  <img src="documentation/deskcrank.jpg" alt="Desk Crank System" width="220"/>
-</p>
+**Key Features:** Motor-driven up/down movement, rocker switch control, comprehensive testing, ASPICE-aligned development.
+
+---
+
+## Quick Navigation
+
+- **Want to understand the project?** → [Project Overview](#project-overview)
+- **Building hardware?** → [Hardware Setup](#hardware-setup)
+- **Writing code?** → [Development Setup](#development-setup)
+- **Running tests?** → [Testing](#testing)
+- **Need documentation?** → [Documentation Index](#documentation-index)
 
 ---
 
 ## Project Overview
 
-- **Purpose:** Automate desk movement (up/down) with safety and reliability.
-- **Technologies:** Arduino UNO, L298N motor driver, modular C++ codebase.
-- **Features:**
-  - Up/Down movement with button control
-  - Host-based unit testing
-- **Compliance:** ISO 25119, ASPICE
+This project automates desk height adjustment using:
+- **Arduino UNO** microcontroller
+- **BTS7960/IBT-2** motor driver (12V/24V)
+- **31ZY-5840 DC Worm Gear Motor** (12V/24V)
+- **Rocker switch** input (3-position: UP/OFF/DOWN)
+- **Modular C++ architecture** with comprehensive tests
+
+**Design Philosophy:** Minimal hardware, maximum safety - no LEDs or visual indicators needed.
+
+**Compliance:** ISO 25119 (safety), ASPICE (software process)
+
+**Current Version:** v1.0 (basic movement + testing framework)
 
 ---
 
-## Getting Started
-
-Choose your path based on your goals:
-
-### 🔧 I Want to Build the Hardware
-
-**Prerequisites:**
-- Arduino UNO board
-- L298N motor driver module
-- DC motor (12V recommended)
-- Push buttons (2x)
-- LEDs and resistors
-- Power supply (12V)
-- See complete parts list in [Hardware Connections](documentation/HardwareConnections.md)
-
-**Steps:**
-1. Review the [Hardware Connections Guide](documentation/HardwareConnections.md) for wiring
-2. Read the [Safety Notes](documentation/SafetyNotes.md) before assembly
-3. Download the firmware: `source/arduino/arduino.ino`
-4. Flash to Arduino using Arduino IDE
-5. Test your setup!
-
-### 💻 I Want to Contribute Code
-
-**Prerequisites:**
-- **Windows:** g++, CMake, Google Test ([Setup Guide](documentation/toolchain.md))
-- *```
-5. Review [Coding Guidelines](documentation/codingguidelines.md) before contributing
-
-### 🧪 I Want to Test/Explore Without Hardware
-
-You can run all unit and integration tests on your host machine without Arduino hardware:
-
-1. Follow the "Contribute Code" prerequisites above
-2. Build and run tests:
-   ```sh
-   cmake -S . -B build
-   cmake --build build --config Release
-   ctest --test-dir build -C Release --output-on-failure
-   ```
-3. Explore the mock HAL in `source/arduino/hal_mock/` to see how hardware is simulated
-
----
-
-## Development Environment Setup
-
-### Windows Users
-
-For a complete guide on setting up the development toolchain (g++, CMake, Google Test) on Windows, see:
-
-**[Windows Toolchain Setup Guide](documentation/toolchain.md)**
-
-This guide covers:
-- Installing MSYS2 via winget
-- Setting up g++, CMake, and Google Test
-- Configuring your PATH
-- Building and testing the project
+## Hardware Setup
 
 ### Prerequisites
+- Arduino UNO board
+- BTS7960/IBT-2 motor driver
+- 31ZY-5840 DC Worm Gear Motor (12V/24V)
+- Rocker switch (3-position: UP/OFF/DOWN)
+- Power supply (12V or 24V, 5A+ recommended)
+- Basic wiring components (jumper wires, connectors)
 
-- Arduino IDE or PlatformIO (for flashing firmware to Arduino)
-- See [Hardware Connections](documentation/HardwareConnections.md) for wiring setup
-- For Windows development: Follow the [Toolchain Setup Guide](documentation/toolchain.md)
+**Note:** This is a minimal hardware setup - no LEDs or additional indicators required.
 
----
-
-## Quick Start
-
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/aperico/deskatuomation.git
-   ```
-2. **Set up your development environment:**
-   - **Windows:** Follow the [Windows Toolchain Setup Guide](documentation/toolchain.md)
-   - **Linux/Mac:** Install CMake, g++, and Google Test via your package manager
-3. **Build the project:**
-   - Use CMake tasks in VS Code or run:
-     ```sh
-     cmake -S . -B build
-     cmake --build build --config Release
-     ```
-4. **Flash to Arduino:**
-   - Open `source/arduino/arduino.ino` in Arduino IDE and upload.
-5. **Run unit tests:**
-   - Use CTest tasks or run:
-     ```sh
-     ctest --test-dir build -C Release --output-on-failure
-     ```
+### Getting Started
+1. Review [Hardware Schematic](documentation/Schematic.md) for wiring
+2. Read [Safety Notes](documentation/SafetyNotes.md) before assembly
+3. Download firmware: `source/arduino/arduino.ino`
+4. Flash to Arduino using Arduino IDE
+5. Test your setup
 
 ---
 
+## Development Setup
+
+### Windows Setup (Recommended)
+
+Follow the [Windows Toolchain Setup Guide](documentation/13_Toolchain.md) to install:
+- MSYS2 & g++
+- CMake 3.x
+- Google Test framework
+
+### Other Platforms
+- **Linux/Mac:** Install `g++`, `cmake`, `googletest` via your package manager
+
+### Quick Start
+```bash
+# 1. Clone repository
+git clone https://github.com/aperico/deskatuomation.git
+cd deskatuomation
+
+# 2. Create build directory
+cmake -S . -B build
+
+# 3. Build project
+cmake --build build --config Release
+
+# 4. Run tests (verify setup)
+ctest --test-dir build -C Release --output-on-failure
+```
+
 ---
 
-## ASPICE Assessment Overview
+## Testing
 
-See the [ASPICE Assessment](documentation/aspiceassessments.md) for a detailed checklist of compliance with ASPICE base practices, including system and software engineering. This document provides:
+### Run All Tests
+```bash
+ctest --test-dir build -C Release --output-on-failure
+```
 
-- A table-oriented checklist for SYS and SWE sections
-- Status legend for process achievement (Not achieved, Partially achieved, Largely achieved, Fully achieved)
-- Evidence mapping to project documentation
-- Action items and recommendations for improvement
-- Overall process maturity classification
+### Test Types
+- **Unit Tests (3):** Basic functionality
+- **Component Tests (13):** DeskController logic
+- **Integration Tests (9):** System-level workflows
+
+**Result:** 25/25 tests passing ✅
+
+### Running Without Hardware
+All tests run on host machine with simulated hardware (no Arduino needed).
+
+See [Component Test Spec](documentation/10_ComponentTestCasesSpecification.md) and [Integration Test Spec](documentation/11_SoftwareIntegrationTestsSpecification.md) for details.
+
+---
+
+## Local Pipeline Script (Windows)
+
+Use the automated local CI helper to mirror the GitHub workflow on Windows.
+
+**Script:** [tests/pipeline.ps1](tests/pipeline.ps1)
+
+**Prerequisites:**
+- Cppcheck in PATH (winget install Cppcheck.Cppcheck). The script auto-downloads official `misra.py` and `cert.py` addons if missing.
+- Optional: Clang/LLVM for AddressSanitizer (winget install LLVM.LLVM).
+- Optional: OpenCppCoverage for coverage reports (winget install OpenCppCoverage.OpenCppCoverage).
+
+**Run:**
+```powershell
+# Standard (static analysis + build + tests)
+./tests/pipeline.ps1
+
+# Include AddressSanitizer (requires Clang)
+./tests/pipeline.ps1 -Full
+
+# Include code coverage (requires OpenCppCoverage)
+./tests/pipeline.ps1 -Coverage
+```
+
+**What it does:**
+- Runs MISRA/CERT checks with Cppcheck (downloads official addons if absent)
+- Configures, builds, and executes all tests (Release)
+- Optional AddressSanitizer build/test (`-Full`)
+- Optional coverage build/report (`-Coverage`)
+- Summarizes results and exits non-zero on failure
+
+---
+
+## CI/CD Pipeline
+
+The project uses an automated **CMake CI workflow** (GitHub Actions) that runs on every push and pull request to `main` branch. Here's what each stage does:
+
+### Pipeline Stages
+
+**1. Checkout & Dependencies**
+- Clones repository code
+- Installs build tools: `cmake`, `g++`, `gcc`, `lcov`, `cppcheck`
+- Builds and installs Google Test framework from source
+
+**2. Static Analysis (Cppcheck)**
+- Runs `cppcheck --enable=all` on all source code
+- Checks for MISRA-like violations and code quality issues
+- Generates XML report and uploads as artifact
+- Non-blocking: warnings don't fail the build
+
+**3. CMake Configure**
+- Runs `cmake -B build` to generate build system
+- Enables code coverage flags (`--coverage` for gcov)
+- Configures for Debug mode (necessary for coverage)
+
+**4. Build**
+- Compiles source code and test executable with `cmake --build`
+- Links against Google Test framework
+- Creates executable in `build/` directory
+
+**5. Unit Tests**
+- Runs only tests labeled "Unit" (basic functionality)
+- Generates JUnit XML result file
+- Output shows individual test results
+- **Status:** 3/3 passing ✅
+
+**6. Integration Tests**
+- Runs only tests labeled "Integration" (component interaction)
+- Generates separate JUnit XML result file
+- Verifies system-level workflows
+- **Status:** 9/9 passing ✅
+
+**7. Component Tests**
+- Runs component-level tests (DeskController logic)
+- Part of overall test suite validation
+- **Status:** 13/13 passing ✅
+
+**8. Code Coverage Report**
+- Runs `geninfo` and `lcov` to collect coverage metrics
+- Generates `coverage.info` file showing line/branch coverage
+- Filters to source code only (excludes tests and external libs)
+- Lists coverage summary in build log
+
+**9. Artifact Upload**
+- Uploads Cppcheck XML report
+- Uploads JUnit test result files (unit + integration)
+- Uploads lcov coverage report
+- All artifacts stored in GitHub Actions for 90 days
+
+### Key Features
+
+- **Automated on every commit:** Catches issues immediately
+- **Parallel execution:** Unit and integration tests run separately for clarity
+- **Coverage tracking:** Generates metrics for code quality assessment
+- **Multiple quality gates:** Static analysis + unit tests + integration tests
+- **Artifact preservation:** Results available for download and analysis
+
+---
+
+
+
+Before contributing:
+
+1. Review [Coding Guidelines](documentation/14_Codingguidelines.md)
+2. Ensure tests pass locally
+3. Add tests for new features
+4. Update documentation
+5. Follow existing code style
+
+**Code Quality:** Unit tests required, ASPICE-aligned process, comprehensive traceability.
+
+---
 
 ## Documentation Index
 
-Below is a table listing major `.md` documents and integration test specs/artifacts:
-
-| Document                                                                                        | Description                                                                     |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [README.md](README.md)                                                                             | Project overview, quick start, file map, glossary, and contribution guidelines. |
-| [toolchain.md](documentation/toolchain.md)                                                         | Windows toolchain setup guide (g++, CMake, Google Test via MSYS2).             |
-| [HardwareConnections.md](documentation/HardwareConnections.md)                                     | Hardware setup, wiring, and pin assignments.                                    |
-| [SoftwareRequirements.md](documentation/SoftwareRequirements.md)                                   | Functional, safety, and interface requirements.                                 |
-| [SoftwareTestCasesSpecification.md](documentation/SoftwareTestCasesSpecification.md)               | Detailed software test cases (unit + system).                                   |
-| [SoftwareIntegrationTestsSpecification.md](documentation/SoftwareIntegrationTestsSpecification.md) | Integration test specification (Application + HAL).                             |
-| [SystemUseCases.md](documentation/SystemUseCases.md)                                               | User scenarios and flows driving requirements.                                  |
-| [TraceabilityMatrix.md](documentation/TraceabilityMatrix.md)                                       | Mapping between use cases, requirements, and test cases.                        |
-| [SoftwareArchitecture.md](documentation/SoftwareArchitecture.md)                                   | High-level software structure and architectural views.                          |
-| [SoftwareDetailedDesign.md](documentation/SoftwareDetailedDesign.md)                               | In-depth design details and rationale.                                          |
-| [aspiceassessments.md](documentation/aspiceassessments.md)                                         | ASPICE process maturity assessment and checklist.                               |
-| [Glossary.md](documentation/Glossary.md)                                                           | Project glossary and term definitions.                                          |
-
----
-
-## Project File Overview
-
-| File/Folder                                                                                | Description                                             |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| [source/arduino/arduino.ino](source/arduino/arduino.ino)                                      | Main Arduino entry point (setup + loop).                |
-| [source/arduino/PinConfig.h](source/arduino/PinConfig.h)                                      | Pin assignments.                                        |
-| [source/arduino/HAL.h / HAL.cpp](source/arduino/HAL.h)                                        | Hardware Abstraction Layer (LEDs, buttons, motor).      |
-| [source/arduino/DeskController.h / DeskController.cpp](source/arduino/DeskController.h)       | Application logic & state machine.                      |
-| [source/arduino/hal_mock/HALMock.h / HALMock.cpp](source/arduino/hal_mock/HALMock.h)          | HAL mock for host tests (millis, pin state).            |
-| [source/arduino/hal_mock/SerialMock.h / SerialMock.cpp](source/arduino/hal_mock/SerialMock.h) | Serial mock for tests.                                  |
-| [tests/SoftwareTests.cpp](tests/SoftwareTests.cpp)                                            | Unit tests (gtest) for application logic.               |
-| [tests/IntegrationTests.cpp](tests/IntegrationTests.cpp)                                      | Integration tests exercising Application + HAL (gtest). |
-| [tests/Integration_SmokeTests.cpp](tests/Integration_SmokeTests.cpp)                          | Additional integration smoke tests (gtest).             |
-| [build/](build/)                                                                              | CMake build output and test execution artifacts (CI).   |
+| Document | Purpose |
+|----------|---------|
+| [01_MissionStatement.md](documentation/01_MissionStatement.md) | Project mission & vision |
+| [02_SystemObjectives.md](documentation/02_SystemObjectives.md) | System-level objectives & goals |
+| [03_ConOps.md](documentation/03_ConOps.md) | Concept of operations & use scenarios |
+| [04_SystemContextDiagram.md](documentation/04_SystemContextDiagram.md) | System context & external interfaces |
+| [05_SystemUseCases.md](documentation/05_SystemUseCases.md) | User scenarios & workflows |
+| [06_SystemRequirements.md](documentation/06_SystemRequirements.md) | System-level requirements |
+| [07_SoftwareRequirements.md](documentation/07_SoftwareRequirements.md) | Functional & safety requirements |
+| [08_SoftwareArchitecture.md](documentation/08_SoftwareArchitecture.md) | System design & components |
+| [09_SoftwareDetailedDesign.md](documentation/09_SoftwareDetailedDesign.md) | Implementation details |
+| [10_ComponentTestCasesSpecification.md](documentation/10_ComponentTestCasesSpecification.md) | Component test guide & examples |
+| [11_SoftwareIntegrationTestsSpecification.md](documentation/11_SoftwareIntegrationTestsSpecification.md) | Integration test guide & examples |
+| [12_TraceabilityMatrix.md](documentation/12_TraceabilityMatrix.md) | Requirements ↔ Architecture ↔ Tests mapping |
+| [13_Toolchain.md](documentation/13_Toolchain.md) | Windows development setup |
+| [14_Codingguidelines.md](documentation/14_Codingguidelines.md) | Code style & standards |
+| [aspice/aspiceassessments.md](documentation/aspice/aspiceassessments.md) | ASPICE compliance checklist |
+| [Glossary.md](documentation/Glossary.md) | Term definitions |
+| [SafetyNotes.md](documentation/SafetyNotes.md) | Safety & operational guidelines |
+| [Schematic.md](documentation/Schematic.md) | Hardware wiring & connections |
 
 ---
 
-## Integration Test Artifacts
+## Project Structure
 
-- Integration test source:
-  - tests/IntegrationTests.cpp
-  - tests/Integration_SmokeTests.cpp
-  - documentation/SoftwareIntegrationTestsSpecification.md
-- Traceability & mapping:
-  - documentation/TraceabilityMatrix.md
-- CI / build artifacts (created by CI / ctest):
-  - build/test-results-integration.xml
-  - build/Testing/**/Test.xml (Integration labeled runs)
-- How to run integration tests locally:
-  1. cmake -S . -B build
-  2. cmake --build build --config Release
-  3. ctest --test-dir build -C Release -L Integration --output-on-failure
+```
+source/arduino/          # Arduino firmware & HAL
+  ├── arduino.ino        # Entry point (setup/loop)
+  ├── DeskController.*   # Application logic & state machine
+  ├── HAL.*              # Hardware abstraction layer
+  ├── PinConfig.h        # Pin definitions
+  └── hal_mock/          # Test mocks (no hardware needed)
+  
+tests/                   # Comprehensive test suites
+  ├── ComponentTests.cpp      # Component-level tests
+  ├── IntegrationTests.cpp    # System integration tests
+  └── UnitTests.cpp           # Basic unit tests
+
+documentation/           # Complete project documentation
+  ├── 05_SystemUseCases.md
+  ├── 07_SoftwareRequirements.md
+  ├── 08_SoftwareArchitecture.md
+  ├── 10_ComponentTestCasesSpecification.md
+  ├── 11_SoftwareIntegrationTestsSpecification.md
+  ├── 12_TraceabilityMatrix.md
+  └── ...
+```
 
 ---
 
-## Planned Enhancements
+## Troubleshooting
 
-See [Roadmap](documentation/Roadmap.md) for details:
+### Build Fails
+- **Windows:** Verify CMake/g++ in PATH, follow [Toolchain Setup](documentation/13_Toolchain.md)
+- **Google Test issues:** Re-run `cmake -S . -B build`
+- **Clean rebuild:** `Remove-Item -Path ".\build" -Recurse -Force`
 
-- Upper and lower limit switches
+### Tests Fail
+- Ensure Release build: `cmake --build build --config Release`
+- Check no hardware is required (all tests use mocks)
+
+### Motor Issues
+- Verify 12V power supply to BTS7960
+- Check wiring against [Hardware Schematic](documentation/Schematic.md)
+- Test rocker switch with multimeter
+
+---
+
+## Compliance & Safety
+
+- **ISO 25119:** Agricultural machinery safety principles
+- **ASPICE:** Software engineering process (SWE.3-SWE.6)
+- **Safety Critical:** Review [Safety Notes](documentation/SafetyNotes.md) before assembly
+
+---
+
+## Roadmap
+
+See [Roadmap](documentation/Roadmap.md) for v2.0 enhancements:
+- Upper/lower limit switches
 - Current sensing for stall detection
 - Height presets
-- EEPROM-based calibration
-- Soft-start/stop PWM control
+- EEPROM calibration
+- Soft-start/stop control
 
 ---
 
-## Compliance & Safety
+## License & Support
 
-- Designed for ISO 25119 (agricultural machinery safety) and ASPICE (automotive software process improvement)
-- See [Safety Notes](documentation/SafetyNotes.md) for wiring and operational safety
-
----
-
-## License
-
-This project is open-source under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## Contact & Support
-
-- **Questions or issues?** Open an issue on GitHub.
-
-## Out of Scope (Initial Phase)
-
-- Closed-loop position control
-ntributing
-
-We welcome contributions! Before submitting code:
-
-1. Read the [Coding Guidelines](documentation/codingguidelines.md) - enforced by CI linting
-2. Ensure all tests pass locally
-3. Add tests for new features
-4. Update documentation as needed
-5. Follow the existing code structure and naming conventions
-
-### Code Quality Standards
-
-- **Compliance:** ISO 25119, ASPICE process improvement
-- **Testing:** Unit tests required for all new code
-- **Documentation:** Keep docs in sync with code changes
-
----
-
-## FAQ & Troubleshooting
-
-### Build Issues
-
-**Q: CMake configuration fails on Windows**
-- Ensure g++ and CMake are in your PATH
-- Follow the [Windows Toolchain Setup Guide](documentation/toolchain.md)
-- Try cleaning: `Remove-Item -Path ".\build" -Recurse -Force`
-
-**Q: Tests fail to build**
-- Verify Google Test is installed
-- Check that you're building with Release configuration
-
-**Q: Arduino upload fails**
-- Verify correct COM port selected
-- Check USB cable connection
-- Ensure Arduino drivers are installed
-
-### Hardware Issues
-
-**Q: Motor doesn't respond**
-- Check L298N power supply (12V connected)
-- Verify wiring against [Hardware Connections](documentation/HardwareConnections.md)
-- Test button functionality with LED indicators
-
-**Q: Desk moves but stutters**
-- Check motor power supply voltage/amperage
-- Inspect mechanical crank for binding
-- Review [Safety Notes](documentation/SafetyNotes.md)
-
-For more issues, check existing [GitHub Issues](https://github.com/aperico/deskatuomation/issues) or open a new one.
-
----
-
-## Compliance & Safety
-
-- Designed following ISO 25119 (agricultural machinery safety) principles
-- ASPICE-aligned software development process
-- **⚠️ Important:** Review [Safety Notes](documentation/SafetyNotes.md) before assembly and operation
-
----
-
-## For Developers: Technical Documentation
-
-### Project File Overview
-
-| File/Folder                                                                                | Description                                             |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| [source/arduino/arduino.ino](source/arduino/arduino.ino)                                      | Main Arduino entry point (setup + loop).                |
-| [source/arduino/PinConfig.h](source/arduino/PinConfig.h)                                      | Pin assignments.                                        |
-| [source/arduino/HAL.h / HAL.cpp](source/arduino/HAL.h)                                        | Hardware Abstraction Layer (LEDs, buttons, motor).      |
-| [source/arduino/DeskController.h / DeskController.cpp](source/arduino/DeskController.h)       | Application logic & state machine.                      |
-| [source/arduino/hal_mock/HALMock.h / HALMock.cpp](source/arduino/hal_mock/HALMock.h)          | HAL mock for host tests (millis, pin state).            |
-| [source/arduino/hal_mock/SerialMock.h / SerialMock.cpp](source/arduino/hal_mock/SerialMock.h) | Serial mock for tests.                                  |
-| [tests/SoftwareTests.cpp](tests/SoftwareTests.cpp)                                            | Unit tests (gtest) for application logic.               |
-| [tests/IntegrationTests.cpp](tests/IntegrationTests.cpp)                                      | Integration tests exercising Application + HAL (gtest). |
-| [tests/Integration_SmokeTests.cpp](tests/Integration_SmokeTests.cpp)                          | Additional integration smoke tests (gtest).             |
-| [build/](build/)                                                                              | CMake build output and test execution artifacts (CI).   |
-
----
-
-## License
-
-This project is open-source under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## Contact & Support
-
-- **Questions or issues?** Open an issue on [GitHub Issues](https://github.com/aperico/deskatuomation/issues)
-- **Discussions:** Use GitHub Discussions for general questions
-- **Security Issues:** Please report privately via GitHub Security Advisories
+- **License:** MIT License ([LICENSE](LICENSE))
+- **Issues:** [GitHub Issues](https://github.com/aperico/deskatuomation/issues)
+- **Discussions:** GitHub Discussions
+- **Security:** Report privately via GitHub Security Advisories

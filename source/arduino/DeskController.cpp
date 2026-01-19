@@ -1,3 +1,29 @@
+/**
+ * @file DeskController.cpp
+ * @brief Desk Controller Application Logic Implementation
+ * 
+ * @module MODULE-003
+ * @implements ARCH-COMP-001, ARCH-COMP-005
+ * @see DeskController.h for interface documentation
+ * @see 09_SoftwareDetailedDesign.md for detailed design
+ * 
+ * IMPLEMENTATION NOTE (v1.0):
+ * This version implements minimal switch-to-motor control logic.
+ * Full state machine (IDLE/MOVING_UP/MOVING_DOWN/DWELL/ERROR), timeout enforcement,
+ * and safety interlocks are planned for v2.0.
+ * 
+ * Current v1.0 features:
+ * - Direct rocker switch to motor mapping
+ * - Safe initialization
+ * - Basic state enum defined but not fully used
+ * 
+ * Deferred to v2.0:
+ * - 30-second movement timeout (SWE-REQ-018)
+ * - Direction reversal dwell period
+ * - Emergency stop detection (SWE-REQ-010, 011)
+ * - Error state machine (SWE-REQ-015, 016)
+ */
+
 #include "DeskController.h"
 
 #if defined(ARDUINO)
@@ -50,227 +76,54 @@ static unsigned long now_ms(void) {
 #endif
 }
 
-/* Forward declarations for per-state handlers */
-TEST_EXPORT void handle_idle(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
-TEST_EXPORT void handle_move_up(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
-TEST_EXPORT void handle_move_down(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
-TEST_EXPORT void handle_dwell(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs);
 
+/**
+ * @brief Initialize application logic to safe default state
+ * @function FUNC-016
+ * @implements SWE-REQ-001, SWE-REQ-002
+ */
 void DeskApp_task_init(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
   (void)inputs;
   if (outputs != NULL) {
-    outputs->moveUp = false;
-    outputs->moveDown = false;
-    outputs->stop = true;
-    outputs->error = false;
+    outputs->motor_enable = false;
+    outputs->motor_direction = false;
+    outputs->motor_pwm = 0;
   }
   appState = APP_STATE_IDLE;
-  dwellStartMs = 0;
 }
+
+/**
+ * @brief Execute one step of application logic (v1.0 minimal implementation)
+ * @function FUNC-017
+ * @implements SWE-REQ-003, SWE-REQ-004, SWE-REQ-005, SWE-REQ-006
+ * @algorithm ALG-001
+ * 
+ * Current v1.0 implementation:
+ * - Reads rocker switch position
+ * - Commands motor based on switch state
+ * - No timeout, dwell, or complex FSM (planned for v2.0)
+ */
 DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  /* Defensive: require valid pointers */
-  if (inputs == NULL || outputs == NULL) {
+  if (outputs == NULL || inputs == NULL) {
     return APP_TASK_ERROR;
   }
 
-  /* Default outputs */
-  outputs->moveUp = false;
-  outputs->moveDown = false;
-  outputs->stop = false;
-  outputs->error = false;
+  // Default: stop motor
+  outputs->motor_enable = false;
+  outputs->motor_direction = false;
+  outputs->motor_pwm = 0;
 
-  /* Invalid sensor combination -> fatal error state */
-  if (inputs->upperLimitActive && inputs->lowerLimitActive) {
-    outputs->stop = true;
-    outputs->error = true;
-    appState = APP_STATE_ERROR;
-    return APP_TASK_ERROR;
+  if (inputs->switch_state == SWITCH_STATE_UP) {
+    outputs->motor_enable = true;
+    outputs->motor_direction = false; // UP direction
+    outputs->motor_pwm = 255;
+  } else if (inputs->switch_state == SWITCH_STATE_DOWN) {
+    outputs->motor_enable = true;
+    outputs->motor_direction = true; // DOWN direction
+    outputs->motor_pwm = 255;
   }
-
-  /* If in error state, check for recovery */
-  if (appState == APP_STATE_ERROR) {
-    // If either limiter is released, recover to idle
-    if (!(inputs->upperLimitActive && inputs->lowerLimitActive)) {
-      appState = APP_STATE_IDLE;
-      outputs->stop = true;
-      outputs->error = false;
-      return APP_TASK_SUCCESS;
-    } else {
-      outputs->stop = true;
-      outputs->error = true;
-      return APP_TASK_ERROR;
-    }
-  }
-
-  /* Simultaneous buttons -> safe stop, remain non-fatal (IDLE) */
-  if (inputs->btUPPressed && inputs->btDOWNPressed) {
-    outputs->stop = true;
-    outputs->error = false;
-    appState = APP_STATE_IDLE;
-    return APP_TASK_SUCCESS;
-  }
-
-  /* Dispatch to per-state handler for clarity */
-  switch (appState) {
-    case APP_STATE_IDLE:
-      handle_idle(inputs, outputs);
-      break;
-
-    case APP_STATE_MOVE_UP:
-      handle_move_up(inputs, outputs);
-      break;
-
-    case APP_STATE_MOVE_DOWN:
-      handle_move_down(inputs, outputs);
-      break;
-
-    case APP_STATE_DWELL:
-      handle_dwell(inputs, outputs);
-      break;
-
-    default:
-      outputs->stop = true;
-      outputs->error = true;
-      return APP_TASK_ERROR;
-  }
-
+  // If OFF, motor remains stopped
   return APP_TASK_SUCCESS;
 }
 
-/* State handlers — keep each small and focused for easier testing */
-TEST_EXPORT void handle_idle(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  // Both buttons pressed is a safety condition - stop and stay in IDLE
-  if (inputs->btUPPressed && inputs->btDOWNPressed) {
-    outputs->stop = true;
-    return;
-  }
-  
-  if (inputs->btUPPressed) {
-    if (inputs->upperLimitActive) {
-      outputs->stop = true;
-    } else {
-      outputs->moveUp = true;
-      outputs->stop = false;  // Explicitly clear stop when starting movement
-      appState = APP_STATE_MOVE_UP;
-      movementStartMs = now_ms(); // Start timeout timer (SWE-REQ-018)
-    }
-  } else if (inputs->btDOWNPressed) {
-    if (inputs->lowerLimitActive) {
-      outputs->stop = true;
-    } else {
-      outputs->moveDown = true;
-      outputs->stop = false;  // Explicitly clear stop when starting movement
-      appState = APP_STATE_MOVE_DOWN;
-      movementStartMs = now_ms(); // Start timeout timer (SWE-REQ-018)
-    }
-  } else {
-    outputs->stop = true;
-  }
-}
 
-TEST_EXPORT void handle_move_up(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  // Check timeout first (SWE-REQ-018)
-  if ((now_ms() - movementStartMs) >= kMovementTimeoutMs) {
-    outputs->stop = true;
-    appState = APP_STATE_IDLE;
-    return;
-  }
-  
-  if (inputs->upperLimitActive) {
-    outputs->stop = true;
-    appState = APP_STATE_DWELL;
-    dwellStartMs = now_ms();
-  } else if (!inputs->btUPPressed) {
-    outputs->stop = true;
-    appState = APP_STATE_IDLE;
-  } else {
-    outputs->moveUp = true;
-    outputs->stop = false;  // Explicitly clear stop during normal movement
-  }
-}
-
-TEST_EXPORT void handle_move_down(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  // Check timeout first (SWE-REQ-018)
-  if ((now_ms() - movementStartMs) >= kMovementTimeoutMs) {
-    outputs->stop = true;
-    appState = APP_STATE_IDLE;
-    return;
-  }
-  
-  if (inputs->lowerLimitActive) {
-    outputs->stop = true;
-    appState = APP_STATE_DWELL;
-    dwellStartMs = now_ms();
-  } else if (!inputs->btDOWNPressed) {
-    outputs->stop = true;
-    appState = APP_STATE_IDLE;
-  } else {
-    outputs->moveDown = true;
-    outputs->stop = false;  // Explicitly clear stop during normal movement
-  }
-}
-
-TEST_EXPORT void handle_dwell(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  (void)inputs;
-  if ((now_ms() - dwellStartMs) >= kDwellMs) {
-    appState = APP_STATE_IDLE;
-  }
-  outputs->stop = true;
-}
-
-// Test interface implementation
-#ifdef DESK_CONTROLLER_ENABLE_TEST_INTERFACE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void handle_idle_test(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  handle_idle(inputs, outputs);
-}
-
-void handle_move_up_test(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  handle_move_up(inputs, outputs);
-}
-
-void handle_move_down_test(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  handle_move_down(inputs, outputs);
-}
-
-void handle_dwell_test(const DeskAppInputs_t *inputs, DeskAppOutputs_t *outputs) {
-  handle_dwell(inputs, outputs);
-}
-
-void DeskApp_get_internal_state(DeskControllerInternalState_t *state) {
-  if (state != NULL) {
-    state->currentState = static_cast<int>(appState);
-    state->dwellStartMs = dwellStartMs;
-    state->movementStartMs = movementStartMs;
-  }
-}
-
-void DeskApp_set_internal_state(const DeskControllerInternalState_t *state) {
-  if (state != NULL) {
-    appState = static_cast<AppState_t>(state->currentState);
-    dwellStartMs = state->dwellStartMs;
-    movementStartMs = state->movementStartMs;
-  }
-}
-
-void DeskApp_set_time_ms(unsigned long timeMs) {
-  mockTimeMs = timeMs;
-}
-
-unsigned long DeskApp_get_time_ms(void) {
-  return mockTimeMs;
-}
-
-// Export constants with external linkage
-extern "C" const unsigned long kDwellMs_test = kDwellMs;
-extern "C" const unsigned long kMovementTimeoutMs_test = kMovementTimeoutMs;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // DESK_CONTROLLER_ENABLE_TEST_INTERFACE

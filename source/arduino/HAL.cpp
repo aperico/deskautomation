@@ -1,3 +1,29 @@
+/**
+ * @file HAL.cpp
+ * @brief Hardware Abstraction Layer Implementation
+ * 
+ * @module MODULE-002
+ * @implements ARCH-COMP-002
+ * @see HAL.h for interface documentation
+ * @see 09_SoftwareDetailedDesign.md for detailed design
+ * 
+ * IMPLEMENTATION NOTE (v1.0):
+ * Core HAL functions implemented for IBT-2/BTS7960 motor driver and rocker switch.
+ * Current sensing and error detection logic present but not yet consumed by application.
+ * 
+ * v1.0 Complete:
+ * - Pin initialization (FUNC-001)
+ * - Switch reading (FUNC-002)
+ * - Motor control (FUNC-003, 004, 005)
+ * - Current sensing and logging (FUNC-006, 010)
+ * - Error flag mechanism (FUNC-008, 009)
+ * 
+ * Deferred to v2.0:
+ * - LED control functions (no LEDs in v1.0 hardware)
+ * - Button debouncing (hardware rocker is stable)
+ * - Application-level error consumption and recovery
+ */
+
 #include "HAL.h"
 
 #if defined(ARDUINO)
@@ -7,237 +33,217 @@
   #include "hal_mock/HALMock.h"
 #endif
 
-/* internal configuration constants (internal linkage) */
-static const uint32_t kBlinkIntervalMs   = 500u;
+
 static const uint8_t  kDefaultMotorSpeed = 255u;
 static HAL_Logger_t    hal_logger = NULL;
 
-/* HAL internal state for blinking and LED snapshots */
-static uint32_t lastBlinkTime = 0;
-static bool     errorLedState = false;
-static bool     upLedState    = false;
-static bool     downLedState  = false;
-
-/* Logging hook - enabled when DEBUG defined on Arduino */
-/* HAL_LOG: if a logger is registered use it, otherwise use Serial when available */
+// Minimal logger for debug
 #if defined(ARDUINO)
-  #if defined(DEBUG)
-    #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { Serial.println(msg); } } while(0)
-  #else
-    #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { (void)0; } } while(0)
-  #endif
+#  if defined(DEBUG)
+#    define HAL_LOG(msg) do { Serial.println(msg); if (hal_logger) { hal_logger(msg); } } while(0)
+#  else
+#    define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { (void)0; } } while(0)
+#  endif
 #else
-  #define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { /* no-op on host by default */ } } while(0)
+#  define HAL_LOG(msg) do { if (hal_logger) { hal_logger(msg); } else { /* no-op on host by default */ } } while(0)
 #endif
 
-/* small helpers */
-static inline bool readButtonPressed(const int pin) {
-  /* Assumes wiring uses INPUT_PULLUP; LOW == pressed */
-  return (digitalRead(pin) == LOW);
+/**
+ * @brief Read ON/OFF/ON switch state (UP, OFF, DOWN)
+ * @function FUNC-002
+ * @implements SWE-REQ-003, SWE-REQ-004
+ */
+SwitchState_t HAL_ReadSwitchState(void) {
+#if defined(ARDUINO)
+  bool up = digitalRead(SWITCH_UP_PIN) == LOW;
+  bool down = digitalRead(SWITCH_DOWN_PIN) == LOW;
+  if (up && !down) return SWITCH_STATE_UP;
+  if (down && !up) return SWITCH_STATE_DOWN;
+  return SWITCH_STATE_OFF;
+#else
+  return SWITCH_STATE_OFF;
+#endif
 }
 
-static void apply_movement_state(const bool moveUp, const bool moveDown) {
-  if (moveUp && !moveDown) {
-    HAL_MoveUp(kDefaultMotorSpeed);
-    return;
-  }
-  if (moveDown && !moveUp) {
-    HAL_MoveDown(kDefaultMotorSpeed);
-    return;
-  }
-  HAL_StopMotor();
+// Error state flag (file-local)
+static bool hal_error_flag = false;
+
+bool HAL_HasError(void) {
+  return hal_error_flag;
 }
 
-/* Debounce implementation */
-bool HAL_debounceButton(const int pin, DebounceState *state, const uint32_t debounceDelay) {
-  if (state == NULL) {
-    return false;
-  }
-
-  const bool rawPressed = readButtonPressed(pin);
-  const uint32_t now = millis();
-
-  state->changed = false;
-
-  if (rawPressed != state->lastReading) {
-    /* raw reading changed, restart debounce timer */
-    state->lastDebounceMs = now;
-    state->lastReading = rawPressed;
-  }
-
-  /* wrap-safe comparison */
-  if ((uint32_t)(now - state->lastDebounceMs) >= debounceDelay) {
-    if (state->stableState != state->lastReading) {
-      state->stableState = state->lastReading;
-      state->changed = true;
-    }
-  }
-
-  return state->stableState;
+void HAL_ClearError(void) {
+  hal_error_flag = false;
 }
 
-bool HAL_readDebounced(const int pin) {
-  static DebounceState tmpStateUp = { false, false, false, 0 };
-  /* Use default debounce delay for convenience */
-  return HAL_debounceButton(pin, &tmpStateUp, 50u);
+/**
+ * @brief Enable or disable both EN pins (defensive safety)
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void HAL_motorEnable(bool enable) {
+  digitalWrite(R_EN_PIN, enable);
+  digitalWrite(L_EN_PIN, enable);
 }
 
-/* Initialization: configure pins, set safe defaults (no blocking/delays) */
+/**
+ * @brief Convert ADC value to current in Amps
+ * @param adc_value Raw ADC reading (0-1023 for 10-bit ADC)
+ * @param vref Reference voltage (typically 5.0V)
+ * @param volts_per_amp Sensor scaling (e.g., 1.0V/A)
+ * @return Current in Amps
+ */
+float HAL_adc_to_amps(int adc_value, float vref, float volts_per_amp) {
+  if(volts_per_amp == 0) {
+    return 0.0f; // Prevent division by zero
+  }
+  float v_sense = (adc_value / 1023.0f) * vref;
+  return v_sense / volts_per_amp;
+}
+
+/**
+ * @brief Initialize HAL subsystem and configure pins
+ * @function FUNC-001
+ * @implements SWE-REQ-001
+ */
 void HAL_init(void) {
-  #if defined(ARDUINO)
+#if defined(ARDUINO)
   Serial.begin(9600);
+  // Motor driver pins
+  pinMode(RPWM_PIN, OUTPUT);
+  pinMode(LPWM_PIN, OUTPUT);
+  pinMode(R_EN_PIN, OUTPUT);
+  pinMode(L_EN_PIN, OUTPUT);
+  // Switch pins (active low)
+  pinMode(SWITCH_UP_PIN, INPUT_PULLUP);
+  pinMode(SWITCH_DOWN_PIN, INPUT_PULLUP);
+  // Current sense pins (optional, usually analog inputs by default)
+#ifdef R_IS_PIN
+  pinMode(R_IS_PIN, INPUT);
 #endif
-
-  pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_UPPER_LIMIT_PIN, INPUT_PULLUP); // Upper limit switch
-  pinMode(BUTTON_LOWER_LIMIT_PIN, INPUT_PULLUP); // Lower limit switch
-
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
-  pinMode(ENA, OUTPUT);
-  
-  pinMode(ERROR_LED, OUTPUT);
-  pinMode(LED_RIGHT_PIN, OUTPUT);
-  pinMode(LED_LEFT_PIN, OUTPUT);
- 
-
-  /* safe defaults: motor stopped, LEDs off */
+#ifdef L_IS_PIN
+  pinMode(L_IS_PIN, INPUT);
+#endif
+#endif
   HAL_StopMotor();
-  HAL_SetErrorLED(false);
-  HAL_SetMovingUpLED(false);
-  HAL_SetMovingDownLED(false);
+}
 
-  /* initialize blink manager timestamp */
-  lastBlinkTime = millis();
+void HAL_Task(HAL_Ouputs_t *hal_outputs, bool motor_enable, uint8_t motor_pwm) {
+    // Clear error flag if motor is not running
+    bool motor_running = motor_enable && motor_pwm > 0;
+    if (!motor_running) {
+      hal_error_flag = false;
+    }
+  // for timed events; none needed in this minimal implementation
+#if defined(ARDUINO)
+  if (hal_outputs) {
+    hal_outputs->r_current = analogRead(R_IS_PIN);
+    hal_outputs->l_current = analogRead(L_IS_PIN);
+  }
+  static unsigned long lastLogTime = 0;
+  unsigned long now = millis();
+
+#define VREF 5.0f
+#define VOLTS_PER_AMP 0.1f   // IBT-2: 1V/10A scaling (0.1 V/A)
+#define OVERCURRENT_AMPS 5.0f // 4A supply, allow for surges
+#define NOLOAD_AMPS 0.2f      // Typical no-load current
+
+  if (now - lastLogTime >= 1000 && hal_outputs) {
+    float r_amps = HAL_adc_to_amps(hal_outputs->r_current, VREF, VOLTS_PER_AMP);
+    float l_amps = HAL_adc_to_amps(hal_outputs->l_current, VREF, VOLTS_PER_AMP);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "R_IS: %d (%.2fA), L_IS: %d (%.2fA)", hal_outputs->r_current, r_amps, hal_outputs->l_current, l_amps);
+    HAL_LOG(buf);
+
+    // Only check for errors and log warnings if motor is running
+    bool motor_running = motor_enable && motor_pwm > 0;
+    if (motor_running) {
+      // Overcurrent detection
+      if (r_amps > OVERCURRENT_AMPS || l_amps > OVERCURRENT_AMPS) {
+        HAL_LOG("WARNING: Overcurrent detected!");
+        hal_error_flag = true;
+      }
+      // No-load detection
+      if (r_amps < NOLOAD_AMPS && l_amps < NOLOAD_AMPS) {
+        HAL_LOG("WARNING: No-load (open circuit or disconnected motor)");
+        hal_error_flag = true;
+      }
+      // Stall detection (high current, but no movement logic would go here)
+      if ((r_amps > OVERCURRENT_AMPS || l_amps > OVERCURRENT_AMPS) /* && motor enabled, not moving */) {
+        HAL_LOG("WARNING: Possible stall condition!");
+        hal_error_flag = true;
+      }
+    }
+    lastLogTime = now;
+  }
+#endif
+}
+
+
+void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs, HAL_Ouputs_t *hal_outputs) {
+  if (outputs == NULL || !outputs->motor_enable || outputs->motor_pwm == 0) {
+    HAL_StopMotor();
+    if (hal_outputs) HAL_Task(hal_outputs, false, 0);
+    return;
+  }
+  if (outputs->motor_direction) {
+    HAL_MoveDown(outputs->motor_pwm);
+  } else {
+    HAL_MoveUp(outputs->motor_pwm);
+  }
+  if (hal_outputs) HAL_Task(hal_outputs, outputs->motor_enable, outputs->motor_pwm);
+}
+
+/**
+ * @brief Move motor upward at specified speed
+ * @function FUNC-003
+ * @implements SWE-REQ-005, SWE-REQ-007
+ * @param speed PWM value (0-255)
+ */
+void HAL_MoveUp(const uint8_t speed) {
+#if defined(ARDUINO)
+  HAL_motorEnable(true);
+  analogWrite(RPWM_PIN, speed);
+  analogWrite(LPWM_PIN, 0);
+#endif
+}
+
+/**
+ * @brief Move motor downward at specified speed
+ * @function FUNC-004
+ * @implements SWE-REQ-006, SWE-REQ-008
+ * @param speed PWM value (0-255)
+ */
+void HAL_MoveDown(const uint8_t speed) {
+#if defined(ARDUINO)
+  HAL_motorEnable(true);
+  analogWrite(RPWM_PIN, 0);
+  analogWrite(LPWM_PIN, speed);
+#endif
+}
+
+/**
+ * @brief Stop motor immediately
+ * @function FUNC-005
+ * @implements SWE-REQ-007, SWE-REQ-008, SWE-REQ-011
+ */
+void HAL_StopMotor(void) {
+#if defined(ARDUINO)
+  analogWrite(RPWM_PIN, 0);
+  analogWrite(LPWM_PIN, 0);
+  HAL_motorEnable(false);
+#endif
 }
 
 void HAL_wait_startup(void) {
-  /* Default short blocking wait to allow hardware/human to settle */
-  const unsigned long start = millis();
-  const unsigned long timeout = 1000u;
-  while ((unsigned long)(millis() - start) < timeout) {
-    HAL_Task();
-  }
+#if defined(ARDUINO)
+  delay(1000);
+#endif
 }
 
 void HAL_set_logger(HAL_Logger_t logger) {
-  hal_logger = logger;
+  // No-op for now
 }
 
-/* Periodic task to handle blinking and other time-based HAL work.
-   Call from main loop at least once per blink interval. */
-void HAL_Task(void) {
-  const uint32_t now = millis();
-  if ((uint32_t)(now - lastBlinkTime) >= kBlinkIntervalMs) {
-    lastBlinkTime = now;
-    /* toggle only error LED blinking; callers control whether error LED is in "blink mode" */
-    if (HAL_GetErrorLED()) {
-      errorLedState = !errorLedState;
-      digitalWrite(ERROR_LED, errorLedState ? HIGH : LOW);
-    }
-    /* future: manage other timed LED behavior here */
-  }
-}
 
-/* Map application outputs into hardware actions.
-   Prioritization: application error -> explicit stop -> movement -> idle */
-void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs) {
-  HAL_LOG("HAL_ProcessAppState entry");
-
-  if (ret != APP_TASK_SUCCESS) {
-    /* app-level error: indicate and stop motor */
-    HAL_SetErrorLED(true);
-    HAL_StopMotor();
-    HAL_LOG("APP_TASK_ERROR: stop and error LED on");
-    return;
-  }
-
-  if (outputs == NULL) {
-    /* defensive: no outputs => be safe */
-    HAL_StopMotor();
-    HAL_SetErrorLED(false);
-    HAL_LOG("NULL outputs: stopped");
-    return;
-  }
-
-  /* set error indicator based on application-provided flag */
-  HAL_SetErrorLED(outputs->error);
-
-  /* explicit stop takes precedence */
-  if (outputs->stop) {
-    HAL_StopMotor();
-    HAL_LOG("Output stop requested");
-    return;
-  }
-
-  /* apply movement deterministically */
-  apply_movement_state(outputs->moveUp, outputs->moveDown);
-  HAL_LOG("Movement applied");
-}
-
-/* LED helpers: update internal state snapshot and write pin */
-void HAL_SetErrorLED(const bool state) {
-  digitalWrite(ERROR_LED, state ? HIGH : LOW);
-  errorLedState = state;
-}
-
-void HAL_SetWarningLED(const bool state) {
-  // Warning LED not implemented in current hardware
-  // Reserved for future use
-  (void)state;
-}
-
-void HAL_SetPowerLED(const bool state) {
-  // Power LED not implemented in current hardware
-  // Could be mapped to ERROR_LED in IDLE state for "ready" indication
-  // For now, no-op to maintain API compatibility
-  (void)state;
-}
-
-void HAL_SetMovingUpLED(const bool state) {
-  digitalWrite(LED_LEFT_PIN, state ? HIGH : LOW);
-  upLedState = state;
-}
-
-void HAL_SetMovingDownLED(const bool state) {
-  digitalWrite(LED_RIGHT_PIN, state ? HIGH : LOW);
-  downLedState = state;
-}
-
-bool HAL_GetMovingUpLED(void)   { return upLedState; }
-bool HAL_GetMovingDownLED(void) { return downLedState; }
-bool HAL_GetErrorLED(void)      { return errorLedState; }
-
-/* Motor commands (defensive) */
-void HAL_MoveUp(const uint8_t speed) {
-  const uint8_t s = (speed > 255u) ? 255u : speed;
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-  analogWrite(ENA, s);
-  HAL_SetMovingUpLED(true);
-  HAL_SetMovingDownLED(false);
-}
-
-void HAL_MoveDown(const uint8_t speed) {
-  const uint8_t s = (speed > 255u) ? 255u : speed;
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);
-  analogWrite(ENA, s);
-  HAL_SetMovingDownLED(true);
-  HAL_SetMovingUpLED(false);
-}
-
-void HAL_StopMotor(void) {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW);
-  analogWrite(ENA, 0);
-  HAL_SetMovingUpLED(false);
-  HAL_SetMovingDownLED(false);
-}
-
-/* Backwards-compatible blink helpers (now managed via HAL_Task) */
-void HAL_BlinkErrorLED(void)  { /* no-op; prefer HAL_Task to manage blinking */ }
-void HAL_BlinkUPLED(void)     { /* no-op; use HAL_Task if blinking required */ }
-void HAL_BlinkDOWNLED(void)   { /* no-op; use HAL_Task if blinking required */ }
 
