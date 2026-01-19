@@ -42,9 +42,9 @@ $Red = @{ ForegroundColor = "Red" }
 $Gray = @{ ForegroundColor = "Gray" }
 
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════════════╗" @Green
-Write-Host "║   DESK AUTOMATION - LOCAL CI/CD PIPELINE                       ║" @Green
-Write-Host "╚════════════════════════════════════════════════════════════════╝" @Green
+Write-Host "========================================" @Green
+Write-Host "  DESK AUTOMATION - LOCAL CI/CD PIPELINE" @Green
+Write-Host "========================================" @Green
 Write-Host ""
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" @Gray
 Write-Host "Location:  $(Get-Location)" @Gray
@@ -59,23 +59,96 @@ $reportLines = @()
 # Step 1: Static Analysis (MISRA-C 2012)
 # ============================================================================
 Write-Host "[1/5] Running MISRA-C 2012 Static Analysis..." @Yellow
-Write-Host "─────────────────────────────────────────" @Gray
+Write-Host "---------------------------------------------" @Gray
 
 $misraStart = Get-Date
 
 # Check if cppcheck is available
 if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
-    Write-Host "⚠️  Cppcheck not found in PATH" @Red
+    Write-Host "[WARN] Cppcheck not found in PATH" @Red
     Write-Host "   Install with: winget install --id Cppcheck.Cppcheck" @Gray
     $pipelineSuccess = $false
-    $reportLines += "❌ Cppcheck not installed"
+    $reportLines += "[FAIL] Cppcheck not installed"
 } else {
+    # Resolve addon paths (misra.py, cert.py) based on cppcheck install location
+    $cppcheckExe = (Get-Command cppcheck -ErrorAction SilentlyContinue).Source
+    $cppcheckRoot = Split-Path $cppcheckExe
+    $addonArgs = @()
+
+    # Local cache for official addons
+    $addonCacheRoot = Join-Path $PSScriptRoot "cppcheck-addons"
+    $addonZip = Join-Path $addonCacheRoot "cppcheck-addons.zip"
+    $addonExtractRoot = Join-Path $addonCacheRoot "cppcheck-main"
+
+    if (-not (Test-Path $addonCacheRoot)) { New-Item -ItemType Directory -Path $addonCacheRoot | Out-Null }
+
+    # Candidate addon locations (installed + cached download)
+    $candidatePaths = @(
+        (Join-Path $cppcheckRoot "addons"),
+        (Join-Path (Split-Path $cppcheckRoot) "addons"),
+        (Join-Path (Split-Path $cppcheckRoot) "share\\cppcheck\\addons"),
+        (Join-Path $addonExtractRoot "addons")
+    )
+
+    # Fallback: search a limited depth under the install root
+    $foundMisra = $null
+    $foundCert = $null
+    foreach ($path in $candidatePaths) {
+        if (-not $foundMisra -and (Test-Path (Join-Path $path "misra.py"))) {
+            $foundMisra = Join-Path $path "misra.py"
+        }
+        if (-not $foundCert -and (Test-Path (Join-Path $path "cert.py"))) {
+            $foundCert = Join-Path $path "cert.py"
+        }
+    }
+
+    if (-not $foundMisra) {
+        $foundMisra = Get-ChildItem -Path (Split-Path $cppcheckRoot) -Filter misra.py -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1 | ForEach-Object { $_.FullName }
+    }
+    if (-not $foundCert) {
+        $foundCert = Get-ChildItem -Path (Split-Path $cppcheckRoot) -Filter cert.py -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1 | ForEach-Object { $_.FullName }
+    }
+
+    # If still missing, download official addons once
+    if (-not $foundMisra -or -not $foundCert) {
+        try {
+            Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
+            Invoke-WebRequest -Uri "https://github.com/danmar/cppcheck/archive/refs/heads/main.zip" -OutFile $addonZip -UseBasicParsing
+            Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
+        } catch {
+            Write-Host "   [WARN] Failed to download cppcheck addons automatically." @Yellow
+        }
+
+        if (-not $foundMisra) {
+            $dlMisra = Join-Path $addonExtractRoot "addons\misra.py"
+            if (Test-Path $dlMisra) { $foundMisra = $dlMisra }
+        }
+        if (-not $foundCert) {
+            $dlCert = Join-Path $addonExtractRoot "addons\cert.py"
+            if (Test-Path $dlCert) { $foundCert = $dlCert }
+        }
+    }
+
+    if ($foundMisra) {
+        $addonArgs += "--addon=$foundMisra"
+    } else {
+        Write-Host "   [WARN] misra.py not found (MISRA rules will be skipped)." @Yellow
+        Write-Host "          Install addons: download https://github.com/danmar/cppcheck/archive/refs/heads/main.zip and copy addons/misra.py next to cppcheck.exe" @Gray
+    }
+
+    if ($foundCert) {
+        $addonArgs += "--addon=$foundCert"
+    } else {
+        Write-Host "   [WARN] cert.py not found (CERT rules will be skipped)." @Yellow
+        Write-Host "          Install addons: download https://github.com/danmar/cppcheck/archive/refs/heads/main.zip and copy addons/cert.py next to cppcheck.exe" @Gray
+    }
+
     # Run MISRA-C checks with XML and text output
     $misraXmlFile = "$PSScriptRoot\..\cppcheck-report.xml"
     $misraTxtFile = "$PSScriptRoot\..\cppcheck-summary.txt"
     
     cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem `
-        --addon=misra --addon=cert `
+        @addonArgs `
         --xml --xml-version=2 `
         --output-file=$misraXmlFile `
         "$PSScriptRoot\..\source" 2>&1 | Tee-Object -FilePath $misraTxtFile | Select-Object -Last 5
@@ -86,12 +159,12 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
     if (Test-Path $misraXmlFile) {
         [xml]$xmlDoc = Get-Content $misraXmlFile
         $errorCount = @($xmlDoc.results.error).Count
-        Write-Host "   ✓ MISRA check complete ($errorCount issues)" @Green
-        Write-Host "   ✓ Reports: cppcheck-report.xml, cppcheck-summary.txt" @Green
-        $reportLines += "✅ MISRA-C 2012: $errorCount issues found (${misraElapsed}s)"
+        Write-Host "   [OK] MISRA check complete ($errorCount issues)" @Green
+        Write-Host "   [OK] Reports: cppcheck-report.xml, cppcheck-summary.txt" @Green
+        $reportLines += "[PASS] MISRA-C 2012: $errorCount issues found (${misraElapsed}s)"
     } else {
-        Write-Host "   ✓ MISRA check complete" @Green
-        $reportLines += "✅ MISRA-C 2012: Analysis passed (${misraElapsed}s)"
+        Write-Host "   [OK] MISRA check complete" @Green
+        $reportLines += "[PASS] MISRA-C 2012: Analysis passed (${misraElapsed}s)"
     }
 }
 
@@ -101,7 +174,7 @@ Write-Host ""
 # Step 2: Clean & Configure Build
 # ============================================================================
 Write-Host "[2/5] Configuring Build..." @Yellow
-Write-Host "──────────────────────────" @Gray
+Write-Host "--------------------------------" @Gray
 
 $buildStart = Get-Date
 
@@ -113,13 +186,13 @@ if (-not $SkipClean) {
 Write-Host "   Running CMake configuration..." @Gray
 $configOutput = cmake -S "$PSScriptRoot\.." -B "$PSScriptRoot\..\build" -DCMAKE_BUILD_TYPE=Release 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "   ❌ CMake configuration failed" @Red
+    Write-Host "   [FAIL] CMake configuration failed" @Red
     Write-Host $configOutput | Select-Object -Last 10
     $pipelineSuccess = $false
-    $reportLines += "❌ CMake Configuration failed"
+    $reportLines += "[FAIL] CMake Configuration failed"
 } else {
-    Write-Host "   ✓ CMake configuration successful" @Green
-    $reportLines += "✅ CMake Configuration: OK"
+    Write-Host "   [OK] CMake configuration successful" @Green
+    $reportLines += "[PASS] CMake Configuration: OK"
 }
 
 Write-Host ""
@@ -128,20 +201,20 @@ Write-Host ""
 # Step 3: Build Project
 # ============================================================================
 Write-Host "[3/5] Building Project (Release)..." @Yellow
-Write-Host "──────────────────────────────────" @Gray
+Write-Host "------------------------------------" @Gray
 
 $buildStart = Get-Date
 $buildOutput = cmake --build "$PSScriptRoot\..\build" --config Release 2>&1
 $buildElapsed = ((Get-Date) - $buildStart).TotalSeconds
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "   ❌ Build failed" @Red
+    Write-Host "   [FAIL] Build failed" @Red
     Write-Host $buildOutput | Select-Object -Last 15
     $pipelineSuccess = $false
-    $reportLines += "❌ Build failed"
+    $reportLines += "[FAIL] Build failed"
 } else {
-    Write-Host "   ✓ Build successful (${buildElapsed}s)" @Green
-    $reportLines += "✅ Build (Release): OK (${buildElapsed}s)"
+    Write-Host "   [OK] Build successful (${buildElapsed}s)" @Green
+    $reportLines += "[PASS] Build (Release): OK (${buildElapsed}s)"
 }
 
 Write-Host ""
@@ -150,29 +223,29 @@ Write-Host ""
 # Step 4: Run Tests
 # ============================================================================
 Write-Host "[4/5] Running Tests..." @Yellow
-Write-Host "─────────────────────" @Gray
+Write-Host "----------------------" @Gray
 
 $testStart = Get-Date
 $testOutput = ctest --test-dir "$PSScriptRoot\..\build" -C Release --output-on-failure 2>&1
 $testElapsed = ((Get-Date) - $testStart).TotalSeconds
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "   ❌ Tests failed" @Red
+    Write-Host "   [FAIL] Tests failed" @Red
     Write-Host $testOutput | Select-Object -Last 20
     $pipelineSuccess = $false
-    $reportLines += "❌ Tests: FAILED"
+    $reportLines += "[FAIL] Tests: FAILED"
 } else {
     # Parse test results
     $passed = ($testOutput | Select-String "100% tests passed").Count
     $total = ($testOutput | Select-String "Test.*Passed").Count
     
     if ($passed -gt 0) {
-        Write-Host "   ✓ All tests passed (${testElapsed}s)" @Green
-        $reportLines += "✅ Tests (25/25): PASSED (${testElapsed}s)"
+        Write-Host "   [OK] All tests passed (${testElapsed}s)" @Green
+        $reportLines += "[PASS] Tests (25/25): PASSED (${testElapsed}s)"
         Write-Host $testOutput | Select-Object -Last 3
     } else {
-        Write-Host "   ✓ Tests executed (${testElapsed}s)" @Green
-        $reportLines += "✅ Tests: OK (${testElapsed}s)"
+        Write-Host "   [OK] Tests executed (${testElapsed}s)" @Green
+        $reportLines += "[PASS] Tests: OK (${testElapsed}s)"
         Write-Host $testOutput | Select-Object -Last 3
     }
 }
@@ -184,7 +257,7 @@ Write-Host ""
 # ============================================================================
 if ($Full) {
     Write-Host "[5/5] Building with AddressSanitizer..." @Yellow
-    Write-Host "───────────────────────────────────────" @Gray
+    Write-Host "--------------------------------------" @Gray
     
     # Check if Clang is available
     if (Get-Command clang++ -ErrorAction SilentlyContinue) {
@@ -210,25 +283,25 @@ if ($Full) {
                 $asanElapsed = ((Get-Date) - $asanStart).TotalSeconds
                 
                 if ($LASTEXITCODE -eq 0) {
-                    Write-Host "   ✓ AddressSanitizer tests passed (${asanElapsed}s)" @Green
-                    $reportLines += "✅ AddressSanitizer: PASSED (${asanElapsed}s)"
+                    Write-Host "   [OK] AddressSanitizer tests passed (${asanElapsed}s)" @Green
+                    $reportLines += "[PASS] AddressSanitizer: PASSED (${asanElapsed}s)"
                 } else {
-                    Write-Host "   ⚠️  AddressSanitizer tests had issues" @Yellow
-                    $reportLines += "⚠️  AddressSanitizer: Check build-asan directory"
+                    Write-Host "   [WARN] AddressSanitizer tests had issues" @Yellow
+                    $reportLines += "[WARN] AddressSanitizer: Check build-asan directory"
                     $pipelineSuccess = $false
                 }
             } else {
-                Write-Host "   ⚠️  ASan build failed" @Yellow
-                $reportLines += "⚠️  AddressSanitizer: Build failed"
+                Write-Host "   [WARN] ASan build failed" @Yellow
+                $reportLines += "[WARN] AddressSanitizer: Build failed"
             }
         } else {
-            Write-Host "   ⚠️  ASan configuration failed" @Yellow
-            $reportLines += "⚠️  AddressSanitizer: Configuration failed"
+            Write-Host "   [WARN] ASan configuration failed" @Yellow
+            $reportLines += "[WARN] AddressSanitizer: Configuration failed"
         }
     } else {
-        Write-Host "   ⚠️  Clang not found (required for AddressSanitizer)" @Yellow
+        Write-Host "   [WARN] Clang not found (required for AddressSanitizer)" @Yellow
         Write-Host "      Install with: winget install --id LLVM.LLVM" @Gray
-        $reportLines += "⚠️  AddressSanitizer: Clang not installed"
+        $reportLines += "[WARN] AddressSanitizer: Clang not installed"
     }
     
     Write-Host ""
@@ -239,7 +312,7 @@ if ($Full) {
 # ============================================================================
 if ($Coverage) {
     Write-Host "[5/5] Generating Code Coverage..." @Yellow
-    Write-Host "────────────────────────────────" @Gray
+    Write-Host "------------------------------" @Gray
     
     if (Get-Command OpenCppCoverage -ErrorAction SilentlyContinue) {
         $coverageStart = Get-Date
@@ -260,16 +333,16 @@ if ($Coverage) {
                 -- ctest --test-dir "$PSScriptRoot\..\build-coverage" -C Debug --output-on-failure 2>&1
             
             $coverageElapsed = ((Get-Date) - $coverageStart).TotalSeconds
-            Write-Host "   ✓ Coverage report generated (${coverageElapsed}s)" @Green
-            $reportLines += "✅ Code Coverage: Report generated (${coverageElapsed}s)"
+            Write-Host "   [OK] Coverage report generated (${coverageElapsed}s)" @Green
+            $reportLines += "[PASS] Code Coverage: Report generated (${coverageElapsed}s)"
         } else {
-            Write-Host "   ⚠️  Coverage build failed" @Yellow
-            $reportLines += "⚠️  Code Coverage: Build failed"
+            Write-Host "   [WARN] Coverage build failed" @Yellow
+            $reportLines += "[WARN] Code Coverage: Build failed"
         }
     } else {
-        Write-Host "   ⚠️  OpenCppCoverage not found" @Yellow
+        Write-Host "   [WARN] OpenCppCoverage not found" @Yellow
         Write-Host "      Install with: winget install --id OpenCppCoverage.OpenCppCoverage" @Gray
-        $reportLines += "⚠️  Code Coverage: OpenCppCoverage not installed"
+        $reportLines += "[WARN] Code Coverage: OpenCppCoverage not installed"
     }
     
     Write-Host ""
@@ -279,9 +352,9 @@ if ($Coverage) {
 # Summary Report
 # ============================================================================
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════════════╗" @Green
-Write-Host "║   PIPELINE SUMMARY                                             ║" @Green
-Write-Host "╚════════════════════════════════════════════════════════════════╝" @Green
+Write-Host "========================================" @Green
+Write-Host "  PIPELINE SUMMARY" @Green
+Write-Host "========================================" @Green
 
 foreach ($line in $reportLines) {
     Write-Host $line @Green
@@ -291,11 +364,11 @@ Write-Host ""
 
 # Final status
 if ($pipelineSuccess) {
-    Write-Host "✓ PIPELINE PASSED - Ready to push!" @Green
+    Write-Host "[SUCCESS] PIPELINE PASSED - Ready to push!" @Green
     Write-Host ""
     exit 0
 } else {
-    Write-Host "❌ PIPELINE FAILED - Fix errors and retry" @Red
+    Write-Host "[FAIL] PIPELINE FAILED - Fix errors and retry" @Red
     Write-Host ""
     exit 1
 }
