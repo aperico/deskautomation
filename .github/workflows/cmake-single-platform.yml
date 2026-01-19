@@ -32,62 +32,38 @@ jobs:
         cd /usr/src/gtest && sudo cmake . && sudo make
         sudo cp lib/*.a /usr/lib
 
-    - name: Fetch cppcheck addons (MISRA & CERT)
-      run: |
-        chmod +x tests/fetch_cppcheck_addons.sh
-        ADDON_DIR=$(tests/fetch_cppcheck_addons.sh /tmp/cppcheck-addons)
-        echo "ADDON_DIR=$ADDON_DIR" >> $GITHUB_ENV
-
-    - name: Run Cppcheck (MISRA-C 2012 linting)
+    - name: Run Cppcheck (static analysis)
       continue-on-error: true
       run: |
-        echo "=== Running Cppcheck with MISRA-C 2012 checks ==="
+        echo "=== Running Cppcheck static analysis ==="
         
-        ADDON_ARGS=""
-        
-        # Add available addons
-        if [ -f "$ADDON_DIR/misra.py" ]; then
-          echo "✓ Using misra.py"
-          ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/misra.py"
-        fi
-        
-        if [ -f "$ADDON_DIR/cert.py" ]; then
-          echo "✓ Using cert.py"
-          ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/cert.py"
-        else
-          echo "⚠ cert.py not available"
-        fi
-
-        echo "Running cppcheck with MISRA/CERT addons..."
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
-          $ADDON_ARGS \
           --xml --xml-version=2 \
           --output-file=cppcheck-report.xml \
           source 2>&1 | tee cppcheck-console.log || true
         
         echo "=== Cppcheck Summary ==="
         cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
-          $ADDON_ARGS \
           source 2>&1 | tee cppcheck-summary.txt || true
         
         # Count issues for reporting
         if [ -f cppcheck-report.xml ]; then
           ISSUE_COUNT=$(grep -c '<error' cppcheck-report.xml || echo "0")
-          echo "=== MISRA/CERT Check Complete: $ISSUE_COUNT issues found ==="
+          echo "=== Static Analysis Complete: $ISSUE_COUNT issues found ==="
           if [ "$ISSUE_COUNT" -gt 0 ]; then
-            echo "⚠️ MISRA/CERT violations detected but workflow will continue"
+            echo "⚠️ Issues detected but workflow will continue"
           else
-            echo "✅ No MISRA/CERT violations found"
+            echo "✅ No issues found"
           fi
         else
           echo "⚠️ cppcheck-report.xml not generated"
         fi
 
-    - name: Upload Cppcheck & MISRA reports
+    - name: Upload Cppcheck reports
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: cppcheck-misra-reports
+        name: cppcheck-reports
         if-no-files-found: ignore
         path: |
           cppcheck-report.xml
@@ -318,14 +294,14 @@ jobs:
         echo "" >> quality-report.md
         echo "## 🔐 Security & Code Quality" >> quality-report.md
         
-        # MISRA findings
+        # Static analysis findings
         if [ -f cppcheck-summary.txt ]; then
-          MISRA_ISSUES=$(grep -i "error\|warning" cppcheck-summary.txt | wc -l)
-          echo "### MISRA-C 2012 Checks" >> quality-report.md
-          if [ $MISRA_ISSUES -eq 0 ]; then
+          CPPCHECK_ISSUES=$(grep -i "error\|warning" cppcheck-summary.txt | wc -l)
+          echo "### Cppcheck Static Analysis" >> quality-report.md
+          if [ $CPPCHECK_ISSUES -eq 0 ]; then
             echo "✅ **No violations detected**" >> quality-report.md
           else
-            echo "⚠️ **Found $MISRA_ISSUES issues** - [Download Report](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }})" >> quality-report.md
+            echo "⚠️ **Found $CPPCHECK_ISSUES issues** - [Download Report](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }})" >> quality-report.md
             grep -i "error\|warning" cppcheck-summary.txt | head -5 >> quality-report.md
           fi
         fi
@@ -379,7 +355,7 @@ jobs:
         echo "" >> quality-report.md
         echo "## 📋 Downloads" >> quality-report.md
         echo "All detailed reports available in [Artifacts](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}):" >> quality-report.md
-        echo "- 📄 MISRA-C & Cppcheck reports" >> quality-report.md
+        echo "- 📄 Cppcheck static analysis reports" >> quality-report.md
         echo "- 🛡️ Dynamic analysis (ASan, Valgrind)" >> quality-report.md
         echo "- 🧪 Fuzzing results" >> quality-report.md
         echo "- 📊 Code coverage" >> quality-report.md

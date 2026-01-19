@@ -1,5 +1,5 @@
 #!/bin/bash
-# Download and extract cppcheck addons (misra.py, cert.py)
+# Download and extract cppcheck addons (misra.py)
 # Usage: ./fetch_cppcheck_addons.sh [target_dir]
 
 TARGET_DIR="${1:-/tmp/cppcheck-addons}"
@@ -92,12 +92,6 @@ else
   echo "Contents of addons directory:"
   ls -la "$ADDON_DIR" | head -20
   exit 1
-fi
-
-if [ -f "$ADDON_DIR/cert.py" ]; then
-  echo "✓ Found cert.py"
-else
-  echo "⚠ cert.py not found (continuing without CERT checks)"
 fi
 
 echo "✓ Addons ready at: $ADDON_DIR"

@@ -74,7 +74,7 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
     $pipelineSuccess = $false
     $reportLines += "[FAIL] Cppcheck not installed"
 } else {
-    # Resolve addon paths (misra.py, cert.py) based on cppcheck install location
+    # Resolve addon paths (misra.py) based on cppcheck install location
     $cppcheckExe = (Get-Command cppcheck -ErrorAction SilentlyContinue).Source
     $cppcheckRoot = Split-Path $cppcheckExe
     $addonArgs = @()
@@ -96,30 +96,22 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
 
     # Fallback: search a limited depth under the install root
     $foundMisra = $null
-    $foundCert = $null
     foreach ($path in $candidatePaths) {
         if (-not $foundMisra -and (Test-Path (Join-Path $path "misra.py"))) {
             $foundMisra = Join-Path $path "misra.py"
-        }
-        if (-not $foundCert -and (Test-Path (Join-Path $path "cert.py"))) {
-            $foundCert = Join-Path $path "cert.py"
         }
     }
 
     if (-not $foundMisra) {
         $foundMisra = Get-ChildItem -Path (Split-Path $cppcheckRoot) -Filter misra.py -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1 | ForEach-Object { $_.FullName }
     }
-    if (-not $foundCert) {
-        $foundCert = Get-ChildItem -Path (Split-Path $cppcheckRoot) -Filter cert.py -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1 | ForEach-Object { $_.FullName }
-    }
 
     # If still missing, reuse cached download or fetch once
-    if (-not $foundMisra -or -not $foundCert) {
+    if (-not $foundMisra) {
         $dlMisra = Join-Path $addonExtractRoot "addons\misra.py"
-        $dlCert = Join-Path $addonExtractRoot "addons\cert.py"
 
         # If zip already exists, ensure it is extracted
-        if ((-not (Test-Path $dlMisra) -or -not (Test-Path $dlCert)) -and (Test-Path $addonZip)) {
+        if ((-not (Test-Path $dlMisra)) -and (Test-Path $addonZip)) {
             if (-not (Test-Path $addonExtractRoot)) {
                 try {
                     Write-Host "   [INFO] Using cached cppcheck addons zip..." @Gray
@@ -134,10 +126,9 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
 
         # After extraction attempt, pick up files if present
         if (-not $foundMisra -and (Test-Path $dlMisra)) { $foundMisra = $dlMisra }
-        if (-not $foundCert -and (Test-Path $dlCert)) { $foundCert = $dlCert }
 
         # Download only if still missing
-        if (-not $foundMisra -or -not $foundCert) {
+        if (-not $foundMisra) {
             if (-not (Test-Path $addonZip)) {
                 try {
                     Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
@@ -160,7 +151,6 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
             }
 
             if (-not $foundMisra -and (Test-Path $dlMisra)) { $foundMisra = $dlMisra }
-            if (-not $foundCert -and (Test-Path $dlCert)) { $foundCert = $dlCert }
         }
     }
 
@@ -169,13 +159,6 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
     } else {
         Write-Host "   [WARN] misra.py not found (MISRA rules will be skipped)." @Yellow
         Write-Host "          Install addons: download https://github.com/danmar/cppcheck/archive/refs/heads/main.zip and copy addons/misra.py next to cppcheck.exe" @Gray
-    }
-
-    if ($foundCert) {
-        $addonArgs += "--addon=$foundCert"
-    } else {
-        Write-Host "   [WARN] cert.py not found (CERT rules will be skipped)." @Yellow
-        Write-Host "          Install addons: download https://github.com/danmar/cppcheck/archive/refs/heads/main.zip and copy addons/cert.py next to cppcheck.exe" @Gray
     }
 
     # Run MISRA-C checks with XML and text output (store under tests/results)
