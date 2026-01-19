@@ -55,6 +55,10 @@ Write-Host ""
 $pipelineSuccess = $true
 $reportLines = @()
 
+# Results directory
+$resultsRoot = Join-Path $PSScriptRoot "results"
+if (-not (Test-Path $resultsRoot)) { New-Item -ItemType Directory -Path $resultsRoot | Out-Null }
+
 # ============================================================================
 # Step 1: Static Analysis (MISRA-C 2012)
 # ============================================================================
@@ -109,23 +113,37 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
         $foundCert = Get-ChildItem -Path (Split-Path $cppcheckRoot) -Filter cert.py -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1 | ForEach-Object { $_.FullName }
     }
 
-    # If still missing, download official addons once
+    # If still missing, reuse cached download or fetch once
     if (-not $foundMisra -or -not $foundCert) {
-        try {
-            Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
-            Invoke-WebRequest -Uri "https://github.com/danmar/cppcheck/archive/refs/heads/main.zip" -OutFile $addonZip -UseBasicParsing
-            Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
-        } catch {
-            Write-Host "   [WARN] Failed to download cppcheck addons automatically." @Yellow
+        $dlMisra = Join-Path $addonExtractRoot "addons\misra.py"
+        $dlCert = Join-Path $addonExtractRoot "addons\cert.py"
+
+        # If zip already exists, ensure it is extracted
+        if ((-not (Test-Path $dlMisra) -or -not (Test-Path $dlCert)) -and (Test-Path $addonZip)) {
+            try {
+                Write-Host "   [INFO] Using cached cppcheck addons zip..." @Gray
+                Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
+            } catch {
+                Write-Host "   [WARN] Failed to extract cached cppcheck addons." @Yellow
+            }
         }
 
-        if (-not $foundMisra) {
-            $dlMisra = Join-Path $addonExtractRoot "addons\misra.py"
-            if (Test-Path $dlMisra) { $foundMisra = $dlMisra }
-        }
-        if (-not $foundCert) {
-            $dlCert = Join-Path $addonExtractRoot "addons\cert.py"
-            if (Test-Path $dlCert) { $foundCert = $dlCert }
+        # After extraction attempt, pick up files if present
+        if (-not $foundMisra -and (Test-Path $dlMisra)) { $foundMisra = $dlMisra }
+        if (-not $foundCert -and (Test-Path $dlCert)) { $foundCert = $dlCert }
+
+        # Download only if still missing
+        if (-not $foundMisra -or -not $foundCert) {
+            try {
+                Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
+                Invoke-WebRequest -Uri "https://github.com/danmar/cppcheck/archive/refs/heads/main.zip" -OutFile $addonZip -UseBasicParsing
+                Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
+            } catch {
+                Write-Host "   [WARN] Failed to download cppcheck addons automatically." @Yellow
+            }
+
+            if (-not $foundMisra -and (Test-Path $dlMisra)) { $foundMisra = $dlMisra }
+            if (-not $foundCert -and (Test-Path $dlCert)) { $foundCert = $dlCert }
         }
     }
 
@@ -143,11 +161,12 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
         Write-Host "          Install addons: download https://github.com/danmar/cppcheck/archive/refs/heads/main.zip and copy addons/cert.py next to cppcheck.exe" @Gray
     }
 
-    # Run MISRA-C checks with XML and text output
-    $misraXmlFile = "$PSScriptRoot\..\cppcheck-report.xml"
-    $misraTxtFile = "$PSScriptRoot\..\cppcheck-summary.txt"
+    # Run MISRA-C checks with XML and text output (store under tests/results)
+    $misraXmlFile = Join-Path $resultsRoot "cppcheck-report.xml"
+    $misraTxtFile = Join-Path $resultsRoot "cppcheck-summary.txt"
     
     cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem `
+        --error-exitcode=1 `
         @addonArgs `
         --xml --xml-version=2 `
         --output-file=$misraXmlFile `
@@ -159,9 +178,15 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
     if (Test-Path $misraXmlFile) {
         [xml]$xmlDoc = Get-Content $misraXmlFile
         $errorCount = @($xmlDoc.results.error).Count
-        Write-Host "   [OK] MISRA check complete ($errorCount issues)" @Green
-        Write-Host "   [OK] Reports: cppcheck-report.xml, cppcheck-summary.txt" @Green
-        $reportLines += "[PASS] MISRA-C 2012: $errorCount issues found (${misraElapsed}s)"
+        if ($errorCount -gt 0) {
+            Write-Host "   [FAIL] MISRA/CERT findings detected ($errorCount issues)" @Red
+            $pipelineSuccess = $false
+            $reportLines += "[FAIL] MISRA/CERT: $errorCount issues (${misraElapsed}s)"
+        } else {
+            Write-Host "   [OK] MISRA check complete (0 issues)" @Green
+            $reportLines += "[PASS] MISRA-C 2012: 0 issues (${misraElapsed}s)"
+        }
+        Write-Host "   Reports: $(Split-Path $misraXmlFile -Leaf), $(Split-Path $misraTxtFile -Leaf) (saved to tests/results)" @Green
     } else {
         Write-Host "   [OK] MISRA check complete" @Green
         $reportLines += "[PASS] MISRA-C 2012: Analysis passed (${misraElapsed}s)"
@@ -226,7 +251,8 @@ Write-Host "[4/5] Running Tests..." @Yellow
 Write-Host "----------------------" @Gray
 
 $testStart = Get-Date
-$testOutput = ctest --test-dir "$PSScriptRoot\..\build" -C Release --output-on-failure 2>&1
+$testLog = Join-Path $resultsRoot "ctest-output.txt"
+$testOutput = ctest --test-dir "$PSScriptRoot\..\build" -C Release --output-on-failure 2>&1 | Tee-Object -FilePath $testLog
 $testElapsed = ((Get-Date) - $testStart).TotalSeconds
 
 if ($LASTEXITCODE -ne 0) {
@@ -279,7 +305,8 @@ if ($Full) {
                 $env:ASAN_OPTIONS = "verbosity=2:halt_on_error=1"
                 $env:UBSAN_OPTIONS = "verbosity=2:halt_on_error=1"
                 
-                $asanOutput = ctest --test-dir "$PSScriptRoot\..\build-asan" -C Debug --output-on-failure 2>&1
+                $asanLog = Join-Path $resultsRoot "asan-ubsan-output.txt"
+                $asanOutput = ctest --test-dir "$PSScriptRoot\..\build-asan" -C Debug --output-on-failure 2>&1 | Tee-Object -FilePath $asanLog
                 $asanElapsed = ((Get-Date) - $asanStart).TotalSeconds
                 
                 if ($LASTEXITCODE -eq 0) {
@@ -328,9 +355,10 @@ if ($Coverage) {
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host "   Generating coverage report..." @Gray
+            $coverageLog = Join-Path $resultsRoot "coverage-output.txt"
             $coverageOutput = OpenCppCoverage --modules "$PSScriptRoot\..\build-coverage" `
                 --sources "$PSScriptRoot\..\source" `
-                -- ctest --test-dir "$PSScriptRoot\..\build-coverage" -C Debug --output-on-failure 2>&1
+                -- ctest --test-dir "$PSScriptRoot\..\build-coverage" -C Debug --output-on-failure 2>&1 | Tee-Object -FilePath $coverageLog
             
             $coverageElapsed = ((Get-Date) - $coverageStart).TotalSeconds
             Write-Host "   [OK] Coverage report generated (${coverageElapsed}s)" @Green
@@ -361,6 +389,7 @@ foreach ($line in $reportLines) {
 }
 
 Write-Host ""
+Write-Host "Results saved under: $resultsRoot" @Gray
 
 # Final status
 if ($pipelineSuccess) {

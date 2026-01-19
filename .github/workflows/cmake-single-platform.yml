@@ -1,6 +1,6 @@
 # CMake CI workflow for Automated Mechanical Desk Lift System
 
-name: CMake CI
+name: DeskAutomation CI
 
 on:
   push:
@@ -32,10 +32,11 @@ jobs:
       run: |
         echo "=== Running Cppcheck with MISRA-C 2012 checks ==="
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
+          --error-exitcode=1 \
           --addon=misra --addon=cert \
           --xml --xml-version=2 \
           --output-file=cppcheck-report.xml \
-          source || true
+          source
         echo "=== Cppcheck Summary ==="
         cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
           --addon=misra --addon=cert \

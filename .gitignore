@@ -4,3 +4,4 @@ schematics/schmatics_desk_automation/~schmatics_desk_automation.kicad_pcb.lck
 
 tests/cppcheck-addons/cppcheck-main/
 tests/cppcheck-addons/cppcheck-addons.zip
+tests/results/
