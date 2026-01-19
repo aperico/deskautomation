@@ -27,8 +27,8 @@ for URL in "${URLS[@]}"; do
   HTTP_CODE=$(curl -sL -w "%{http_code}" -f --max-time 60 "$URL" -o "$TARGET_DIR/cppcheck.zip" 2>&1 | tail -1 || echo "000")
   
   if [ "$HTTP_CODE" = "200" ] && [ -f "$TARGET_DIR/cppcheck.zip" ]; then
-    # Check file size (should be > 1MB)
-    FILE_SIZE=$(stat -f%z "$TARGET_DIR/cppcheck.zip" 2>/dev/null || stat -c%s "$TARGET_DIR/cppcheck.zip" 2>/dev/null || echo "0")
+    # Check file size (should be > 1MB) - Linux compatible
+    FILE_SIZE=$(stat -c%s "$TARGET_DIR/cppcheck.zip" 2>/dev/null || stat -f%z "$TARGET_DIR/cppcheck.zip" 2>/dev/null || echo "0")
     
     if [ "$FILE_SIZE" -gt 1000000 ]; then
       # Verify zip integrity
@@ -63,6 +63,9 @@ rm -rf "$TARGET_DIR"/cppcheck-*
 # Extract
 echo "Extracting addons..."
 unzip -q "$TARGET_DIR/cppcheck.zip" -d "$TARGET_DIR"
+
+echo "Contents after extraction:"
+ls -la "$TARGET_DIR" | head -20
 
 # Find extracted directory
 EXTRACTED_DIR=$(find "$TARGET_DIR" -maxdepth 1 -type d -name "cppcheck-*" | head -1)
