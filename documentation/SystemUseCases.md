@@ -23,18 +23,22 @@ This document describes the main use cases for the Automated Mechanical Desk Lif
 
 ---
 
+
+
 ## Use Case Summary
 
 | Use Case ID | Name | Priority | Frequency | Status | Related Requirements |
-|------------|------|----------|-----------|--------|---------------------|
+|-------------|------|----------|-----------|--------|-----------------------|
 | UC-01 | Power-On the Desk Control System | Critical | Every Session | Approved | SWE-REQ-001, SWE-REQ-002 |
-| UC-02 | Raise Desk | Critical | High | Approved | SWE-REQ-003, SWE-REQ-005, SWE-REQ-007 |
-| UC-03 | Lower Desk | Critical | High | Approved | SWE-REQ-004, SWE-REQ-006, SWE-REQ-008 |
-| UC-04 | Emergency Stop | Critical | Low | Approved | SWE-REQ-010, SWE-REQ-011 |
-| UC-05 | Visual Feedback | High | Continuous | Approved | SWE-REQ-012, SWE-REQ-013 |
-| UC-06 | Power-Off During Movement | Medium | Low | Approved | SWE-REQ-001, SWE-REQ-009 |
-| UC-07 | Simultaneous Button Presses | High | Low | Approved | SWE-REQ-010, SWE-REQ-014 |
-| UC-08 | Error Indication and Recovery | High | Low | Approved | SWE-REQ-015, SWE-REQ-016 |
+| UC-02 | Raise Desk | Critical | High | Approved | SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-017, SWE-REQ-018, SWE-REQ-020 |
+| UC-03 | Lower Desk | Critical | High | Approved | SWE-REQ-004, SWE-REQ-006, SWE-REQ-008, SWE-REQ-017, SWE-REQ-018, SWE-REQ-020 |
+| UC-04 | Emergency Stop | Critical | Low | Approved | SWE-REQ-010, SWE-REQ-011, SWE-REQ-019, SWE-REQ-020 |
+| UC-05 | Visual Feedback | High | Continuous | Approved | SWE-REQ-012, SWE-REQ-013, SWE-REQ-020 |
+| UC-06 | Power-Off During Movement | Medium | Low | Approved | SWE-REQ-001, SWE-REQ-009, SWE-REQ-016, SWE-REQ-020 |
+| UC-07 | Simultaneous Button Presses | High | Low | Approved | SWE-REQ-010, SWE-REQ-014, SWE-REQ-017, SWE-REQ-020 |
+| UC-08 | Error Indication and Recovery | High | Low | Approved | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016, SWE-REQ-018, SWE-REQ-020 |
+``
+
 
 ---
 
@@ -79,6 +83,10 @@ graph TD
 ---
 
 ## Use Cases
+
+### UC-10: Automatic Desk Movement
+Desk will move up or down after 10 minutes stationary;
+Rationale: for user to standup or seat down to prevent back pain
 
 ### UC-01: Power-On the Desk Control System
 
@@ -173,7 +181,7 @@ graph TD
 - **Success:** System in IDLE state, desk at new higher position, ready LED ON
 - **Failure:** System in ERROR state, desk stopped, error LED ON
 
-**Related Requirements:** SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-009
+**Related Requirements:** SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-017, SWE-REQ-018, SWE-REQ-020
 
 **Test Cases:** TC-003, TC-004, TC-009, IT-002
 

@@ -34,15 +34,16 @@ Refer to [Software Requirements](SoftwareRequirements.md) for full requirement t
 ## Use Cases → Software Requirements
 
 | Use Case | Description | Software Requirement(s) |
-|----------|-------------|-------------------------|
+|----------|-------------|--------------------------|
 | UC-01 | Power the Desk Control System | SWE-REQ-001, SWE-REQ-002, SWE-REQ-009 |
-| UC-02 | Raise Desk | SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-012, SWE-REQ-017, SWE-REQ-018 |
-| UC-03 | Lower Desk | SWE-REQ-004, SWE-REQ-006, SWE-REQ-008, SWE-REQ-012, SWE-REQ-017, SWE-REQ-018 |
-| UC-04 | Emergency Stop | SWE-REQ-010, SWE-REQ-011, SWE-REQ-019 |
-| UC-05 | Visual Feedback | SWE-REQ-012, SWE-REQ-013 |
-| UC-06 | Power-Off During Movement | SWE-REQ-001, SWE-REQ-009, SWE-REQ-016 |
-| UC-07 | Simultaneous Button Presses | SWE-REQ-010, SWE-REQ-014 |
-| UC-08 | Error Indication and Recovery | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016 |
+| UC-02 | Raise Desk | SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-012, SWE-REQ-017, SWE-REQ-018, SWE-REQ-020 |
+| UC-03 | Lower Desk | SWE-REQ-004, SWE-REQ-006, SWE-REQ-008, SWE-REQ-012, SWE-REQ-017, SWE-REQ-018, SWE-REQ-020 |
+| UC-04 | Emergency Stop | SWE-REQ-010, SWE-REQ-011, SWE-REQ-019, SWE-REQ-020 |
+| UC-05 | Visual Feedback | SWE-REQ-012, SWE-REQ-013, SWE-REQ-020 |
+| UC-06 | Power-Off During Movement | SWE-REQ-001, SWE-REQ-009, SWE-REQ-016, SWE-REQ-020 |
+| UC-07 | Simultaneous Button Presses | SWE-REQ-010, SWE-REQ-014, SWE-REQ-017, SWE-REQ-020 |
+| UC-08 | Error Indication and Recovery | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016, SWE-REQ-018, SWE-REQ-020 |
+
 
 ---
 
