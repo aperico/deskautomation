@@ -33,7 +33,7 @@ Run integration tests (host)
 # Integration tests are implemented in the same test binary (IT-001..IT-012)
 # Examples:
 build\ComponentTests.exe --gtest_filter=HALIntegrationTests.*
-build\ComponentTests.exe --gtest_filter=SystemIntegrationFixture.*
+build\ComponentTests.exe --gtest_filter=SIT.*
 ```
 
 CI and test artifacts
