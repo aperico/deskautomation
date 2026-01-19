@@ -110,95 +110,121 @@ These integration tests verify the following architectural elements:
 
 ### Example Integration Test Case
 
-Below is a complete example showing how to write an integration test that verifies upward movement workflow:
+Below is a complete example showing how to write an HAL integration test that verifies motor control orchestration via `HAL_ProcessAppState()` with application outputs:
 
 ```cpp
 /**
- * @test Integration_IT002_UpwardMovement_TransitionsAndControl
- * @req SWE-REQ-003, SWE-REQ-005, SWE-REQ-007, SWE-REQ-017, SWE-REQ-020
- * @usecase UC-02 (Raise Desk)
- * @architecture ARCH-COMP-001 (DeskController), ARCH-COMP-002 (HAL), ARCH-COMP-005 (State Machine)
- * @architecture ARCH-IF-001 (Task API), ARCH-IF-002 (HAL API)
- * @architecture ARCH-STATE-001 (IDLE), ARCH-STATE-002 (MOVING_UP)
- * @architecture ARCH-TRANS-001 (IDLE → MOVING_UP), ARCH-TRANS-003 (MOVING_UP → IDLE)
+ * @test HALIntegrationTests.Integration_IT006_HALProcessAppState_MotorControl
+ * @req SWE-REQ-005, SWE-REQ-006 (Motor control execution)
+ * @architecture ARCH-COMP-002 (HAL), ARCH-IF-002 (HAL ↔ OS API)
  * @priority High
  * @severity Major
  * 
- * Objective: Verify complete upward movement workflow integrating 
- *            DeskController and HAL components
+ * Objective: Verify HAL_ProcessAppState() correctly orchestrates motor control
+ *            by calling appropriate HAL functions (MoveUp, MoveDown, Stop)
+ *            based on application outputs, which then call Arduino OS functions
  * 
- * Test Approach:
- * - Verify initial IDLE state
- * - Trigger state transition to MOVING_UP
- * - Verify sustained movement
- * - Trigger return to IDLE state
- * - Validate all state transitions and component interactions
+ * Integration Points Being Tested:
+ * - HAL_ProcessAppState() → HAL_MoveUp() when motor_enable=true, motor_direction=false
+ * - HAL_ProcessAppState() → HAL_MoveDown() when motor_enable=true, motor_direction=true
+ * - HAL_ProcessAppState() → HAL_StopMotor() when motor_enable=false
+ * - HAL_MoveUp/Down() → analogWrite(RPWM/LPWM_PIN, speed)
+ * - HAL_MoveUp/Down() → digitalWrite(EN_PIN, HIGH)
+ * - HAL_StopMotor() → analogWrite(0), digitalWrite(EN, LOW)
+ * 
+ * Test Approach (HAL orchestration layer):
+ * - Create DeskAppOutputs_t with specific motor control values
+ * - Call HAL_ProcessAppState() to bridge app outputs to HAL functions
+ * - Verify Arduino OS mock calls via pin_states array
+ * - Test all three motor control paths (UP, DOWN, STOP)
  */
-TEST_F(IntegrationTestFixture, Integration_IT002_UpwardMovement_TransitionsAndControl) {
-    DeskAppTask_Return_t ret;
+TEST_F(HALIntegration, Integration_IT006_HALProcessAppState_MotorControl) {
+    // Initialize HAL and output structures
+    HAL_init();
+    DeskAppOutputs_t outputs = {};
+    HAL_Ouputs_t hal_outputs = {};
     
     // ========================================================================
-    // PHASE 1: Verify Initial IDLE State (ARCH-STATE-001)
+    // PHASE 1: Verify Initial Safe State (Motor Disabled)
     // ========================================================================
-    // Precondition: System initialized to safe IDLE state
-    inputs.switch_state = SWITCH_STATE_OFF;
-    
-    ret = DeskApp_task(&inputs, &outputs);
-    
-    // Verify task execution successful
-    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed in IDLE state";
-    
-    // Verify IDLE state characteristics (motor disabled)
-    VerifyMotorStopped();  // Helper: checks motor_enable=false, pwm=0
+    // Precondition: Motor pins should be in stopped state after init
+    EXPECT_EQ(pin_states[RPWM_PIN], 0) << "RPWM should be 0 initially";
+    EXPECT_EQ(pin_states[LPWM_PIN], 0) << "LPWM should be 0 initially";
+    EXPECT_EQ(pin_states[R_EN_PIN], 0) << "R_EN should be disabled initially";
+    EXPECT_EQ(pin_states[L_EN_PIN], 0) << "L_EN should be disabled initially";
     
     // ========================================================================
-    // PHASE 2: Trigger Upward Movement (ARCH-TRANS-001: IDLE → MOVING_UP)
+    // PHASE 2: Application Requests Upward Motion (motor_enable=true, direction=false)
     // ========================================================================
-    // Action: User presses UP switch
-    inputs.switch_state = SWITCH_STATE_UP;
+    // Set application outputs for upward movement at 220 PWM
+    outputs.motor_enable = true;
+    outputs.motor_direction = false;  // false = UP direction
+    outputs.motor_pwm = 220;
     
-    ret = DeskApp_task(&inputs, &outputs);
-    
-    // Verify task continues to succeed during movement
-    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed during upward movement";
-    
-    // Verify ARCH-STATE-002: MOVING_UP state characteristics
-    VerifyMotorMovingUp();  // Helper: checks enable=true, direction=UP, pwm=255
-    
-    // Additional state-specific checks
-    EXPECT_TRUE(outputs.motor_enable) << "Motor should be enabled for upward movement";
-    EXPECT_FALSE(outputs.motor_direction) << "Direction should be UP (false)";
-    EXPECT_EQ(outputs.motor_pwm, 255) << "PWM should be at full speed";
+    // Call HAL_ProcessAppState to route outputs to HAL motor control functions
+    HAL_ProcessAppState(APP_TASK_SUCCESS, &outputs, &hal_outputs);
     
     // ========================================================================
-    // PHASE 3: Verify Sustained Movement (Hold UP Switch)
+    // PHASE 3: Verify HAL Called Correct OS Functions for Upward Motion
     // ========================================================================
-    // Action: Keep UP switch pressed (simulate sustained user input)
-    // inputs.switch_state remains SWITCH_STATE_UP
+    // Verify RPWM (PIN 5) has PWM signal for upward rotation
+    ASSERT_EQ(pin_states[RPWM_PIN], 220) 
+        << "HAL_ProcessAppState should call analogWrite(RPWM_PIN, 220)";
     
-    ret = DeskApp_task(&inputs, &outputs);
-    
-    // Verify system maintains MOVING_UP state
-    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should continue succeeding";
-    VerifyMotorMovingUp();  // Motor should still be moving up
+    // Verify LPWM (PIN 6) is disabled (0 for upward only)
+    ASSERT_EQ(pin_states[LPWM_PIN], 0) 
+        << "HAL_ProcessAppState should call analogWrite(LPWM_PIN, 0)";
     
     // ========================================================================
-    // PHASE 4: Return to IDLE (ARCH-TRANS-003: MOVING_UP → IDLE)
+    // PHASE 4: Verify Motor Driver Enable Pins Asserted
     // ========================================================================
-    // Action: User releases UP switch
-    inputs.switch_state = SWITCH_STATE_OFF;
+    // Verify R_EN (PIN 9) is HIGH to enable right motor driver
+    ASSERT_EQ(pin_states[R_EN_PIN], 1) 
+        << "HAL_ProcessAppState should call digitalWrite(R_EN_PIN, HIGH)";
     
-    ret = DeskApp_task(&inputs, &outputs);
+    // Verify L_EN (PIN 10) is HIGH to enable left motor driver
+    ASSERT_EQ(pin_states[L_EN_PIN], 1) 
+        << "HAL_ProcessAppState should call digitalWrite(L_EN_PIN, HIGH)";
     
-    // Verify successful transition back to IDLE
-    EXPECT_EQ(ret, APP_TASK_SUCCESS) << "Task should succeed when returning to IDLE";
+    // ========================================================================
+    // PHASE 5: Application Requests Downward Motion (motor_direction=true)
+    // ========================================================================
+    // Switch to downward movement at 190 PWM
+    outputs.motor_enable = true;
+    outputs.motor_direction = true;  // true = DOWN direction
+    outputs.motor_pwm = 190;
     
-    // Verify ARCH-STATE-001: IDLE state restored
-    VerifyMotorStopped();  // Motor should be disabled again
+    HAL_ProcessAppState(APP_TASK_SUCCESS, &outputs, &hal_outputs);
     
-    // Final verification: system ready for next command
-    EXPECT_FALSE(outputs.motor_enable) << "Motor should be disabled in IDLE";
-    EXPECT_EQ(outputs.motor_pwm, 0) << "PWM should be zero in IDLE";
+    // Verify LPWM (PIN 6) now has PWM signal for downward rotation
+    ASSERT_EQ(pin_states[RPWM_PIN], 0)
+        << "Should call analogWrite(RPWM_PIN, 0) for DOWN direction";
+    ASSERT_EQ(pin_states[LPWM_PIN], 190)
+        << "Should call analogWrite(LPWM_PIN, 190) for DOWN direction";
+    
+    // Motor enable pins should still be HIGH
+    EXPECT_EQ(pin_states[R_EN_PIN], 1);
+    EXPECT_EQ(pin_states[L_EN_PIN], 1);
+    
+    // ========================================================================
+    // PHASE 6: Application Stops Motor (motor_enable=false)
+    // ========================================================================
+    // Stop motor by clearing enable and PWM
+    outputs.motor_enable = false;
+    outputs.motor_pwm = 0;
+    
+    HAL_ProcessAppState(APP_TASK_SUCCESS, &outputs, &hal_outputs);
+    
+    // ========================================================================
+    // PHASE 7: Verify Motor Stopped via HAL to OS Functions
+    // ========================================================================
+    // Verify all PWM outputs are zero
+    EXPECT_EQ(pin_states[RPWM_PIN], 0) << "Should call analogWrite(RPWM_PIN, 0)";
+    EXPECT_EQ(pin_states[LPWM_PIN], 0) << "Should call analogWrite(LPWM_PIN, 0)";
+    
+    // Verify enable pins are disabled
+    EXPECT_EQ(pin_states[R_EN_PIN], 0) << "Should call digitalWrite(R_EN_PIN, LOW)";
+    EXPECT_EQ(pin_states[L_EN_PIN], 0) << "Should call digitalWrite(L_EN_PIN, LOW)";
 }
 ```
 
@@ -207,117 +233,80 @@ TEST_F(IntegrationTestFixture, Integration_IT002_UpwardMovement_TransitionsAndCo
 **1. Test Documentation Header:**
 ```cpp
 /**
- * @test Integration_IT002_...          // Unique test identifier
- * @req SWE-REQ-XXX                      // Requirements covered
- * @usecase UC-XX                        // Use case reference
- * @architecture ARCH-COMP-XXX           // Architecture elements verified
- * @priority High/Medium/Low             // Test priority
- * @severity Critical/Major/Minor        // Failure severity
+ * @test HALIntegrationTests.Integration_IT###_...  // Fixture + unique ID
+ * @req SWE-REQ-XXX                                  // Requirements covered
+ * @architecture ARCH-COMP-002, ARCH-IF-002         // HAL & OS API layer
+ * @priority High/Medium/Low                         // Test priority
+ * @severity Critical/Major/Minor                    // Failure severity
  * 
- * Objective: Clear statement of what is being tested
+ * Objective: Clear statement of HAL → OS function verification
  */
 ```
 
 **2. Test Fixture:**
 ```cpp
-TEST_F(IntegrationTestFixture, Integration_IT002_...) {
-    // IntegrationTestFixture provides:
-    // - DeskAppInputs_t inputs;
-    // - DeskAppOutputs_t outputs;
-    // - SetUp() for initialization
-    // - Helper functions (VerifyMotorStopped, VerifyMotorMovingUp, etc.)
+TEST_F(HALIntegration, Integration_IT006_...) {
+    // HALIntegration fixture provides:
+    // - SetUp() to clear pin_states[] before each test
+    // - pin_states[] array simulating GPIO/PWM values
+    // - Helper functions: VerifyMotorPinsStopped(), SimulateSwitchInput()
+    // - Direct access to HAL functions (no DeskApp_task)
 }
 ```
 
-**3. Multi-Phase Structure:**
-- **Phase 1:** Verify preconditions and initial state
-- **Phase 2:** Trigger state change and verify transition
-- **Phase 3:** Verify behavior during sustained state
-- **Phase 4:** Trigger return transition and verify final state
+**3. Multi-Phase Structure (HAL-focused, not application-focused):**
+- **Phase 1:** Verify initial safe state (pins set correctly)
+- **Phase 2:** Set application outputs via DeskAppOutputs_t struct
+- **Phase 3:** Call HAL_ProcessAppState() to orchestrate motor control
+- **Phase 4:** Verify analogWrite() calls via pin_states[]
+- **Phase 5:** Test direction change (DOWN) with new outputs
+- **Phase 6:** Stop motor by setting motor_enable=false
+- **Phase 7:** Verify safe stop (all pins disabled)
 
-**4. Assertions:**
+**4. Assertions - HAL Integration Specific:**
 ```cpp
-EXPECT_EQ(actual, expected) << "Descriptive failure message";
-EXPECT_TRUE(condition) << "Explain what should be true";
-EXPECT_FALSE(condition) << "Explain what should be false";
+// Verify HAL_ProcessAppState calls appropriate HAL functions
+EXPECT_EQ(pin_states[RPWM_PIN], 220);              // HAL_MoveUp(220)
+EXPECT_EQ(pin_states[LPWM_PIN], 0);                // HAL_MoveUp disables LPWM
+EXPECT_EQ(pin_states[R_EN_PIN], 1);                // digitalWrite(R_EN_PIN, HIGH)
+EXPECT_EQ(pin_states[L_EN_PIN], 1);                // digitalWrite(L_EN_PIN, HIGH)
+
+// Verify motor direction changes are handled correctly
+EXPECT_EQ(pin_states[RPWM_PIN], 0);                // HAL_MoveDown disables RPWM
+EXPECT_EQ(pin_states[LPWM_PIN], 190);              // HAL_MoveDown(190)
 ```
 
-### Key Points for Writing Integration Tests
-
-1. **Naming Convention:**
-   - Prefix: `Integration_IT###_`
-   - Format: `Integration_IT002_UpwardMovement_TransitionsAndControl`
-   - Use descriptive names that explain the workflow being tested
-
-2. **Comprehensive Documentation:**
-   - Include all traceability tags (@test, @req, @usecase, @architecture)
-   - Reference all architectural elements being verified
-   - State objective clearly
-   - Include priority and severity
-
-3. **Multi-Phase Testing:**
-   - Break complex workflows into logical phases
-   - Use clear phase comments (PHASE 1, PHASE 2, etc.)
-   - Each phase should have a clear purpose
-
-4. **State Verification:**
-   - Explicitly verify each state (ARCH-STATE-XXX)
-   - Verify state transitions (ARCH-TRANS-XXX)
-   - Check state invariants and characteristics
-
-5. **Helper Functions:**
-   - Use helper functions for common checks (VerifyMotorStopped, VerifyMotorMovingUp)
-   - Keep test code readable and maintainable
-   - Reduce duplication across tests
-
-6. **Complete Workflows:**
-   - Test entire end-to-end scenarios
-   - Verify component interactions, not just individual components
-   - Validate data flows correctly between components
-
-7. **Architecture Focus:**
-   - Verify interface contracts (ARCH-IF-001, ARCH-IF-002)
-   - Test component integration (ARCH-COMP-001 ↔ ARCH-COMP-002)
-   - Validate state machine behavior (ARCH-COMP-005)
-
-8. **Descriptive Messages:**
-   - Every assertion should have a clear failure message
-   - Messages should explain what is expected and why
-   - Makes debugging failed tests much easier
-
-### Difference Between Test Levels
-
-| Aspect | Integration Test | Component Test | Unit Test |
-|--------|-----------------|----------------|-----------|
-| **Scope** | Multiple components | Single component | Single function |
-| **Focus** | Component interaction | Function logic | Basic behavior |
-| **Prefix** | `Integration_IT###` | `Component_TC###` | `Unit_` |
-| **Example** | DeskController + HAL | DeskController alone | Simple input→output |
-| **Verifies** | Workflows, interfaces | Requirements, design | Minimal functionality |
-| **Architecture** | ARCH-COMP, IF, STATE, TRANS | MODULE, FUNC | N/A |
-| **Complexity** | High (multi-phase) | Medium (arrange-act-assert) | Low (simple checks) |
-
-### Helper Functions Available in IntegrationTestFixture
+**5. Helper Functions Available in HALIntegration Fixture:**
 
 ```cpp
-// Verify motor is completely stopped
-void VerifyMotorStopped() {
-    EXPECT_FALSE(outputs.motor_enable);
-    EXPECT_EQ(outputs.motor_pwm, 0);
+// Verify all motor pins are in stopped (safe) state
+void VerifyMotorPinsStopped() {
+    EXPECT_EQ(pin_states[RPWM_PIN], 0) << "RPWM should be 0 (stopped)";
+    EXPECT_EQ(pin_states[LPWM_PIN], 0) << "LPWM should be 0 (stopped)";
+    EXPECT_EQ(pin_states[R_EN_PIN], 0) << "R_EN should be disabled";
+    EXPECT_EQ(pin_states[L_EN_PIN], 0) << "L_EN should be disabled";
 }
 
-// Verify motor is moving upward
-void VerifyMotorMovingUp() {
-    EXPECT_TRUE(outputs.motor_enable);
-    EXPECT_FALSE(outputs.motor_direction);  // UP = false
-    EXPECT_EQ(outputs.motor_pwm, 255);
+// Simulate switch input via HALMock pin_states
+void SimulateSwitchInput(bool up_pressed, bool down_pressed) {
+    pin_states[SWITCH_UP_PIN] = up_pressed ? 0 : 1;     // Active LOW
+    pin_states[SWITCH_DOWN_PIN] = down_pressed ? 0 : 1;  // Active LOW
 }
 
-// Verify motor is moving downward
-void VerifyMotorMovingDown() {
-    EXPECT_TRUE(outputs.motor_enable);
-    EXPECT_TRUE(outputs.motor_direction);   // DOWN = true
-    EXPECT_EQ(outputs.motor_pwm, 255);
+// Verify motor is moving upward correctly
+void VerifyMotorMovingUp(int expected_pwm = 255) {
+    EXPECT_EQ(pin_states[RPWM_PIN], expected_pwm) << "RPWM should have PWM signal";
+    EXPECT_EQ(pin_states[LPWM_PIN], 0) << "LPWM should be 0 (UP only)";
+    EXPECT_EQ(pin_states[R_EN_PIN], 1) << "R_EN should be enabled";
+    EXPECT_EQ(pin_states[L_EN_PIN], 1) << "L_EN should be enabled";
+}
+
+// Verify motor is moving downward correctly
+void VerifyMotorMovingDown(int expected_pwm = 255) {
+    EXPECT_EQ(pin_states[RPWM_PIN], 0) << "RPWM should be 0 (DOWN only)";
+    EXPECT_EQ(pin_states[LPWM_PIN], expected_pwm) << "LPWM should have PWM signal";
+    EXPECT_EQ(pin_states[R_EN_PIN], 1) << "R_EN should be enabled";
+    EXPECT_EQ(pin_states[L_EN_PIN], 1) << "L_EN should be enabled";
 }
 ```
 
@@ -331,6 +320,79 @@ void VerifyMotorMovingDown() {
 6. **Use Helpers:** Leverage helper functions to keep tests readable
 7. **Test Both Paths:** Verify both successful and failure scenarios
 8. **Document Thoroughly:** Future testers (including yourself) will thank you
+
+### Key Points for Writing Integration Tests (HAL ↔ OS Focus, v1.0 Design)
+
+1. **Test HAL functions, preferably via HAL_ProcessAppState():**
+   - Call HAL_ProcessAppState() with DeskAppOutputs_t to test orchestration
+   - Test direct HAL functions (HAL_MoveUp, HAL_ReadSwitchState) for specific behaviors
+   - Verify Arduino OS mock calls via pin_states[] array
+   - Integration tests verify HAL ↔ OS layer, NOT application logic
+   - Application logic is tested at higher levels (component, SIT)
+
+2. **Naming Convention:**
+   - Format: `HALIntegration.Integration_IT###_DescriptiveName`
+   - Example: `HALIntegration.Integration_IT006_HALProcessAppState_MotorControl`
+   - Prefix `IT` indicates Integration (HAL ↔ OS layer)
+   - Use fixture name HALIntegration for OS-level testing
+
+3. **Focus on OS Function Calls:**
+   - Verify analogWrite() called with correct PWM values
+   - Verify digitalWrite() enable pins driven correctly
+   - Verify digitalRead() reads switch inputs properly
+   - Check pin_states[] array to see OS function effects
+
+4. **Multi-Phase Testing Structure:**
+   - Phase 1: Clear initial state (HAL_init verified)
+   - Phase 2: Set application output values (DeskAppOutputs_t)
+   - Phase 3: Call HAL_ProcessAppState() to orchestrate
+   - Phase 4: Verify analogWrite() calls via pin_states
+   - Phase 5: Test direction changes or multiple states
+   - Phase 6: Verify motor shutdown (motor_enable=false)
+   - Phase 7: Check safe state (all pins disabled)
+
+5. **Hardware Pin Reference (v1.0):**
+   - RPWM/LPWM (PIN 5/6): PWM signals to motor driver
+   - R_EN/L_EN (PIN 9/10): Motor driver enable signals
+   - SWITCH_UP/SWITCH_DOWN (PIN 7/8): Switch input (active LOW)
+   - pin_states[]: Mock array simulating GPIO/PWM output levels
+
+6. **Assertion Strategy:**
+   - Assert pin_states values, NOT outputs struct values
+   - Example: `EXPECT_EQ(pin_states[RPWM_PIN], 220);`
+   - Verify both PWM and enable pin states together
+   - Check safety by verifying opposite PWM pin is 0
+
+7. **HAL API Coverage (v1.0):**
+   - HAL_init(): Pin configuration via pinMode()
+   - HAL_ReadSwitchState(): Reads via digitalRead()
+   - HAL_MoveUp(speed): analogWrite(RPWM), digitalWrite(EN)
+   - HAL_MoveDown(speed): analogWrite(LPWM), digitalWrite(EN)
+   - HAL_StopMotor(): analogWrite(0), digitalWrite(EN, LOW)
+   - HAL_ProcessAppState(): Orchestrates all motor control paths
+   - HAL_Task(): Optional periodic HAL operations
+
+8. **Test Independence:**
+   - Each test should be isolated (SetUp() clears pin_states)
+   - No test should depend on another test's state
+   - Mock should provide deterministic behavior
+   - No real hardware or timing dependencies
+
+### Test Level Differences (v1.0 Context)
+
+| Aspect | System Integration (SIT) | HAL Integration (IT) | Component Test | Unit Test |
+|--------|--------------------------|----------------------|----------------|-----------|
+| **Scope** | App + HAL together | HAL ↔ Arduino OS | DeskController alone | State handlers |
+| **Focus** | End-to-end workflows | OS function calls | Switch → motor logic | handle_idle(), etc. |
+| **Fixture** | SystemIntegrationFixture | HALIntegration | DeskController | DeskControllerStateHandlerTest |
+| **Calls** | DeskApp_task() | HAL_MoveUp/Down/Stop() | DeskApp_task() | handle_*_test() |
+| **Prefix** | `SIT###_` | `IT###_` | `Component_TC###` | `Unit_` |
+| **Example** | Full UP/DOWN sequences | HAL_ProcessAppState() | Process switch input | State transitions |
+| **Verifies** | Use cases, requirements | Arduino OS integration | High-level logic | Low-level logic |
+| **Architecture** | ARCH-COMP-001/002, IF | ARCH-COMP-002, IF-002 | ARCH-COMP-001, IF-001 | Private functions |
+| **Complexity** | Very high (7+ phases) | Medium (3-7 phases) | Medium (arrange-act-assert) | Low (direct calls) |
+| **Mock Level** | Application + HAL | Arduino OS only | None (real logic) | State only |
+| **Assertions Check** | outputs struct & pins | pin_states[] array | outputs struct | state struct |
 
 ---
 
@@ -391,7 +453,7 @@ void VerifyMotorMovingDown() {
 - Test Data: inputs.btUPPressed=true, inputs.btDOWNPressed=true.
 - Steps:
   1. Call DeskApp_task(&inputs,&outputs).
-  2. Apply outputs via HAL_ProcessAppState(...); HAL_Task().
+  2. Apply outputs to HAL_ProcessAppState(...); HAL_Task().
 - Expected Results:
   - Motor stopped: IN1=LOW, IN2=LOW, ENA=0.
   - LEDs: LED_LEFT_PIN=LOW, LED_RIGHT_PIN=LOW, ERROR_LED=LOW.
