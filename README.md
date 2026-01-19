@@ -105,6 +105,38 @@ See [Component Test Spec](documentation/10_ComponentTestCasesSpecification.md) a
 
 ---
 
+## Local Pipeline Script (Windows)
+
+Use the automated local CI helper to mirror the GitHub workflow on Windows.
+
+**Script:** [tests/pipeline.ps1](tests/pipeline.ps1)
+
+**Prerequisites:**
+- Cppcheck in PATH (winget install Cppcheck.Cppcheck). The script auto-downloads official `misra.py` and `cert.py` addons if missing.
+- Optional: Clang/LLVM for AddressSanitizer (winget install LLVM.LLVM).
+- Optional: OpenCppCoverage for coverage reports (winget install OpenCppCoverage.OpenCppCoverage).
+
+**Run:**
+```powershell
+# Standard (static analysis + build + tests)
+./tests/pipeline.ps1
+
+# Include AddressSanitizer (requires Clang)
+./tests/pipeline.ps1 -Full
+
+# Include code coverage (requires OpenCppCoverage)
+./tests/pipeline.ps1 -Coverage
+```
+
+**What it does:**
+- Runs MISRA/CERT checks with Cppcheck (downloads official addons if absent)
+- Configures, builds, and executes all tests (Release)
+- Optional AddressSanitizer build/test (`-Full`)
+- Optional coverage build/report (`-Coverage`)
+- Summarizes results and exits non-zero on failure
+
+---
+
 ## CI/CD Pipeline
 
 The project uses an automated **CMake CI workflow** (GitHub Actions) that runs on every push and pull request to `main` branch. Here's what each stage does:
