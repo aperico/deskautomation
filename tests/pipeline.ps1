@@ -120,11 +120,15 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
 
         # If zip already exists, ensure it is extracted
         if ((-not (Test-Path $dlMisra) -or -not (Test-Path $dlCert)) -and (Test-Path $addonZip)) {
-            try {
-                Write-Host "   [INFO] Using cached cppcheck addons zip..." @Gray
-                Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
-            } catch {
-                Write-Host "   [WARN] Failed to extract cached cppcheck addons." @Yellow
+            if (-not (Test-Path $addonExtractRoot)) {
+                try {
+                    Write-Host "   [INFO] Using cached cppcheck addons zip..." @Gray
+                    Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
+                } catch {
+                    Write-Host "   [WARN] Failed to extract cached cppcheck addons." @Yellow
+                }
+            } else {
+                Write-Host "   [INFO] Addons already extracted; skipping cached zip extraction." @Gray
             }
         }
 
@@ -134,12 +138,25 @@ if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
 
         # Download only if still missing
         if (-not $foundMisra -or -not $foundCert) {
-            try {
-                Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
-                Invoke-WebRequest -Uri "https://github.com/danmar/cppcheck/archive/refs/heads/main.zip" -OutFile $addonZip -UseBasicParsing
-                Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
-            } catch {
-                Write-Host "   [WARN] Failed to download cppcheck addons automatically." @Yellow
+            if (-not (Test-Path $addonZip)) {
+                try {
+                    Write-Host "   [INFO] Downloading official cppcheck addons..." @Gray
+                    Invoke-WebRequest -Uri "https://github.com/danmar/cppcheck/archive/refs/heads/main.zip" -OutFile $addonZip -UseBasicParsing
+                } catch {
+                    Write-Host "   [WARN] Failed to download cppcheck addons automatically." @Yellow
+                }
+            } else {
+                Write-Host "   [INFO] Cached cppcheck addons zip already present; skipping download." @Gray
+            }
+
+            if (-not (Test-Path $addonExtractRoot) -and (Test-Path $addonZip)) {
+                try {
+                    Expand-Archive -Path $addonZip -DestinationPath $addonCacheRoot -Force
+                } catch {
+                    Write-Host "   [WARN] Failed to extract cached/downloaded cppcheck addons." @Yellow
+                }
+            } elseif (Test-Path $addonExtractRoot) {
+                Write-Host "   [INFO] Addons already extracted; skipping download extraction." @Gray
             }
 
             if (-not $foundMisra -and (Test-Path $dlMisra)) { $foundMisra = $dlMisra }
