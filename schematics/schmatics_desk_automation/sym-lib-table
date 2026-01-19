@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "L298N_Interface")(type "KiCad")(uri "${KIPRJMOD}/L298N_Interface.kicad_sym")(options "")(descr ""))
+)

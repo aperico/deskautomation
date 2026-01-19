@@ -55,6 +55,10 @@ void loop() {
     // read debounced buttons
     inputs.btUPPressed   = HAL_debounceButton(BUTTON_UP_PIN, &upDebounce, DEBOUNCE_DELAY);
     inputs.btDOWNPressed = HAL_debounceButton(BUTTON_DOWN_PIN, &downDebounce, DEBOUNCE_DELAY);
+
+    // read limit switches (active LOW if using INPUT_PULLUP)
+    inputs.upperLimitActive = digitalRead(BUTTON_UPPER_LIMIT_PIN) == LOW;
+    inputs.lowerLimitActive = digitalRead(BUTTON_LOWER_LIMIT_PIN) == LOW;
   }
 
   // Run application logic and update hardware state
@@ -66,6 +70,7 @@ void loop() {
   {
     HAL_ProcessAppState(ret, &outputs); // Ensure all outputs are processed
   }
+
 
 #ifdef DEBUG
   Serial.print("App State: ");

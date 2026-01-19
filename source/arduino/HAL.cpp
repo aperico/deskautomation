@@ -84,12 +84,14 @@ bool HAL_readDebounced(const int pin) {
 
 /* Initialization: configure pins, set safe defaults (no blocking/delays) */
 void HAL_init(void) {
-#if defined(ARDUINO)
-  Serial.begin(115200);
+  #if defined(ARDUINO)
+  Serial.begin(9600);
 #endif
 
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_UPPER_LIMIT_PIN, INPUT_PULLUP); // Upper limit switch
+  pinMode(BUTTON_LOWER_LIMIT_PIN, INPUT_PULLUP); // Lower limit switch
 
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
@@ -98,6 +100,7 @@ void HAL_init(void) {
   pinMode(ERROR_LED, OUTPUT);
   pinMode(LED_RIGHT_PIN, OUTPUT);
   pinMode(LED_LEFT_PIN, OUTPUT);
+ 
 
   /* safe defaults: motor stopped, LEDs off */
   HAL_StopMotor();
