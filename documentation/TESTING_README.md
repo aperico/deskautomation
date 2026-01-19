@@ -20,18 +20,20 @@ Run unit tests (host)
 
 ```powershell
 # Run all tests
-build\SoftwareTests.exe
+build\ComponentTests.exe
 # Run a single GoogleTest by filter (example: smoke test)
-build\SoftwareTests.exe --gtest_filter=SmokeTest.BasicTruth
+build\ComponentTests.exe --gtest_filter=SmokeTest.BasicTruth
 # Run a single named test suite
-build\SoftwareTests.exe --gtest_filter=DeskAppTest.*
+build\ComponentTests.exe --gtest_filter=DeskAppTest.*
 ```
 
 Run integration tests (host)
 
 ```powershell
-# Integration tests are implemented in the same test binary (IT-001..IT-010)
-build\SoftwareTests.exe --gtest_filter=IntegrationTest.*
+# Integration tests are implemented in the same test binary (IT-001..IT-012)
+# Examples:
+build\ComponentTests.exe --gtest_filter=HALIntegration.*
+build\ComponentTests.exe --gtest_filter=SIT.*
 ```
 
 CI and test artifacts
@@ -40,7 +42,7 @@ CI and test artifacts
 - To produce JUnit XML locally, set the Google Test flag to generate output (if supported):
 
 ```powershell
-build\SoftwareTests.exe --gtest_output=xml:build/test-results/results.xml
+build\ComponentTests.exe --gtest_output=xml:build/test-results/results.xml
 ```
 
 Coverage (optional)

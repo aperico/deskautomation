@@ -35,7 +35,13 @@
 
 
 static const uint8_t  kDefaultMotorSpeed = 255u;
-static HAL_Logger_t    hal_logger = NULL;
+static HAL_Logger_t    hal_logger = nullptr;
+
+// information for current sensing and error detection
+static const float VREF = 5.0f;
+static const float VOLTS_PER_AMP = 0.1f;   // IBT-2: 1V/10A scaling (0.1 V/A)
+static const float OVERCURRENT_AMPS = 5.0f; // 4A supply, allow for surges
+static const float NOLOAD_AMPS = 0.2f;      // Typical no-load current
 
 // Minimal logger for debug
 #if defined(ARDUINO)
@@ -54,15 +60,11 @@ static HAL_Logger_t    hal_logger = NULL;
  * @implements SWE-REQ-003, SWE-REQ-004
  */
 SwitchState_t HAL_ReadSwitchState(void) {
-#if defined(ARDUINO)
-  bool up = digitalRead(SWITCH_UP_PIN) == LOW;
-  bool down = digitalRead(SWITCH_DOWN_PIN) == LOW;
+  const bool up = digitalRead(SWITCH_UP_PIN) == LOW;
+  const bool down = digitalRead(SWITCH_DOWN_PIN) == LOW;
   if (up && !down) return SWITCH_STATE_UP;
   if (down && !up) return SWITCH_STATE_DOWN;
   return SWITCH_STATE_OFF;
-#else
-  return SWITCH_STATE_OFF;
-#endif
 }
 
 // Error state flag (file-local)
@@ -107,8 +109,9 @@ float HAL_adc_to_amps(int adc_value, float vref, float volts_per_amp) {
  * @implements SWE-REQ-001
  */
 void HAL_init(void) {
-#if defined(ARDUINO)
-  Serial.begin(9600);
+  #if defined(DEBUG)
+    Serial.begin(9600);
+  #endif
   // Motor driver pins
   pinMode(RPWM_PIN, OUTPUT);
   pinMode(LPWM_PIN, OUTPUT);
@@ -118,45 +121,32 @@ void HAL_init(void) {
   pinMode(SWITCH_UP_PIN, INPUT_PULLUP);
   pinMode(SWITCH_DOWN_PIN, INPUT_PULLUP);
   // Current sense pins (optional, usually analog inputs by default)
-#ifdef R_IS_PIN
   pinMode(R_IS_PIN, INPUT);
-#endif
-#ifdef L_IS_PIN
   pinMode(L_IS_PIN, INPUT);
-#endif
-#endif
   HAL_StopMotor();
 }
 
 void HAL_Task(HAL_Ouputs_t *hal_outputs, bool motor_enable, uint8_t motor_pwm) {
-    // Clear error flag if motor is not running
-    bool motor_running = motor_enable && motor_pwm > 0;
-    if (!motor_running) {
-      hal_error_flag = false;
-    }
-  // for timed events; none needed in this minimal implementation
-#if defined(ARDUINO)
+  // Clear error flag if motor is not running
+  const bool motor_running = motor_enable && motor_pwm > 0;
+  if (!motor_running) {
+    hal_error_flag = false;
+  }
+  
+  // Read current sensors
   if (hal_outputs) {
     hal_outputs->r_current = analogRead(R_IS_PIN);
     hal_outputs->l_current = analogRead(L_IS_PIN);
   }
+  
   static unsigned long lastLogTime = 0;
-  unsigned long now = millis();
-
-#define VREF 5.0f
-#define VOLTS_PER_AMP 0.1f   // IBT-2: 1V/10A scaling (0.1 V/A)
-#define OVERCURRENT_AMPS 5.0f // 4A supply, allow for surges
-#define NOLOAD_AMPS 0.2f      // Typical no-load current
+  const unsigned long now = millis();
 
   if (now - lastLogTime >= 1000 && hal_outputs) {
-    float r_amps = HAL_adc_to_amps(hal_outputs->r_current, VREF, VOLTS_PER_AMP);
-    float l_amps = HAL_adc_to_amps(hal_outputs->l_current, VREF, VOLTS_PER_AMP);
-    char buf[128];
-    snprintf(buf, sizeof(buf), "R_IS: %d (%.2fA), L_IS: %d (%.2fA)", hal_outputs->r_current, r_amps, hal_outputs->l_current, l_amps);
-    HAL_LOG(buf);
-
+    const float r_amps = HAL_adc_to_amps(hal_outputs->r_current, VREF, VOLTS_PER_AMP);
+    const float l_amps = HAL_adc_to_amps(hal_outputs->l_current, VREF, VOLTS_PER_AMP);
+    
     // Only check for errors and log warnings if motor is running
-    bool motor_running = motor_enable && motor_pwm > 0;
     if (motor_running) {
       // Overcurrent detection
       if (r_amps > OVERCURRENT_AMPS || l_amps > OVERCURRENT_AMPS) {
@@ -176,9 +166,7 @@ void HAL_Task(HAL_Ouputs_t *hal_outputs, bool motor_enable, uint8_t motor_pwm) {
     }
     lastLogTime = now;
   }
-#endif
 }
-
 
 void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs, HAL_Ouputs_t *hal_outputs) {
   if (outputs == NULL || !outputs->motor_enable || outputs->motor_pwm == 0) {
@@ -201,11 +189,9 @@ void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t 
  * @param speed PWM value (0-255)
  */
 void HAL_MoveUp(const uint8_t speed) {
-#if defined(ARDUINO)
   HAL_motorEnable(true);
   analogWrite(RPWM_PIN, speed);
   analogWrite(LPWM_PIN, 0);
-#endif
 }
 
 /**
@@ -215,11 +201,9 @@ void HAL_MoveUp(const uint8_t speed) {
  * @param speed PWM value (0-255)
  */
 void HAL_MoveDown(const uint8_t speed) {
-#if defined(ARDUINO)
   HAL_motorEnable(true);
   analogWrite(RPWM_PIN, 0);
   analogWrite(LPWM_PIN, speed);
-#endif
 }
 
 /**
@@ -228,17 +212,13 @@ void HAL_MoveDown(const uint8_t speed) {
  * @implements SWE-REQ-007, SWE-REQ-008, SWE-REQ-011
  */
 void HAL_StopMotor(void) {
-#if defined(ARDUINO)
   analogWrite(RPWM_PIN, 0);
   analogWrite(LPWM_PIN, 0);
   HAL_motorEnable(false);
-#endif
 }
 
 void HAL_wait_startup(void) {
-#if defined(ARDUINO)
   delay(1000);
-#endif
 }
 
 void HAL_set_logger(HAL_Logger_t logger) {

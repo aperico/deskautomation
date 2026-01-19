@@ -4,7 +4,7 @@
 **Last Updated:** January 19, 2026  
 **Status:** Approved  
 **Standards:** IEEE 29148-2018, ISTQB Test Case Format, ISO 25119  
-**Implementation:** tests/SoftwareTests.cpp  
+**Implementation:** tests/ComponentTests.cpp  
 **Test Framework:** Google Test (gtest)  
 **Compliance:** ASPICE SWE.4 (Software Unit Verification)
 
@@ -41,7 +41,7 @@ Each test case includes:
 - **Precondition:** Initial system state
 - **Steps:** Actions to perform
 - **Expected Result:** Verification criteria
-- **Implementation:** Test function name in SoftwareTests.cpp
+- **Implementation:** Test function name in ComponentTests.cpp
 
 ---
 

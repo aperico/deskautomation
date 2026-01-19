@@ -22,10 +22,14 @@
 /* mock instance */
 extern SerialMock Serial;
 
+/* Expose pin states for test verification */
+extern int pin_states[64];
+
 /* Minimal Arduino-like API for host unit tests */
 void pinMode(int pin, int mode);
 void digitalWrite(int pin, int value);
 int  digitalRead(int pin);
 void analogWrite(int pin, int value);
+int  analogRead(int pin);
 unsigned long millis(void);
 void delay(unsigned long ms);

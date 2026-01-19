@@ -5,14 +5,20 @@
 /* define Serial instance (matches extern in headers) */
 SerialMock Serial;
 
-/* Simple in-memory pin state (optional enhancement) */
-static int pin_states[64] = {0};
+/* Simple in-memory pin state (exposed for test verification) */
+int pin_states[64] = {0};
 
 /* basic implementations used by host tests */
 void pinMode(int pin, int mode) { (void)pin; (void)mode; }
 void digitalWrite(int pin, int value) { if (pin >= 0 && pin < 64) pin_states[pin] = value ? 1 : 0; (void)pin; (void)value; }
 int digitalRead(int pin) { if (pin >= 0 && pin < 64) return pin_states[pin]; return LOW; }
 void analogWrite(int pin, int value) { if (pin >= 0 && pin < 64) pin_states[pin] = value; (void)pin; (void)value; }
+int analogRead(int pin) { 
+    // Return mock ADC value from pin_states array
+    // For testing, can be pre-set via pin_states[pin] = adc_value
+    if (pin >= 0 && pin < 64) return pin_states[pin]; 
+    return 0; // Default to 0 if pin out of range
+}
 
 /* millis using steady_clock for monotonic time in host tests */
 unsigned long millis(void) {
