@@ -58,6 +58,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: cppcheck-misra-reports
+        if-no-files-found: ignore
         path: |
           cppcheck-report.xml
           cppcheck-summary.txt
@@ -95,6 +96,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-results
+        if-no-files-found: ignore
         path: |
           build/test-results.xml
           build/test-output.log
@@ -110,6 +112,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
+        if-no-files-found: ignore
         path: coverage.info
 
     # ========== DYNAMIC ANALYSIS SECTION ==========
@@ -225,6 +228,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dynamic-analysis-reports
+        if-no-files-found: ignore
         path: |
           build-sanitized/asan-ubsan-results.txt
           valgrind-reports/*.xml
@@ -353,6 +357,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: complete-quality-reports
+        if-no-files-found: ignore
         path: |
           quality-report.md
           cppcheck-report.xml
