@@ -1,6 +1,7 @@
 
 
-# Software Requirements
+
+# Software Requirements (DeskHigh torque branch: BTS7960/IBT-2, 31ZY-5840)
 
 **Document Version:** 1.2  
 **Last Updated:** January 7, 2026  
@@ -13,7 +14,7 @@
 
 ## Overview
 
-This document specifies the software requirements for the Automated Mechanical Desk Lift system. All requirements are:
+This document specifies the software requirements for the Automated Mechanical Desk Lift system. This version is for the DeskHigh torque branch, using the BTS7960/IBT-2 motor driver and 31ZY-5840 DC Worm Gear Motor. All requirements are:
 - **Derived from** [System Use Cases](SystemUseCases.md)
 - **Traceable** to use cases and test cases
 - **Testable** with defined acceptance criteria
@@ -54,11 +55,44 @@ This document specifies the software requirements for the Automated Mechanical D
 | SWE-REQ-018 | Movement Timeout | Safety | Mandatory | UC-02, UC-03 | Test | Approved |
 | SWE-REQ-019 | Emergency Stop Response Time | Performance | Mandatory | UC-04 | Test | Approved |
 | SWE-REQ-020 | State Transition Integrity | Functional | Mandatory | Derived | Test | Approved |
+| SWE-REQ-022 | PWM Soft-Start for Motor | Functional | Mandatory | UC-10 | Test | Proposed |
+### SWE-REQ-022: PWM Soft-Start for Motor
+
+**Category:** Functional  
+**Priority:** Mandatory  
+**Derived From:** UC-10 (PWM Soft-Start for Motor)
+
+**Description:**
+
+The software shall apply a PWM soft-start ramp when initiating motor movement (up or down) to gradually increase power and reduce mechanical shock to the worm gear motor.
+
+**Specific Requirements:**
+- When a movement command is issued, the software shall set the PWM output to a low initial value
+- The software shall ramp the PWM value to the configured target speed over a configurable time (e.g., 200–500ms)
+- The ramp shall be applied for both upward and downward movement
+- If movement is stopped during ramp, PWM is immediately set to zero
+- If ramp fails to reach target PWM (hardware fault), system enters ERROR state
+
+**Rationale:**
+Soft-start reduces mechanical stress, increases motor and gearbox longevity, and improves user safety.
+
+**Acceptance Criteria:**
+- Motor accelerates smoothly to target speed on every movement
+- No abrupt starts or mechanical shock
+- Ramp duration and initial/final PWM values are configurable
+- System enters ERROR state if ramp fails
+
+**Dependencies:**
+- SWE-REQ-005, SWE-REQ-006 (Movement Execution)
+
+**Verification Method:** Test (integration tests with timing and ramp monitoring)
+
+**Test Cases:** IT-009 (if implemented)
 
 ---
 
 ## Assumptions and Constraints
-- The system hardware (ECU, motor driver, indicator LEDs, limit switches, buttons) is available and functions as specified.
+- The system hardware (ECU, BTS7960/IBT-2 motor driver, 31ZY-5840 DC Worm Gear Motor, indicator LEDs, limit switches, buttons) is available and functions as specified.
 - The user is trained to operate the desk safely.
 - The system operates in a typical office environment with standard power supply.
 - Regulatory and safety standards for motorized furniture are met.
@@ -95,7 +129,8 @@ Each requirement follows the standard format:
 
 ---
 
-### SWE-REQ-001: System Initialization
+
+### SWE-REQ-001: System Initialization (BTS7960/IBT-2, 31ZY-5840)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -106,9 +141,9 @@ Each requirement follows the standard format:
 The software shall initialize all input and output variables to their default states upon power-on.
 
 **Specific Requirements:**
-- The software shall initialize all input pins (buttons, limit switches) to INPUT mode
-- The software shall initialize all output pins (motor control, LEDs) to OUTPUT mode
-- The software shall set all motor control outputs to inactive (motor stopped)
+- The software shall initialize all input pins (buttons, limit switches, current sense A0/A1 if used) to INPUT mode
+- The software shall initialize all output pins (motor control: RPWM, LPWM, R_EN, L_EN; LEDs) to OUTPUT mode
+- The software shall set all motor control outputs (RPWM, LPWM, R_EN, L_EN) to inactive (motor stopped, both PWM LOW, enables LOW or HIGH as required)
 - The software shall set the system state to IDLE
 - The software shall perform initialization within 500ms of power application
 
@@ -123,8 +158,7 @@ Proper initialization ensures the system starts in a known, safe state with all 
 - All pin modes correctly configured
 - Initialization sequence completes successfully 100% of test runs
 
-**Dependencies:**
-- Hardware: Arduino power supply, pin connections
+- Hardware: Arduino power supply, BTS7960/IBT-2 wiring, pin connections
 - None (this is the first requirement executed)
 
 **Verification Method:** Test (automated unit tests)
@@ -163,7 +197,7 @@ Provides visual confirmation to the user that the system is powered, initialized
 
 ---
 
-### SWE-REQ-003: Upward Movement Detection
+### SWE-REQ-003: Upward Movement Detection (Rocker Switch)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -171,21 +205,19 @@ Provides visual confirmation to the user that the system is powered, initialized
 
 **Description:**
 
-The software shall detect when the Up button is pressed by the user via debounced input reading.
+The software shall detect when the ON/OFF/ON rocker switch is set to the UP position by the user.
 
 **Rationale:**
 
-Accurate button detection is essential for user-initiated movement commands. Debouncing prevents false triggers from mechanical switch bounce.
+Accurate switch state detection is essential for user-initiated movement commands. The ON/OFF/ON rocker switch provides a clear, debounced hardware interface.
 
 **Acceptance Criteria:**
-- Up button press detected within 50ms of physical press
-- Debouncing eliminates false triggers from switch bounce
-- Button state accurately reflects physical switch state
-- Detection works reliably across 10,000+ button press cycles
+- UP switch position detected within 50ms of physical actuation
+- Switch state accurately reflects physical switch position
+- Detection works reliably across 10,000+ switch cycles
 
 **Dependencies:**
 - SWE-REQ-001 (System Initialization)
-- SWE-REQ-017 (Button Debouncing)
 
 **Verification Method:** Test (unit and integration tests)
 
@@ -193,7 +225,7 @@ Accurate button detection is essential for user-initiated movement commands. Deb
 
 ---
 
-### SWE-REQ-004: Downward Movement Detection
+### SWE-REQ-004: Downward Movement Detection (Rocker Switch)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -201,21 +233,19 @@ Accurate button detection is essential for user-initiated movement commands. Deb
 
 **Description:**
 
-The software shall detect when the Down button is pressed by the user via debounced input reading.
+The software shall detect when the ON/OFF/ON rocker switch is set to the DOWN position by the user.
 
 **Rationale:**
 
-Accurate button detection is essential for user-initiated movement commands. Debouncing prevents false triggers from mechanical switch bounce.
+Accurate switch state detection is essential for user-initiated movement commands. The ON/OFF/ON rocker switch provides a clear, debounced hardware interface.
 
 **Acceptance Criteria:**
-- Down button press detected within 50ms of physical press
-- Debouncing eliminates false triggers from switch bounce
-- Button state accurately reflects physical switch state
-- Detection works reliably across 10,000+ button press cycles
+- DOWN switch position detected within 50ms of physical actuation
+- Switch state accurately reflects physical switch position
+- Detection works reliably across 10,000+ switch cycles
 
 **Dependencies:**
 - SWE-REQ-001 (System Initialization)
-- SWE-REQ-017 (Button Debouncing)
 
 **Verification Method:** Test (unit and integration tests)
 
@@ -223,7 +253,7 @@ Accurate button detection is essential for user-initiated movement commands. Deb
 
 ---
 
-### SWE-REQ-005: Upward Movement Execution
+### SWE-REQ-005: Upward Movement Execution (BTS7960/IBT-2)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -239,7 +269,7 @@ The software shall command upward movement only if all safety conditions are met
 
 **Specific Requirements:**
 - The software shall transition from IDLE to MOVING_UP state
-- The software shall call HAL_setMotorDirection(UP)
+- The software shall set BTS7960 RPWM to PWM value, LPWM to LOW, enables HIGH (or as required)
 - The software shall activate the Up indicator LED (blue)
 - The software shall monitor for stop conditions continuously
 
@@ -265,7 +295,7 @@ Safety interlocks prevent movement in unsafe conditions (conflicting inputs, lim
 
 ---
 
-### SWE-REQ-006: Downward Movement Execution
+### SWE-REQ-006: Downward Movement Execution (BTS7960/IBT-2)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -281,7 +311,7 @@ The software shall command downward movement only if all safety conditions are m
 
 **Specific Requirements:**
 - The software shall transition from IDLE to MOVING_DOWN state
-- The software shall call HAL_setMotorDirection(DOWN)
+- The software shall set BTS7960 LPWM to PWM value, RPWM to LOW, enables HIGH (or as required)
 - The software shall activate the Down indicator LED (yellow)
 - The software shall monitor for stop conditions continuously
 
@@ -307,7 +337,7 @@ Safety interlocks prevent movement in unsafe conditions (conflicting inputs, lim
 
 ---
 
-### SWE-REQ-007: Upward Movement Termination
+### SWE-REQ-007: Upward Movement Termination (BTS7960/IBT-2)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -322,7 +352,7 @@ The software shall stop upward movement when any of the following conditions occ
 - Emergency stop condition is detected
 
 **Specific Requirements:**
-- The software shall call HAL_setMotorDirection(STOP)
+- The software shall set both RPWM and LPWM to LOW (motor stop), disables as required
 - The software shall transition from MOVING_UP to IDLE state (or ERROR if applicable)
 - The software shall deactivate the Up LED
 - The software shall activate the ready LED (if returning to IDLE)
@@ -349,7 +379,7 @@ Timely and reliable movement termination is critical for safety and user control
 
 ---
 
-### SWE-REQ-008: Downward Movement Termination
+### SWE-REQ-008: Downward Movement Termination (BTS7960/IBT-2)
 
 **Category:** Functional  
 **Priority:** Mandatory  
@@ -364,7 +394,7 @@ The software shall stop downward movement when any of the following conditions o
 - Emergency stop condition is detected
 
 **Specific Requirements:**
-- The software shall call HAL_setMotorDirection(STOP)
+- The software shall set both RPWM and LPWM to LOW (motor stop), disables as required
 - The software shall transition from MOVING_DOWN to IDLE state (or ERROR if applicable)
 - The software shall deactivate the Down LED
 - The software shall activate the ready LED (if returning to IDLE)
@@ -427,30 +457,28 @@ Stateless reset ensures predictable behavior after power restoration. The system
 
 **Category:** Safety  
 **Priority:** Mandatory  
-**Derived From:** UC-04 (Emergency Stop), UC-07 (Simultaneous Button Presses)
+**Derived From:** UC-04 (Emergency Stop)
 
 **Description:**
 
 The software shall detect emergency stop conditions:
-- Both Up and Down buttons pressed simultaneously (within 100ms debounce window)
 - System fault detected (timeout, invalid state, hardware fault)
 
 **Rationale:**
 
-Rapid detection of emergency conditions is critical for safety. Simultaneous button presses indicate user error or panic, requiring immediate stop.
+Rapid detection of emergency conditions is critical for safety. The ON/OFF/ON rocker switch interface eliminates the risk of conflicting button presses, so emergency stop is triggered only by system faults.
 
 **Acceptance Criteria:**
-- Simultaneous button press detected within 100ms
 - System fault conditions detected within one control loop cycle (typically < 50ms)
 - Detection occurs regardless of current system state
 - False positives minimized (< 0.01% rate)
 
 **Dependencies:**
-- SWE-REQ-017 (Button Debouncing)
+- None
 
 **Verification Method:** Test (unit and integration tests)
 
-**Test Cases:** TC-011, TC-012, TC-014, TC-015, IT-004, IT-007
+**Test Cases:** TC-011, TC-012, IT-004
 
 ---
 
@@ -552,7 +580,7 @@ Timely visual feedback ensures users perceive the system as responsive and can r
 
 ---
 
-### SWE-REQ-014: Conflicting Input Handling
+### SWE-REQ-014: Conflicting Input Handling (N/A for Rocker Switch)
 
 **Category:** Safety  
 **Priority:** Mandatory  
@@ -560,27 +588,21 @@ Timely visual feedback ensures users perceive the system as responsive and can r
 
 **Description:**
 
-The software shall not command any movement when both Up and Down buttons are detected as pressed simultaneously.
-
-If both buttons are pressed during movement, the software shall invoke emergency stop (SWE-REQ-011).
+The ON/OFF/ON rocker switch interface prevents conflicting inputs by design. No software action is required to handle simultaneous up and down commands.
 
 **Rationale:**
 
-Conflicting inputs indicate user error or equipment malfunction. Preventing movement under these conditions avoids undefined behavior and potential safety hazards.
+The hardware switch cannot be in both UP and DOWN positions simultaneously, eliminating this class of error.
 
 **Acceptance Criteria:**
-- No motor activation when both buttons pressed from IDLE state
-- Emergency stop triggered within 100ms if both buttons pressed during movement
-- System enters ERROR state (requires power cycle to clear)
-- Conflicting input detection works 100% of test cases
+- No conflicting input state is possible with the rocker switch
 
 **Dependencies:**
-- SWE-REQ-010 (Emergency Stop Detection)
-- SWE-REQ-011 (Emergency Stop Execution)
+- None
 
-**Verification Method:** Test (unit and integration tests)
+**Verification Method:** N/A (hardware enforced)
 
-**Test Cases:** TC-014, TC-015, IT-007
+**Test Cases:** N/A
 
 ---
 
@@ -651,42 +673,41 @@ Power cycle reset is a simple, reliable recovery mechanism that ensures full sys
 
 ---
 
-### SWE-REQ-017: Button Debouncing
+
+### SWE-REQ-017: Switch State Reading (Rocker Switch)
 
 **Category:** Functional  
 **Priority:** Mandatory  
-**Derived From:** UC-02 (Raise Desk), UC-03 (Lower Desk), all button-related use cases
+**Derived From:** UC-02 (Raise Desk), UC-03 (Lower Desk), all switch-related use cases
 
 **Description:**
 
-The software shall use a debouncing mechanism for all button inputs via HAL_debounceButton() function.
+The software shall read the ON/OFF/ON rocker switch state via HAL_ReadSwitchState() function.
 
 **Specific Requirements:**
-- Debounce delay shall be configurable (default: 50ms)
-- Button state shall only change after stable for debounce period
-- Debouncing shall eliminate false triggers from mechanical switch bounce
-- Debouncing shall work for both press and release events
+- Switch state shall be read directly from the two switch pins (UP and DOWN)
+- No software debouncing is required due to the hardware switch design
+- Switch state shall be mapped to an enum: UP, OFF, DOWN
 
 **Rationale:**
 
-Mechanical buttons produce electrical noise (bounce) during state transitions. Debouncing filters this noise, ensuring reliable input detection.
+The rocker switch provides a stable, hardware-debounced interface, eliminating the need for software debouncing.
 
 **Acceptance Criteria:**
-- No false triggers from switch bounce (verified across 10,000+ button presses)
-- Button state changes recognized after stable period (50ms ± 10ms)
-- Debouncing works for all buttons (Up, Down)
-- Configurable delay allows tuning for different button hardware
+- Switch state is always accurately detected
+- No false triggers or bounce observed in operation
+- Enum mapping is correct and documented
 
 **Dependencies:**
 - None (fundamental input handling)
 
-**Verification Method:** Test (unit tests with rapid state toggle simulation)
+**Verification Method:** Test (unit tests with simulated switch toggling)
 
-**Test Cases:** TC-003, TC-004, TC-005, TC-006, IT-002, IT-003
+**Test Cases:** TC-003, TC-005, IT-002, IT-003
 
 ---
 
-### SWE-REQ-018: Movement Timeout
+### SWE-REQ-018: Movement Timeout (BTS7960/IBT-2)
 
 **Category:** Safety  
 **Priority:** Mandatory  
@@ -697,9 +718,48 @@ Mechanical buttons produce electrical noise (bounce) during state transitions. D
 The software shall enforce a maximum continuous movement duration of 30 seconds.
 
 If movement continues for 30 seconds without button release, the software shall:
-- Stop motor via HAL_setMotorDirection(STOP)
+- Set both RPWM and LPWM to LOW (motor stop), disables as required
 - Transition to IDLE state (normal timeout, not error)
 - Return to ready state
+### SWE-REQ-021: Motor Current Sensing (Optional)
+
+**Category:** Functional  
+**Priority:** Optional  
+**Derived From:** Hardware capability (BTS7960/IBT-2)
+
+
+**Description:**
+
+If current sense outputs (R_IS, L_IS) are connected to Arduino analog pins (A0, A1), the software shall monitor these pins to detect overcurrent or stall conditions and implement stall protection.
+
+
+**Specific Requirements:**
+- The software shall configure A0 and A1 as analog inputs if current sense is used
+- The software shall periodically read A0 and A1 during movement
+- If current exceeds a configurable threshold, the software shall stop the motor and enter ERROR state
+- The software shall implement stall protection by monitoring current and stopping the motor if a stall is detected (current exceeds calibrated threshold)
+
+
+**Rationale:**
+Current sensing enables detection of stalls or mechanical faults, providing additional protection for the motor and driver. Stall protection prevents hardware damage due to mechanical jams or excessive load.
+
+
+**Acceptance Criteria:**
+- Overcurrent/stall detected within 100ms of event
+- Motor stops and ERROR state entered on overcurrent or stall
+- No false positives during normal operation
+- Stall protection threshold is calibrated and documented
+
+**Dependencies:**
+- SWE-REQ-015 (Error Detection)
+
+**Verification Method:** Test (integration tests with simulated overcurrent)
+
+
+**Test Cases:** IT-008 (if implemented)
+TC-016: Simulate motor stall (block movement) and verify system stops motor and enters ERROR state within 100ms
+TC-017: Run motor under normal load and verify no false stall detection
+TC-018: Calibrate stall threshold and verify detection is reliable across load conditions
 
 **Rationale:**
 

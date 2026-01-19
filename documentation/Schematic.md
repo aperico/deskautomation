@@ -11,7 +11,7 @@
 ## Overview
 
 This document provides:
-1. A visual schematic (SVG) showing connections between Arduino UNO, L298N motor driver, DC motor, power supply, buttons, and LEDs.
+1. A visual schematic (SVG) showing connections between Arduino UNO, IBT-2 motor driver, DC motor, and power supply.
 2. A quick-reference wiring checklist.
 3. Safety and grounding requirements.
 
@@ -19,107 +19,185 @@ This document provides:
 
 ## Schematic Diagram
 
-![Hardware Schematic](./schematic.svg)
 
-**Key connections shown:**
-- Arduino → L298N motor driver (control signals: ENA, IN1, IN2)
-- L298N → JGY370 DC Motor (OUT1, OUT2)
-- Battery → ON/OFF Switch → L298N motor power (Vmotor)
-- Buttons (UP, DOWN) → Arduino digital inputs
-- Indicator LEDs (LEFT, RIGHT, ERROR) → Arduino digital outputs
-- Common ground connection (Arduino GND, L298N GND, Battery negative)
+
+```mermaid
+flowchart TD
+    subgraph ARD["Arduino UNO"]
+        VIN["VIN"]
+        GND_A["GND"]
+        RPWM["PIN 8 (RPWM)"]
+        LPWM["PIN 9 (LPWM)"]
+        REN["PIN 10 (R_EN)"]
+        LEN["PIN 7 (L_EN)"]
+        RIS["A0 (R_IS, opt)"]
+        LIS["A1 (L_IS, opt)"]
+    end
+    subgraph IBT["IBT-2 Motor Driver"]
+        BPLUS["B+ (12/24V)"]
+        BMINUS["B- (GND)"]
+        MPLUS["M+"]
+        MMINUS["M-"]
+        RPWM_I["RPWM"]
+        LPWM_I["LPWM"]
+        REN_I["R_EN"]
+        LEN_I["L_EN"]
+        RIS_I["R_IS"]
+        LIS_I["L_IS"]
+    end
+    PSU["12V/24V DC Power Supply"]
+    FUSE["Fuse (2-3A)"]
+    SW["Power Switch"]
+    MOTOR["31ZY-5840 DC Motor"]
+
+    PSU -- "+12V/24V" --> FUSE
+    FUSE --> SW
+    SW -- "+12V/24V" --> VIN
+    SW -- "+12V/24V" --> BPLUS
+    PSU -- "GND" --> GND_A
+    GND_A -- "GND" --> BMINUS
+    MPLUS -- "M+" --> MOTOR
+    MMINUS -- "M-" --> MOTOR
+    RPWM -- "PWM" --> RPWM_I
+    LPWM -- "PWM" --> LPWM_I
+    REN -- "Digital" --> REN_I
+    LEN -- "Digital" --> LEN_I
+    RIS -- "Analog (opt)" --> RIS_I
+    LIS -- "Analog (opt)" --> LIS_I
+```
+
+**Key connections shown (BTS7960/IBT-2):**
+- Arduino → BTS7960/IBT-2 motor driver (control signals: RPWM, LPWM, R_EN, L_EN)
+- BTS7960 → DC Worm Gear Motor (M+, M-)
+- BTS7960 Power: B+ (12V/24V), B- (Power GND)
+- Common ground connection (Arduino GND, BTS7960 GND, Power GND)
 
 ---
 
-## Quick Wiring Checklist
 
-| Connection | From | To | Notes |
-|---|---|---|---|
-| **Motor Control** | Arduino PIN 10 (ENA) | L298N ENA | PWM signal for motor speed |
-| | Arduino PIN 8 (IN1) | L298N IN1 | Direction control |
-| | Arduino PIN 9 (IN2) | L298N IN2 | Direction control |
-| **Motor Power** | Battery positive | ON/OFF Switch | Add fuse (recommended) |
-| | Switch output | L298N Vmotor | **Do NOT route through Arduino** |
-| | L298N OUT1 | Motor terminal 1 | High-current path |
-| | L298N OUT2 | Motor terminal 2 | High-current path |
-| **User Input** | Button UP | Arduino PIN 3 | Pull-down or internal pull-up |
-| | Button DOWN | Arduino PIN 2 | Pull-down or internal pull-up |
-| **Visual Feedback** | Arduino PIN 5 | LED LEFT | Add current-limiting resistor |
-| | Arduino PIN 4 | LED RIGHT | Add current-limiting resistor |
-| | Arduino PIN 13 | ERROR LED | Built-in LED on UNO |
-| **Ground** | Arduino GND | L298N GND | **CRITICAL: Common ground** |
-| | L298N GND | Battery negative | **CRITICAL: Common ground** |
+## Mermaid Wiring Diagram (Minimal System)
+
+```mermaid
+graph TD
+    PSU["12V/24V DC Power Supply"]
+    SW["Power Switch"]
+    FUSE["Fuse (2-3A)"]
+    ARD["Arduino UNO"]
+    IBT["IBT-2 Motor Driver"]
+    MOTOR["31ZY-5840 DC Motor"]
+
+    PSU -- "+12V/24V" --> FUSE
+    FUSE --> SW
+    SW -- "+12V/24V" --> ARD["Arduino VIN"]
+    SW -- "+12V/24V" --> IBT["B+ (12/24V)"]
+    PSU -- "GND" --> ARD["GND"]
+    ARD -- "GND" --> IBT["B- (GND)"]
+    IBT -- "M+" --> MOTOR
+    IBT -- "M-" --> MOTOR
+    ARD -- "PIN 8 (RPWM)" --> IBT
+    ARD -- "PIN 9 (LPWM)" --> IBT
+    ARD -- "PIN 10 (R_EN)" --> IBT
+    ARD -- "PIN 7 (L_EN)" --> IBT
+    ARD -- "A0 (R_IS, opt)" --> IBT
+    ARD -- "A1 (L_IS, opt)" --> IBT
+```
+
+---
+
+## Quick Wiring Checklist (BTS7960/IBT-2)
+
+| Connection         | From           | To                | Notes |
+|--------------------|----------------|-------------------|-------|
+| **Motor Control**  | Arduino PWM X  | BTS7960 RPWM      | Motor direction/speed (PWM) |
+|                    | Arduino PWM Y  | BTS7960 LPWM      | Motor direction/speed (PWM) |
+|                    | Arduino D Z    | BTS7960 R_EN      | Tie HIGH (5V) or digital pin |
+|                    | Arduino D W    | BTS7960 L_EN      | Tie HIGH (5V) or digital pin |
+|                    | Arduino A0     | BTS7960 R_IS      | (Optional) Current sense |
+|                    | Arduino A1     | BTS7960 L_IS      | (Optional) Current sense |
+| **Motor Power**    | Power +12V/24V | BTS7960 B+        | Motor supply |
+|                    | Power GND      | BTS7960 B-        | Motor supply GND |
+|                    | BTS7960 M+     | Motor terminal 1  | High-current path |
+|                    | BTS7960 M-     | Motor terminal 2  | High-current path |
+|                    |                |                   |                                |
+| **Ground**         | Arduino GND    | BTS7960 GND       | **CRITICAL: Common ground** |
+|                    | BTS7960 GND    | Power GND         | **CRITICAL: Common ground** |
 
 ---
 
 ## Critical Safety & Grounding Requirements
 
-⚠️ **Common Ground:** Arduino GND, L298N GND, and battery negative MUST be connected together. Failure to establish common ground can cause:
+⚠️ **Common Ground:** Arduino GND, IBT-2 GND, and battery negative MUST be connected together. Failure to establish common ground can cause:
 - Erratic motor behavior
 - Damaged components
 - Unreliable sensor readings
 
 ⚠️ **Motor Power Isolation:** Motor power (battery +) must NOT be routed through the Arduino. The Arduino 5V pin cannot supply sufficient current for the motor.
 
-⚠️ **Fusing:** Add an inline fuse (2–3A recommended) between battery and L298N Vmotor to protect against overcurrent faults.
+⚠️ **Fusing:** Add an inline fuse (2–3A recommended) between battery and IBT-2 Vmotor to protect against overcurrent faults.
 
 ⚠️ **Wiring Safety:** Always disconnect battery before making wiring changes. Double-check polarity before powering on.
 
 ---
 
-## Pin Assignment Summary
+
+## Pin Assignment Summary (BTS7960/IBT-2)
 
 Refer to [PinConfig.h](../source/arduino/PinConfig.h) for software definitions.
 
-| Arduino Pin | Function | Connected To |
-|---|---|---|
-| 2 | BTN_DOWN | Button (DOWN) |
-| 3 | BTN_UP | Button (UP) |
-| 4 | LED_RIGHT | Indicator LED |
-| 5 | LED_LEFT | Indicator LED |
-| 8 | MOTOR_IN1 | L298N IN1 |
-| 9 | MOTOR_IN2 | L298N IN2 |
-| 10 | MOTOR_ENA | L298N ENA (PWM) |
-| 13 | ERROR_LED | Built-in LED / External error LED |
-| GND | Ground | Common ground (L298N, battery) |
+| Arduino Pin | Function/Signal      | Connected To         | Description                       |
+|-------------|----------------------|---------------------|-----------------------------------|
+| 6           | RPWM (Right PWM)     | IBT-2 RPWM          | Motor speed/direction PWM (right) |
+| 7           | LPWM (Left PWM)      | IBT-2 LPWM          | Motor speed/direction PWM (left)  |
+| 8           | R_EN (Right Enable)  | IBT-2 R_EN           | Enable right half-bridge          |
+| 9           | L_EN (Left Enable)   | IBT-2 L_EN           | Enable left half-bridge           |
+| A0          | R_IS (Right Sense)   | IBT-2 R_IS (analog)  | Current sense (right, optional)   |
+| A1          | L_IS (Left Sense)    | IBT-2 L_IS (analog)  | Current sense (left, optional)    |
+| VIN         | Power Input          | 12V/24V DC Supply    | Main power input                  |
+| GND         | Ground               | Common ground        | System ground                     |
 
 ---
 
-## Component Specifications
 
-| Component | Model / Type | Notes |
-|---|---|---|
-| Microcontroller | Arduino UNO (ATmega328P) | 5V logic, 16 MHz |
-| Motor Driver | L298N Dual H-Bridge | Supports up to 2A per channel |
-| Motor | JGY370 DC Motor with Gearbox | 12V nominal, check stall current |
-| Power Supply | 9–12V Battery | Match motor voltage rating |
-| Buttons | Momentary push buttons | NO (Normally Open) |
-| LEDs | Standard 5mm LEDs | Add 220Ω–330Ω resistors |
+## Component Specifications (DeskHigh torque branch)
+
+| Component        | Model / Type                | Notes |
+|------------------|----------------------------|-------|
+| Microcontroller  | Arduino UNO (ATmega328P)   | 5V logic, 16 MHz |
+| Motor Driver     | BTS7960 / IBT-2 H-Bridge   | Dual half-bridge, supports high current |
+| Motor            | 31ZY-5840 DC Worm Gear     | 12V/24V, 10 RPM, high torque |
+| Power Supply     | 12V or 24V DC, 5A+         | Match motor voltage rating |
+|                  |                            |                     |
 
 ---
 
-## Modified Power Section (No Battery)
+## Power Section (No Battery)
 
-| Connection | From | To | Notes |
-|---|---|---|---|
-| **Shared Power** | 12V DC Supply (+) | Arduino VIN | Powers Arduino (regulated to 5V internally) |
-| | 12V DC Supply (+) | ON/OFF Switch | Fuse recommended (2–3A) |
-| | Switch output | L298N Vmotor | Motor power |
-| **Ground** | 12V Supply (−) | Arduino GND | Common ground |
-| | Arduino GND | L298N GND | Common ground |
 
-**Required hardware changes:**
-- Replace 9V battery with 12V 2A DC barrel jack power supply
-- Add 2.1mm barrel jack connector to Arduino VIN and L298N Vmotor (via switch)
+| Connection         | From               | To             | Notes                                 |
+|--------------------|--------------------|----------------|---------------------------------------|
+| **Power**          | 12V/24V DC Supply (+) | Arduino VIN    | Powers Arduino (regulated to 5V)      |
+|                    | 12V/24V DC Supply (+) | ON/OFF Switch  | Fuse recommended (2–3A)               |
+|                    | Switch output         | IBT-2 B+       | Motor power                           |
+| **Ground**         | 12V/24V Supply (−)    | Arduino GND    | Common ground                         |
+|                    | Arduino GND           | IBT-2 B-       | Common ground                         |
+
+
+**Required hardware changes for DeskHigh torque:**
+- Use 31ZY-5840 DC Worm Gear Motor
+- Use 12V or 24V DC supply (5A+ recommended)
+- Connect RPWM/LPWM to Arduino PWM pins, R_EN/L_EN to 5V or digital pins
+- Optionally connect R_IS/L_IS to Arduino A0/A1 for current sensing
 - Maintain common ground between all components
 
 ---
+
 
 ## Additional Resources
 
 - **Detailed wiring and troubleshooting:** [HardwareConnections.md](HardwareConnections.md)
 - **Bill of Materials (BOM):** See project README
 - **Testing procedures:** [SoftwareIntegrationTestsSpecification.md](SoftwareIntegrationTestsSpecification.md)
+- **BTS7960/IBT-2 datasheet:** [Example link](https://www.electronicwings.com/nodemcu/bts7960-motor-driver-interfacing-with-nodemcu)
 
 ---
 

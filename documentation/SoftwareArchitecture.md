@@ -232,27 +232,41 @@ The logical view describes the system's structure in terms of its key software m
 - Pin constant definitions
 - Hardware configuration documentation
 
+
 **Exposed Interface:** ARCH-IF-003 (Pin Constants)
 
----
+**Current Pin Assignments (IBT-2/BTS7960, ON/OFF/ON switch):**
 
-#### ARCH-COMP-004: Main Loop (arduino.ino)
+| Name             | Pin | Function/Notes                       |
+|------------------|-----|--------------------------------------|
+| RPWM_PIN         | 5   | Motor driver right PWM (direction/speed) |
+| LPWM_PIN         | 6   | Motor driver left PWM (direction/speed)  |
+| R_EN_PIN         | 9   | Motor driver right enable (must match L_EN_PIN) |
+| L_EN_PIN         | 10  | Motor driver left enable (must match R_EN_PIN)  |
+| SWITCH_UP_PIN    | 7   | ON/OFF/ON switch UP position (active low) |
+| SWITCH_DOWN_PIN  | 8   | ON/OFF/ON switch DOWN position (active low) |
+| R_IS_PIN         | A0  | Right current sense (analog)          |
+| L_IS_PIN         | A1  | Left current sense (analog)           |
 
-**Files:** `arduino.ino`  
-**Responsibility:** System initialization, main loop orchestration  
-**Implements Requirements:** SWE-REQ-001, SWE-REQ-009  
-**Integration Test Coverage:** IT-001 to IT-008
+All pin assignments are defined in PinConfig.h. Power pins (B+/B-) are not controlled by Arduino.
 
-**Key Functions:**
-- System initialization (setup)
-- Non-blocking main loop
-- Input collection
-- Output application
+```cpp
+typedef enum {
+    SWITCH_STATE_OFF = 0,
+    SWITCH_STATE_UP,
+    SWITCH_STATE_DOWN
+} SwitchState_t;
 
-**Dependencies:** ARCH-IF-001 (Task API), ARCH-IF-002 (HAL API)
+typedef struct {
+    SwitchState_t switch_state; // State of ON/OFF/ON switch
+} DeskAppInputs_t;
 
----
-
+typedef struct {
+    bool motor_enable;      // Enable motor driver
+    bool motor_direction;   // Motor direction: false=up, true=down
+    uint8_t motor_pwm;      // Motor PWM value (0-255)
+} DeskAppOutputs_t;
+```
 ```mermaid
 flowchart TB
   subgraph ARCH-COMP-004["ARCH-COMP-004: Main Loop"]
@@ -293,8 +307,8 @@ The state machine is the core behavioral element of the application logic. It en
 | ARCH-STATE-001 | IDLE | System ready, awaiting input | Ready LED (green) | SWE-REQ-001, SWE-REQ-002 |
 | ARCH-STATE-002 | MOVING_UP | Desk moving upward | Up LED (blue) | SWE-REQ-005, SWE-REQ-007 |
 | ARCH-STATE-003 | MOVING_DOWN | Desk moving downward | Down LED (yellow) | SWE-REQ-006, SWE-REQ-008 |
-| ARCH-STATE-004 | ERROR | Fault detected, system locked | Error LED (red) | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016 |
-| ARCH-STATE-005 | DWELL | Brief pause after limit reached | Previous direction LED | SWE-REQ-007, SWE-REQ-008 |
+| ARCH-STATE-004 | ERROR | Fault detected, system locked |  | SWE-REQ-011, SWE-REQ-015, SWE-REQ-016 |
+| ARCH-STATE-005 | DWELL | Brief pause after limit reached |  | SWE-REQ-007, SWE-REQ-008 |
 
 **Note:** ARCH-STATE-005 (DWELL) is an implementation detail that provides a 300ms pause after reaching a limit switch before returning to IDLE. This prevents mechanical stress from immediate direction reversal and satisfies the architectural constraint CONST-003 (direction changes require stop before reversal).
 
@@ -302,12 +316,16 @@ The state machine is the core behavioral element of the application logic. It en
 
 | Transition ID | From State | To State | Guard Condition | Action | Requirements |
 |--------------|-----------|----------|----------------|--------|-------------|
-| ARCH-TRANS-001 | IDLE | MOVING_UP | Up button pressed AND NOT down pressed AND NOT upper limit | Set motor UP, LED ON, start timeout | SWE-REQ-005, SWE-REQ-018 |
-| ARCH-TRANS-002 | IDLE | MOVING_DOWN | Down button pressed AND NOT up pressed AND NOT lower limit | Set motor DOWN, LED ON, start timeout | SWE-REQ-006, SWE-REQ-018 |
-| ARCH-TRANS-003 | MOVING_UP | IDLE | Up button released OR timeout | Stop motor, LED OFF | SWE-REQ-007, SWE-REQ-018 |
-| ARCH-TRANS-004 | MOVING_DOWN | IDLE | Down button released OR timeout | Stop motor, LED OFF | SWE-REQ-008, SWE-REQ-018 |
-| ARCH-TRANS-005 | Any | ERROR | Both buttons pressed OR system fault | Emergency stop, error LED ON | SWE-REQ-010, SWE-REQ-011 |
-| ARCH-TRANS-006 | IDLE | ERROR | Conflicting inputs detected | No movement, error LED ON | SWE-REQ-014 |
+| ARCH-TRANS-001 | IDLE | MOVING_UP | Switch in UP position AND NOT upper limit | Set motor UP, LED ON, start timeout | SWE-REQ-005, SWE-REQ-018 |
+| ARCH-TRANS-002 | IDLE | MOVING_DOWN | Switch in DOWN position AND NOT lower limit | Set motor DOWN, LED ON, start timeout | SWE-REQ-006, SWE-REQ-018 |
+| ARCH-TRANS-003 | MOVING_UP | IDLE | Switch moved to OFF OR timeout | Stop motor, LED OFF | SWE-REQ-007, SWE-REQ-018 |
+| ARCH-TRANS-004 | MOVING_DOWN | IDLE | Switch moved to OFF OR timeout | Stop motor, LED OFF | SWE-REQ-008, SWE-REQ-018 |
+| ARCH-TRANS-001 | IDLE | MOVING_UP | Switch in UP position AND NOT upper limit | Set motor UP, start timeout | SWE-REQ-005, SWE-REQ-018 |
+| ARCH-TRANS-002 | IDLE | MOVING_DOWN | Switch in DOWN position AND NOT lower limit | Set motor DOWN, start timeout | SWE-REQ-006, SWE-REQ-018 |
+| ARCH-TRANS-003 | MOVING_UP | IDLE | Switch moved to OFF OR timeout | Stop motor | SWE-REQ-007, SWE-REQ-018 |
+| ARCH-TRANS-004 | MOVING_DOWN | IDLE | Switch moved to OFF OR timeout | Stop motor | SWE-REQ-008, SWE-REQ-018 |
+| ARCH-TRANS-005 | Any | ERROR | System fault | Emergency stop | SWE-REQ-010, SWE-REQ-011 |
+| ARCH-TRANS-006 | IDLE | ERROR | (N/A for rocker switch) | (N/A) | SWE-REQ-014 |
 | ARCH-TRANS-007 | ERROR | IDLE | Power cycle (system reset) | Reinitialize to IDLE | SWE-REQ-016 |
 | ARCH-TRANS-008 | MOVING_UP | DWELL | Upper limit reached | Stop motor, start dwell timer | SWE-REQ-007 |
 | ARCH-TRANS-009 | MOVING_DOWN | DWELL | Lower limit reached | Stop motor, start dwell timer | SWE-REQ-008 |
@@ -319,36 +337,36 @@ The state machine is the core behavioral element of the application logic. It en
 stateDiagram-v2
     [*] --> IDLE : Power On / Initialize
     
-    IDLE --> MOVING_UP : Up pressed & Safe
-    IDLE --> MOVING_DOWN : Down pressed & Safe
-    IDLE --> ERROR : Both pressed
+    IDLE --> MOVING_UP : Switch UP & Safe
+    IDLE --> MOVING_DOWN : Switch DOWN & Safe
+    IDLE --> ERROR : System fault
     
-    MOVING_UP --> IDLE : Button released / Timeout / Limit
-    MOVING_UP --> ERROR : Fault / Both pressed
+    MOVING_UP --> IDLE : Switch OFF / Timeout / Limit
+    MOVING_UP --> ERROR : Fault
     
-    MOVING_DOWN --> IDLE : Button released / Timeout / Limit
-    MOVING_DOWN --> ERROR : Fault / Both pressed
+    MOVING_DOWN --> IDLE : Switch OFF / Timeout / Limit
+    MOVING_DOWN --> ERROR : Fault
     
     ERROR --> IDLE : Power Cycle
     
     note right of IDLE
         ARCH-STATE-001
-        Ready LED ON
+        // (LED control removed)
     end note
     
     note right of MOVING_UP
         ARCH-STATE-002
-        Up LED ON
+        // (LED control removed)
     end note
     
     note right of MOVING_DOWN
         ARCH-STATE-003
-        Down LED ON
+        // (LED control removed)
     end note
     
     note right of ERROR
         ARCH-STATE-004
-        Error LED ON
+        // (LED control removed)
         System Locked
     end note
 ```
@@ -372,22 +390,25 @@ stateDiagram-v2
 ---
 
 ### Physical View
-The physical view describes the system's hardware components and their physical connections.
+The physical view describes the system's hardware components and their physical connections for the current minimal IBT-2/rocker switch system.
 
-- **ECU:** Arduino UNO (or compatible).
-- **Motor Driver:** L298N (IN1, IN2, ENA/PWM).
-- **Actuator:** DC motor/gearbox driving desk lift.
-- **Human Interface:** Up/Down buttons; indicator LEDs (Up, Down, Error).
-- **Sensors:** Upper and lower limit switches.
-- **Power:** Regulated supply (logic + motor power rails).
+- **ECU:** Arduino UNO (or compatible)
+- **Motor Driver:** BTS7960/IBT-2 (RPWM=5, LPWM=6, R_EN=9, L_EN=10)
+- **Actuator:** 31ZY-5840 DC Worm Gear Motor (10 RPM, high torque)
+- **Human Interface:** ON/OFF/ON 3-position rocker switch (SWITCH_UP_PIN=7, SWITCH_DOWN_PIN=8)
+- **Current Sense:** R_IS_PIN=A0, L_IS_PIN=A1 (analog)
+- **Power:** Regulated supply (logic + motor power rails)
 
 ```mermaid
 flowchart TB
-  PSU[Power Supply] --> MD[L298N Motor Driver]
-  ECU[Arduino UNO] --> MD
-  ECU --> UI[Buttons & LEDs]
-  ECU --> LS[Limit Switches]
-  MD --> MTR[DC Motor]
+    PSU[Power Supply 12V/24V] --> MD[BTS7960/IBT-2 Motor Driver\n(RPWM=5, LPWM=6, R_EN=9, L_EN=10)]
+    MD --> MTR[31ZY-5840 DC Motor]
+    ARD[Arduino UNO]
+    ARD -.-> MD
+    ARD -.-> SW[ON/OFF/ON Rocker Switch\n(7=UP, 8=DOWN)]
+    ARD -.-> CS[Current Sense\nA0/A1]
+    SW --- ARD
+    CS --- ARD
 ```
 
 ### Process View
@@ -425,11 +446,17 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t* inputs, DeskAppOutputs_
 **Data Structures:**
 
 ```cpp
+
+typedef enum {
+    SWITCH_UP,
+    SWITCH_OFF,
+    SWITCH_DOWN
+} SwitchState_t;
+
 typedef struct {
-    bool btUPPressed;      // Up button state (debounced)
-    bool btDOWNPressed;    // Down button state (debounced)
-    bool upperLimitActive; // Upper limit switch state
-    bool lowerLimitActive; // Lower limit switch state
+    SwitchState_t switch_state; // Rocker switch state (UP/OFF/DOWN)
+    bool upperLimitActive;      // Upper limit switch state
+    bool lowerLimitActive;      // Lower limit switch state
 } DeskAppInputs_t;
 
 typedef struct {
@@ -482,21 +509,13 @@ void HAL_StopMotor();
 **Output Functions - LEDs:**
 
 ```cpp
-void HAL_SetErrorLED(bool state);
-void HAL_SetMovingUpLED(bool state);
-void HAL_SetMovingDownLED(bool state);
-void HAL_SetPowerLED(bool state);
-void HAL_BlinkErrorLED();  // Blink pattern for critical errors
-void HAL_BlinkUPLED();
-void HAL_BlinkDOWNLED();
+// (LED control functions removed)
 ```
 
 **Query Functions:**
 
 ```cpp
-bool HAL_GetMovingDownLED();
-bool HAL_GetMovingUpLED();
-bool HAL_GetErrorLED();
+// (LED query functions removed)
 ```
 
 **Timing Constraints:**
@@ -520,17 +539,15 @@ bool HAL_GetErrorLED();
 **Pin Definitions:**
 
 ```cpp
-extern const int ERROR_LED;       // Error indicator LED pin
-extern const int LED_LEFT_PIN;    // Left/Up indicator LED pin
-extern const int LED_RIGHT_PIN;   // Right/Down indicator LED pin
-extern const int BUTTON_UP_PIN;   // Up button input pin
-extern const int BUTTON_DOWN_PIN; // Down button input pin
+// (LED pin definitions removed)
+extern const int SWITCH_UP_PIN;   // Rocker switch UP position pin
+extern const int SWITCH_DOWN_PIN; // Rocker switch DOWN position pin
 extern const int IN1;             // Motor driver IN1
 extern const int IN2;             // Motor driver IN2
 extern const int ENA;             // Motor driver enable (PWM)
 ```
 
-**Testability:** Configurable in mock HAL for testing
+**Testability:** Configurable in mock HAL for testing. All pins and interfaces match the current hardware revision: ON/OFF/ON switch, IBT-2/BTS7960 driver, and current sense.
 
 ---
 
@@ -545,7 +562,7 @@ This view breaks down the system by its core functions and maps them to the modu
 | Motion command generation            | Command motor up/down/stop, apply direction and speed            | HAL (`HAL_MoveUp/Down`, `HAL_StopMotor`)     | UC-02, UC-03        |
 | Safety interlocks and emergency stop | Stop motion on faults or unsafe inputs; handle dual-button press | DeskController, HAL                              | UC-04, UC-07, UC-08 |
 | Dwell management                     | Enforce pause before reversal to protect hardware                | DeskController                                   | UC-02, UC-03        |
-| Indicators and HMI                   | Drive LEDs for UP/DOWN/ERROR and status                          | HAL (LED setters/blinkers)                       | UC-02, UC-03, UC-05 |
+| Indicators and HMI                   | (No LEDs present)                                                |                                                  |                     |
 | Power handling                       | Safe behavior on power loss/restore                              | arduino.ino, DeskController                      | UC-06               |
 | Diagnostics and test hooks           | Host-based tests via structs and HAL abstraction                 | Tests, DeskController, HAL                       | All (verification)  |
 
@@ -558,7 +575,7 @@ This view breaks down the system by its core functions and maps them to the modu
 - Must operate on Arduino UNO or compatible ECU
 - Motor driver: L298N
 - Limit switches and buttons: digital inputs
-- Indicator LEDs: digital outputs
+- (No indicator LEDs)
 - Power supply: regulated, office environment
 - Timing: non-blocking, responsive (<100ms reaction)
 - Regulatory: must comply with ISO 25119, ASPICE (see the safety analysis in [SoftwareDetailedDesign.md](SoftwareDetailedDesign.md#safety-analysis-and-rationale) for details)
@@ -604,45 +621,28 @@ This architecture is fully verified through integration tests that validate all 
 
 These diagrams show component interactions for key scenarios.
 
+
 ### Sequence 1: Normal Upward Movement (UC-02)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant MainLoop as ARCH-COMP-004<br/>Main Loop
-    participant App as ARCH-COMP-001<br/>DeskController
-    participant HAL as ARCH-COMP-002<br/>HAL
-    participant Motor
-    participant LED
-    
-    User->>MainLoop: Press Up Button
-    MainLoop->>HAL: HAL_debounceButton(UP)
-    HAL-->>MainLoop: true (pressed)
-    MainLoop->>App: DeskApp_task(inputs)
-    
-    App->>App: Check state = IDLE
-    App->>App: Check Down NOT pressed
-    App->>App: Transition to MOVING_UP
-    App-->>MainLoop: outputs.moveUp = true
-    
-    MainLoop->>HAL: HAL_MoveUp(speed)
-    HAL->>Motor: Set direction UP
-    HAL->>LED: Set Up LED ON
-    
-    Note over User,LED: Desk moves upward...
-    
-    User->>MainLoop: Release Up Button
-    MainLoop->>HAL: HAL_debounceButton(UP)
-    HAL-->>MainLoop: false (released)
-    MainLoop->>App: DeskApp_task(inputs)
-    
-    App->>App: Detect button release
-    App->>App: Transition to IDLE
-    App-->>MainLoop: outputs.stop = true
-    
-    MainLoop->>HAL: HAL_StopMotor()
-    HAL->>Motor: Stop
-    HAL->>LED: Set Ready LED ON
+    participant Switch as "Rocker Switch (7/8)"
+    participant MainLoop as "Main Loop (arduino.ino)"
+    participant AppLogic as "DeskController"
+    participant HAL as "HAL"
+    participant Motor as "IBT-2 Motor Driver"
+    participant CurrentSense as "Current Sense (A0/A1)"
+
+    User ->> Switch: Move to UP
+    Switch ->> MainLoop: UP state (SWITCH_UP_PIN=LOW)
+    MainLoop ->> AppLogic: DeskApp_task(inputs)
+    AppLogic ->> HAL: Command motor up (enable, dir, pwm)
+    HAL ->> Motor: Set RPWM/LPWM, enable
+    HAL ->> CurrentSense: Read current
+    CurrentSense -->> HAL: ADC values
+    HAL -->> AppLogic: Current feedback (if needed)
+    AppLogic -->> MainLoop: Outputs (motor_enable, dir, pwm)
 ```
 
 **Verifies:** ARCH-TRANS-001, ARCH-TRANS-003, ARCH-IF-001, ARCH-IF-002  
@@ -651,50 +651,29 @@ sequenceDiagram
 
 ---
 
+
 ### Sequence 2: Emergency Stop (UC-04)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant MainLoop as ARCH-COMP-004<br/>Main Loop
-    participant App as ARCH-COMP-001<br/>DeskController
-    participant SM as ARCH-COMP-005<br/>State Machine
-    participant HAL as ARCH-COMP-002<br/>HAL
-    participant Motor
-    participant LED
-    
-    Note over User,LED: System in MOVING_UP state
-    
-    User->>MainLoop: Press Down Button<br/>(both pressed)
-    MainLoop->>HAL: HAL_debounceButton(UP)
-    HAL-->>MainLoop: true
-    MainLoop->>HAL: HAL_debounceButton(DOWN)
-    HAL-->>MainLoop: true (both!)
-    
-    MainLoop->>App: DeskApp_task(inputs)<br/>both buttons pressed
-    
-    App->>SM: Evaluate inputs
-    SM->>SM: Detect conflicting inputs
-    SM->>SM: Transition to ERROR
-    SM-->>App: Emergency stop triggered
-    
-    App-->>MainLoop: outputs.stop = true<br/>outputs.error = true
-    
-    MainLoop->>HAL: HAL_StopMotor()
-    HAL->>Motor: STOP (< 50ms)
-    
-    MainLoop->>HAL: HAL_SetErrorLED(true)
-    HAL->>LED: Error LED ON (red)
-    
-    Note over User,LED: System locked in ERROR
-    
-    User->>MainLoop: Release buttons
-    MainLoop->>App: DeskApp_task(inputs)
-    App->>SM: Check state
-    SM-->>App: ERROR (locked)
-    App-->>MainLoop: No change (locked)
-    
-    Note over User,LED: Only power cycle can recover
+    participant Switch as "Rocker Switch (7/8)"
+    participant MainLoop as "Main Loop (arduino.ino)"
+    participant AppLogic as "DeskController"
+    participant HAL as "HAL"
+    participant Motor as "IBT-2 Motor Driver"
+    participant CurrentSense as "Current Sense (A0/A1)"
+
+    User ->> Switch: (Any position)
+    Switch ->> MainLoop: State
+    MainLoop ->> AppLogic: DeskApp_task(inputs)
+    AppLogic ->> HAL: Command motor (if running)
+    HAL ->> CurrentSense: Read current
+    CurrentSense -->> HAL: ADC values (overcurrent detected)
+    HAL ->> AppLogic: Error flag set
+    AppLogic ->> MainLoop: Outputs (motor_enable = false)
+    MainLoop ->> HAL: HAL_StopMotor()
+    HAL ->> Motor: Disable
 ```
 
 **Verifies:** ARCH-TRANS-005, ARCH-STATE-004, ARCH-IF-001, ARCH-IF-002  
@@ -703,40 +682,24 @@ sequenceDiagram
 
 ---
 
+
 ### Sequence 3: Power Cycle Recovery (UC-08)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Power
-    participant MainLoop as ARCH-COMP-004<br/>Main Loop
-    participant App as ARCH-COMP-001<br/>DeskController
-    participant HAL as ARCH-COMP-002<br/>HAL
-    participant LED
-    
-    Note over User,LED: System in ERROR state
-    
-    User->>Power: Toggle power OFF
-    Power-->>MainLoop: Power lost
-    Note over MainLoop,LED: All components reset
-    
-    User->>Power: Toggle power ON
-    Power-->>MainLoop: Power restored
-    
-    MainLoop->>MainLoop: setup() called
-    MainLoop->>HAL: HAL_init()
-    HAL->>HAL: Initialize pins
-    HAL-->>MainLoop: Init complete
-    
-    MainLoop->>App: DeskApp_task_init()
-    App->>App: Initialize state to IDLE
-    App->>App: Clear all outputs
-    App-->>MainLoop: Init complete
-    
-    MainLoop->>HAL: HAL_SetPowerLED(true)
-    HAL->>LED: Ready LED ON (green)
-    
-    Note over User,LED: System recovered, IDLE state
+    participant MainLoop as "Main Loop (arduino.ino)"
+    participant AppLogic as "DeskController"
+    participant HAL as "HAL"
+    participant Motor as "IBT-2 Motor Driver"
+
+    User ->> MainLoop: Power on/reset
+    MainLoop ->> HAL: HAL_init()
+    MainLoop ->> AppLogic: DeskApp_task_init()
+    AppLogic ->> MainLoop: outputs (motor_enable = false)
+    MainLoop ->> HAL: HAL_StopMotor()
+    HAL ->> Motor: Disable
+    Note over User,MainLoop: System recovered, IDLE state
 ```
 
 **Verifies:** ARCH-TRANS-007, ARCH-STATE-001, ARCH-IF-001  
@@ -753,7 +716,6 @@ This section allocates timing budgets to architectural components to meet system
 
 | Requirement ID | Description | Allocated Time | Primary Component |
 |---------------|-------------|---------------|------------------|
-| SWE-REQ-013 | LED update latency | ≤ 50ms | ARCH-COMP-001, ARCH-COMP-002 |
 | SWE-REQ-019 | Emergency stop response | ≤ 50ms | ARCH-COMP-001, ARCH-COMP-005 |
 | SWE-REQ-017 | Button debounce delay | 50ms ± 10ms | ARCH-COMP-002 |
 | SWE-REQ-018 | Movement timeout | 30s ± 500ms | ARCH-COMP-001 |
@@ -788,7 +750,7 @@ This section allocates timing budgets to architectural components to meet system
 ### Timing Verification
 
 - **Method:** HAL mock timestamps all function calls
-- **Tests:** IT-004 (emergency stop), IT-005 (LED update)
+- **Tests:** IT-004 (emergency stop)
 - **Acceptance:** All timing requirements met with >50% margin
 
 ---
@@ -1000,8 +962,7 @@ The main loop passes input and output structs to the application logic (as defin
 
 ```cpp
 typedef struct {
-    bool btUPPressed;
-    bool btDOWNPressed;
+    SwitchState_t switch_state;
     bool upperLimitActive;
     bool lowerLimitActive;
 } DeskAppInputs_t;
@@ -1049,16 +1010,17 @@ DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t* inputs, DeskAppOutputs_
 
 ---
 
+
 ## System Context Diagram
 
-This diagram shows the software system in the context of its users and the hardware it controls.
+This diagram shows the software system in the context of its users and the hardware it controls (current hardware: ON/OFF/ON switch, IBT-2/BTS7960, current sense, no LEDs).
 
 ```mermaid
 graph TD
     subgraph "Desk Lift System"
         direction TB
-        User -- "Presses Buttons" --> MainLoop
-        
+        User -- "Moves Rocker Switch" --> MainLoop
+
         subgraph "Software on Arduino"
             MainLoop["Main Loop (arduino.ino)"]
             AppLogic["Application Logic (DeskController)"]
@@ -1066,14 +1028,14 @@ graph TD
         end
 
         MainLoop -- "Calls task()" --> AppLogic
-        AppLogic -- "Reads Inputs" --> HAL
+        AppLogic -- "Reads Switch/Current Sense" --> HAL
         AppLogic -- "Commands Outputs" --> HAL
         HAL -- "Controls" --> MotorDriver
-        HAL -- "Drives" --> LEDs
+        HAL -- "Reads" --> CurrentSense
     end
 
-    MotorDriver[("L298N Motor Driver")]
-    LEDs[("Indicator LEDs")]
+    MotorDriver[("IBT-2/BTS7960 Motor Driver")]
+    CurrentSense[("Current Sense (A0/A1)")]
 
     style User fill:#9d9,stroke:#333,stroke-width:2px
 ```

@@ -1,32 +1,37 @@
+
+
+#ifndef SWITCH_STATE_T_DEFINED
+#define SWITCH_STATE_T_DEFINED
+typedef enum {
+  SWITCH_STATE_OFF = 0,
+  SWITCH_STATE_UP,
+  SWITCH_STATE_DOWN
+} SwitchState_t;
+#endif
 // DeskController.h
 // -----------------------------------------------------------------------------
 // Desk movement logic and state machine for Desk Automation Project
 // -----------------------------------------------------------------------------
 
+
 #ifndef DESKCONTROLLER_H
 #define DESKCONTROLLER_H
+#include <stdint.h>
 
-/**
- * @brief Application input signals for the Desk controller
- *
- * All fields are sampled inputs for a single execution step and are
- * provided by the HAL layer (debounced button states, limit switches).
- */
+
+
+
 typedef struct {
-  bool btUPPressed;       /**< true when Up button is pressed (debounced) */
-  bool btDOWNPressed;     /**< true when Down button is pressed (debounced) */
-  bool upperLimitActive;  /**< true when upper limit switch asserts */
-  bool lowerLimitActive;  /**< true when lower limit switch asserts */
+  SwitchState_t switch_state; /**< State of ON/OFF/ON switch */
 } DeskAppInputs_t;
 
 /**
  * @brief Application outputs produced by the Desk controller
  */
 typedef struct {
-  bool moveUp;   /**< request motor move up */
-  bool moveDown; /**< request motor move down */
-  bool stop;     /**< explicit stop request (highest priority) */
-  bool error;    /**< application-level error indicator */
+  bool motor_enable;      /**< Enable motor driver */
+  bool motor_direction;  /**< Motor direction: false=one way, true=reverse */
+  uint8_t motor_pwm;     /**< Motor PWM value (0-255) */
 } DeskAppOutputs_t;
 
 typedef enum {

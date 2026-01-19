@@ -48,7 +48,6 @@ target_link_libraries(SoftwareTests PRIVATE
 
 include(GoogleTest)
 gtest_discover_tests(SoftwareTests)
-gtest_add_tests(TARGET SoftwareTests)
 
 # Add unit tests executable
 add_executable(UnitTests

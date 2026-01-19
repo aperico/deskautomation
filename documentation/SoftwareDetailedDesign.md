@@ -113,31 +113,33 @@ Each module includes: ID, purpose, files, implements requirements/architecture, 
 ### MODULE-001: Pin Configuration
 
 **Module ID:** MODULE-001  
+
 **Files:** `source/arduino/PinConfig.h`  
 **Architecture Mapping:** ARCH-COMP-003  
 **Implements Requirements:** SWE-REQ-001  
 **Implements Use Cases:** UC-01
 
 **Purpose:**
-Provides centralized hardware pin assignment definitions for all I/O peripherals. Isolates hardware configuration from application logic.
+Provides centralized hardware pin assignment definitions for all I/O peripherals. Isolates hardware configuration from application logic. For the DeskHigh torque branch, pin assignments are updated for BTS7960/IBT-2 driver and 31ZY-5840 motor.
+
 
 **Design Elements:**
-- **Constants:** CONST-001 through CONST-008 (pin assignments)
+- **Constants:** CONST-001 through CONST-008 (pin assignments for IBT-2/BTS7960)
 - **Dependencies:** None (leaf module)
 - **Exported Interface:** Pin constant definitions via ARCH-IF-003
 
-**Detailed Constants:**
+**Detailed Constants (DeskHigh torque branch):**
 
 | Constant ID | Name | Value | Type | Purpose | Testability |
 |------------|------|-------|------|---------|-------------|
-| CONST-001 | ERROR_LED | Pin 13 | const int | Error indicator LED | Mock in HAL |
-| CONST-002 | LED_LEFT_PIN | Pin 11 | const int | Up movement LED | Mock in HAL |
-| CONST-003 | LED_RIGHT_PIN | Pin 10 | const int | Down movement LED | Mock in HAL |
-| CONST-004 | BUTTON_UP_PIN | Pin 2 | const int | Up button input | Mock in HAL |
-| CONST-005 | BUTTON_DOWN_PIN | Pin 3 | const int | Down button input | Mock in HAL |
-| CONST-006 | IN1 | Pin 5 | const int | Motor driver IN1 | Mock in HAL |
-| CONST-007 | IN2 | Pin 6 | const int | Motor driver IN2 | Mock in HAL |
-| CONST-008 | ENA | Pin 9 | const int | Motor enable (PWM) | Mock in HAL |
+| CONST-001 | RPWM_PIN | Pin 5 | const int | IBT-2/BTS7960 right PWM (direction/speed) | Mock in HAL |
+| CONST-002 | LPWM_PIN | Pin 6 | const int | IBT-2/BTS7960 left PWM (direction/speed) | Mock in HAL |
+| CONST-003 | R_EN_PIN | Pin 9 | const int | IBT-2/BTS7960 right enable | Mock in HAL |
+| CONST-004 | L_EN_PIN | Pin 10 | const int | IBT-2/BTS7960 left enable | Mock in HAL |
+| CONST-005 | SWITCH_UP_PIN | Pin 7 | const int | ON/OFF/ON switch UP position | Mock in HAL |
+| CONST-006 | SWITCH_DOWN_PIN | Pin 8 | const int | ON/OFF/ON switch DOWN position | Mock in HAL |
+| CONST-007 | R_IS_PIN | A0 | const int | Right current sense (analog) | Mock in HAL |
+| CONST-008 | L_IS_PIN | A1 | const int | Left current sense (analog) | Mock in HAL |
 
 **Complexity Metrics:**
 - Lines of Code: ~30
@@ -170,16 +172,31 @@ Provides centralized hardware pin assignment definitions for all I/O peripherals
 **Implements Requirements:** SWE-REQ-001, SWE-REQ-003, SWE-REQ-004, SWE-REQ-012, SWE-REQ-013, SWE-REQ-017  
 **Implements Use Cases:** UC-01, UC-02, UC-03, UC-05
 
+
 **Purpose:**
-Abstracts direct hardware access for all I/O operations. Provides mockable interface for host-based unit testing. Implements button debouncing, LED control, and motor driver commands.
+Abstracts direct hardware access for all I/O operations. Provides mockable interface for host-based unit testing. Implements ON/OFF/ON switch reading, motor driver commands, and current sense. For DeskHigh torque branch, HAL functions are adapted for IBT-2/BTS7960 dual PWM logic (RPWM/LPWM), enable pins, and current sensing (A0/A1). No button or LED logic is present in this hardware revision.
+
 
 **Design Elements:**
-- **Functions:** FUNC-001 through FUNC-015
-- **Data Structures:** DATA-003 (DebounceState)
+- **Functions:**
+  - FUNC-001: HAL_init(void)
+  - FUNC-002: SwitchState_t HAL_ReadSwitchState(void)
+  - FUNC-003: void HAL_MoveUp(const uint8_t speed)
+  - FUNC-004: void HAL_MoveDown(const uint8_t speed)
+  - FUNC-005: void HAL_StopMotor(void)
+  - FUNC-006: void HAL_Task(HAL_Ouputs_t *hal_outputs, bool motor_enable, uint8_t motor_pwm)
+  - FUNC-007: void HAL_ProcessAppState(const DeskAppTask_Return_t ret, const DeskAppOutputs_t *outputs, HAL_Ouputs_t *hal_outputs)
+  - FUNC-008: bool HAL_HasError(void)
+  - FUNC-009: void HAL_ClearError(void)
+  - FUNC-010: float HAL_adc_to_amps(int adc_value, float vref = 5.0, float volts_per_amp = 1.0)
+  - FUNC-011: void HAL_wait_startup(void)
+  - FUNC-012: void HAL_set_logger(HAL_Logger_t logger)
+- **Data Structures:** HAL_Ouputs_t
 - **Dependencies:** MODULE-001 (PinConfig)
 - **Exported Interface:** ARCH-IF-002
 
 **Function Specifications:**
+
 
 #### FUNC-001: HAL_init
 
@@ -194,15 +211,14 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 - No external hardware failures
 
 **Algorithm:**
-1. Configure all button pins as INPUT with internal pullup
-2. Configure all LED pins as OUTPUT, set LOW (off)
-3. Configure all motor driver pins as OUTPUT, set to stop state (IN1=LOW, IN2=LOW, ENA=0)
-4. Initialize debounce states to released
+1. Configure all motor driver pins (RPWM, LPWM, R_EN, L_EN) as OUTPUT, set to stop state
+2. Configure ON/OFF/ON switch pins (SWITCH_UP_PIN, SWITCH_DOWN_PIN) as INPUT_PULLUP
+3. Configure current sense pins (R_IS_PIN, L_IS_PIN) as INPUT (if needed)
+4. Call HAL_StopMotor() to ensure safe state
 
 **Postconditions:**
 - All pins configured correctly
 - Motor is stopped (safe state)
-- All LEDs are off
 - System ready for operation
 
 **Error Handling:** None (hardware initialization cannot fail in Arduino environment)
@@ -218,36 +234,36 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 
 ---
 
-#### FUNC-002: HAL_readButton
+
+#### FUNC-002: HAL_ReadSwitchState
 
 **Function ID:** FUNC-002  
-**Signature:** `bool HAL_readButton(int pin)`  
-**Purpose:** Read raw digital input state from button pin  
+**Signature:** `SwitchState_t HAL_ReadSwitchState(void)`  
+**Purpose:** Read ON/OFF/ON switch state (UP, OFF, DOWN)  
 **Requirements:** SWE-REQ-003, SWE-REQ-004  
-**Complexity:** Cyclomatic 1, LOC 3
-
-**Parameters:**
-- `pin` (in): Pin number to read (CONST-004 or CONST-005)
+**Complexity:** Cyclomatic 2, LOC 8
 
 **Returns:**
-- `true`: Button pressed (pin LOW due to pullup)
-- `false`: Button released (pin HIGH)
+- `SWITCH_STATE_UP`: UP position (SWITCH_UP_PIN LOW, DOWN HIGH)
+- `SWITCH_STATE_DOWN`: DOWN position (SWITCH_DOWN_PIN LOW, UP HIGH)
+- `SWITCH_STATE_OFF`: Center/off (both HIGH)
 
 **Preconditions:**
 - FUNC-001 (HAL_init) called
-- Pin configured as INPUT
+- Pins configured as INPUT_PULLUP
 
 **Algorithm:**
-1. Call Arduino digitalRead(pin)
-2. Invert result (pullup logic: LOW = pressed)
-3. Return boolean state
+1. Read digital state of SWITCH_UP_PIN and SWITCH_DOWN_PIN
+2. If UP LOW and DOWN HIGH, return SWITCH_STATE_UP
+3. If DOWN LOW and UP HIGH, return SWITCH_STATE_DOWN
+4. If both HIGH, return SWITCH_STATE_OFF
 
 **Postconditions:** None (read-only operation)
 
 **Timing:** < 10µs execution time
 
 **Test Hooks:**
-- Mock can set button states programmatically
+- Mock can set switch states programmatically
 - State transitions can be simulated
 
 **Unit Test Coverage:** TC-003, TC-005  
@@ -255,93 +271,42 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 
 ---
 
-#### FUNC-003: HAL_debounceButton
 
-**Function ID:** FUNC-003  
-**Signature:** `bool HAL_debounceButton(const int pin, DebounceState &state, const unsigned long debounceDelay)`  
-**Purpose:** Read debounced button state with configurable delay  
-**Requirements:** SWE-REQ-017  
-**Complexity:** Cyclomatic 4, LOC 20
-
-**Parameters:**
-- `pin` (in): Pin number to read
-- `state` (in/out): Debounce state structure (DATA-003)
-- `debounceDelay` (in): Debounce time in milliseconds (default 50ms)
-
-**Returns:**
-- Stable debounced button state (true = pressed)
-
-**Preconditions:**
-- FUNC-001 called
-- `state` initialized (can be zero-initialized)
-
-**Algorithm (ALG-002):**
-```
-1. currentReading = HAL_readButton(pin)
-2. IF currentReading != state.lastReading THEN
-3.   state.lastDebounceTime = millis()
-4. END IF
-5. IF (millis() - state.lastDebounceTime) > debounceDelay THEN
-6.   IF currentReading != state.stableState THEN
-7.     state.stableState = currentReading
-8.   END IF
-9. END IF
-10. state.lastReading = currentReading
-11. RETURN state.stableState
-```
-
-**Postconditions:**
-- `state.stableState` reflects stable button reading
-- Transient bounces filtered out
-
-**Timing:** < 50µs execution time
-
-**Test Hooks:**
-- Mock can simulate bounce patterns
-- Timing can be accelerated in tests
-
-**Unit Test Coverage:** TC-003 to TC-006  
-**Integration Test Coverage:** IT-006, IT-010
+// (No debounce logic in this hardware revision)
 
 ---
 
-#### FUNC-004: HAL_SetMotorDirection
 
-**Function ID:** FUNC-004  
-**Signature:** `void HAL_SetMotorDirection(int direction)`  
-**Purpose:** Set motor driver direction pins  
-**Requirements:** SWE-REQ-005, SWE-REQ-006, SWE-REQ-007, SWE-REQ-008  
-**Complexity:** Cyclomatic 3, LOC 12
+#### FUNC-003: HAL_MoveUp, HAL_MoveDown, HAL_StopMotor
+
+**Function IDs:** FUNC-003, FUNC-004, FUNC-005
+**Signatures:**
+- `void HAL_MoveUp(const uint8_t speed)`
+- `void HAL_MoveDown(const uint8_t speed)`
+- `void HAL_StopMotor(void)`
+**Purpose:** Control IBT-2/BTS7960 motor driver for up/down/stop
+**Requirements:** SWE-REQ-005, SWE-REQ-006, SWE-REQ-007, SWE-REQ-008
+**Complexity:** Cyclomatic 2, LOC 10 each
 
 **Parameters:**
-- `direction` (in): -1 (down), 0 (stop), 1 (up)
+- `speed` (in): PWM value (0-255)
 
 **Preconditions:** FUNC-001 called
 
 **Algorithm:**
-```
-1. IF direction == 1 THEN       // Up
-2.   digitalWrite(IN1, HIGH)
-3.   digitalWrite(IN2, LOW)
-4. ELSE IF direction == -1 THEN // Down
-5.   digitalWrite(IN1, LOW)
-6.   digitalWrite(IN2, HIGH)
-7. ELSE                         // Stop
-8.   digitalWrite(IN1, LOW)
-9.   digitalWrite(IN2, LOW)
-10. END IF
-```
+- HAL_MoveUp: Enable both EN pins, set RPWM to speed, LPWM to 0
+- HAL_MoveDown: Enable both EN pins, set LPWM to speed, RPWM to 0
+- HAL_StopMotor: Set both PWM to 0, disable EN pins
 
 **Postconditions:**
-- Motor driver direction pins set correctly
-- Motor moves in specified direction (when enabled)
+- Motor driver pins set correctly for requested action
 
-**Error Handling:** Invalid direction treated as stop (safe default)
+**Error Handling:** None (safe default is stop)
 
 **Timing:** < 20µs execution time
 
 **Test Hooks:**
-- Mock records direction commands
+- Mock records PWM/enable commands
 - Pin states can be verified
 
 **Unit Test Coverage:** TC-003 to TC-006  
@@ -349,22 +314,8 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 
 ---
 
-#### FUNC-005 through FUNC-015: LED and Motor Control Functions
 
-**Additional HAL Functions:**
-- FUNC-005: `HAL_MoveUp(speed)` - Set motor up with PWM speed
-- FUNC-006: `HAL_MoveDown(speed)` - Set motor down with PWM speed
-- FUNC-007: `HAL_StopMotor()` - Stop motor immediately
-- FUNC-008: `HAL_SetErrorLED(state)` - Control error LED
-- FUNC-009: `HAL_SetMovingUpLED(state)` - Control up LED
-- FUNC-010: `HAL_SetMovingDownLED(state)` - Control down LED
-- FUNC-011: `HAL_SetPowerLED(state)` - Control ready/power LED
-- FUNC-012: `HAL_BlinkErrorLED()` - Blink error LED pattern
-- FUNC-013: `HAL_GetErrorLED()` - Query error LED state
-- FUNC-014: `HAL_GetMovingUpLED()` - Query up LED state
-- FUNC-015: `HAL_GetMovingDownLED()` - Query down LED state
-
-(See detailed specifications in code documentation)
+// (No LED or button functions in this hardware revision)
 
 **Module-Level Metrics:**
 - Lines of Code: ~200 (HAL.cpp), ~150 (HALMock.cpp)
@@ -384,6 +335,7 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 
 ---
 
+
 ### MODULE-003: Application Logic (DeskController)
 
 **Module ID:** MODULE-003  
@@ -393,18 +345,20 @@ Abstracts direct hardware access for all I/O operations. Provides mockable inter
 **Implements Use Cases:** UC-01 through UC-08
 
 **Purpose:**
-Implements core application logic including state machine, safety interlocks, error detection, and timeout management. This is the main control module.
+Implements core application logic including state machine, safety interlocks, error detection, and timeout management. This is the main control module. For the DeskHigh torque branch, logic is based on ON/OFF/ON switch input and produces motor_enable, motor_direction, and motor_pwm outputs. No button, LED, or limit switch logic is present.
+
 
 **Design Elements:**
-- **Functions:** FUNC-016 through FUNC-024
-- **Data Structures:** DATA-001, DATA-002, DATA-004 to DATA-007
-- **Algorithms:** ALG-001 (State Machine), ALG-003 (Timeout), ALG-004 (Safety Interlock)
+- **Functions:** FUNC-016, FUNC-017 (see below)
+- **Data Structures:** DATA-001, DATA-002
+- **Algorithms:** ALG-001 (Minimal State Machine)
 - **Dependencies:** MODULE-002 (HAL)
 - **Exported Interface:** ARCH-IF-001
 
 **State Machine Specification:**
 
 See [Software Architecture - ARCH-COMP-005](SoftwareArchitecture.md#arch-comp-005-state-machine-specification) for detailed state definitions (ARCH-STATE-001 to 004) and transitions (ARCH-TRANS-001 to 007).
+
 
 **Function Specifications:**
 
@@ -423,13 +377,11 @@ See [Software Architecture - ARCH-COMP-005](SoftwareArchitecture.md#arch-comp-00
 **Preconditions:** Valid pointers provided
 
 **Algorithm:**
-```
-1. Set all input fields to false/inactive
-2. Set all output fields to false/inactive
+1. Set switch_state to OFF
+2. Set all output fields to safe defaults (motor_enable=false, motor_direction=false, motor_pwm=0)
 3. Set internal state to IDLE (ARCH-STATE-001)
 4. Reset timeout timer
 5. Clear error flags
-```
 
 **Postconditions:**
 - System in IDLE state
@@ -447,13 +399,14 @@ See [Software Architecture - ARCH-COMP-005](SoftwareArchitecture.md#arch-comp-00
 
 ---
 
+
 #### FUNC-017: DeskApp_task
 
 **Function ID:** FUNC-017  
 **Signature:** `DeskAppTask_Return_t DeskApp_task(const DeskAppInputs_t* inputs, DeskAppOutputs_t* outputs)`  
 **Purpose:** Main control task, executes state machine logic  
 **Requirements:** SWE-REQ-005 to SWE-REQ-020  
-**Complexity:** Cyclomatic 15, LOC 200 (most complex function)
+**Complexity:** Cyclomatic 8, LOC 50 (minimal logic)
 
 **Parameters:**
 - `inputs` (in): Pointer to current input state (DATA-001)
@@ -467,57 +420,31 @@ See [Software Architecture - ARCH-COMP-005](SoftwareArchitecture.md#arch-comp-00
 - FUNC-016 called previously
 - Inputs populated with current hardware state
 
-**Algorithm (ALG-001 - State Machine):**
-```
-1. Read current state
-2. Check for emergency conditions (ALG-004)
-3. IF emergency THEN transition to ERROR state, RETURN ERROR
-4. SWITCH current state:
-5.   CASE IDLE:
-6.     IF Up pressed AND safe conditions THEN
-7.       Transition to MOVING_UP (ARCH-TRANS-001)
-8.       Set outputs.moveUp = true
-9.     ELSE IF Down pressed AND safe conditions THEN
-10.       Transition to MOVING_DOWN (ARCH-TRANS-002)
-11.       Set outputs.moveDown = true
-12.     END IF
-13.   CASE MOVING_UP:
-14.     Check timeout (ALG-003)
-15.     IF button released OR timeout OR upper limit THEN
-16.       Transition to IDLE (ARCH-TRANS-003)
-17.       Set outputs.stop = true
-18.     END IF
-19.   CASE MOVING_DOWN:
-20.     Check timeout (ALG-003)
-21.     IF button released OR timeout OR lower limit THEN
-22.       Transition to IDLE (ARCH-TRANS-004)
-23.       Set outputs.stop = true
-24.     END IF
-25.   CASE ERROR:
-26.     outputs.stop = true
-27.     outputs.error = true
-28.     RETURN APP_TASK_ERROR
-29. END SWITCH
-30. Update LED outputs based on state
-31. RETURN APP_TASK_SUCCESS
-```
+**Algorithm:**
+1. Default: outputs->motor_enable = false; outputs->motor_direction = false; outputs->motor_pwm = 0
+2. If switch_state == SWITCH_STATE_UP:
+  - outputs->motor_enable = true
+  - outputs->motor_direction = false (UP)
+  - outputs->motor_pwm = 255
+3. Else if switch_state == SWITCH_STATE_DOWN:
+  - outputs->motor_enable = true
+  - outputs->motor_direction = true (DOWN)
+  - outputs->motor_pwm = 255
+4. Else (OFF): motor remains stopped
+5. Return APP_TASK_SUCCESS
 
 **Postconditions:**
-- State updated according to inputs and current state
 - Outputs reflect commanded actions
 - Return code indicates success/error
 
 **Error Handling:**
-- Emergency conditions trigger ERROR state
-- Invalid states default to IDLE
-- All errors logged to outputs.error
+- If inputs or outputs are NULL, return APP_TASK_ERROR
 
 **Timing Budget:** < 10ms execution time (SWE-REQ-013)
 
 **Test Hooks:**
 - State can be forced for testing
-- Timeout can be accelerated
-- Each state transition independently testable
+- Each switch position independently testable
 
 **Unit Test Coverage:** TC-003 to TC-017 (all state transitions)  
 **Integration Test Coverage:** IT-002 to IT-008
@@ -669,10 +596,7 @@ Each data structure includes: ID, purpose, size, fields with constraints, valida
 **Definition:**
 ```cpp
 typedef struct {
-    bool btUPPressed;      // Up button state (debounced)
-    bool btDOWNPressed;    // Down button state (debounced)
-    bool upperLimitActive; // Upper limit switch state
-    bool lowerLimitActive; // Lower limit switch state
+  SwitchState_t switch_state; // State of ON/OFF/ON switch
 } DeskAppInputs_t;
 ```
 
@@ -680,23 +604,18 @@ typedef struct {
 
 | Field | Type | Valid Values | Default | Source | Validation |
 |-------|------|--------------|---------|--------|------------|
-| btUPPressed | bool | true/false | false | FUNC-003 (debounced) | Always valid |
-| btDOWNPressed | bool | true/false | false | FUNC-003 (debounced) | Always valid |
-| upperLimitActive | bool | true/false | false | FUNC-002 or external | Always valid |
-| lowerLimitActive | bool | true/false | false | FUNC-002 or external | Always valid |
+| switch_state | SwitchState_t | UP/OFF/DOWN | OFF | HAL_ReadSwitchState | Always valid |
 
 **Validation Rules:**
-- No cross-field validation required
-- All fields independent
-- Invalid state detection in application logic (ALG-004)
+- Only valid values for SwitchState_t are allowed
 
 **Memory Footprint:**
-- Size: 4 bytes (4 × bool)
+- Size: 1 byte (enum)
 - Alignment: 1 byte
 - Packing: None required
 
 **Testability:**
-- All fields directly settable in unit tests
+- Field directly settable in unit tests
 - Struct can be stack-allocated or static
 - Easy to create test fixtures
 
@@ -716,10 +635,9 @@ typedef struct {
 **Definition:**
 ```cpp
 typedef struct {
-    bool moveUp;    // Command: move desk up
-    bool moveDown;  // Command: move desk down
-    bool stop;      // Command: stop motor
-    bool error;     // Status: error state active
+  bool motor_enable;      // Enable motor driver
+  bool motor_direction;   // Motor direction: false=up, true=down
+  uint8_t motor_pwm;      // Motor PWM value (0-255)
 } DeskAppOutputs_t;
 ```
 
@@ -727,22 +645,16 @@ typedef struct {
 
 | Field | Type | Valid Values | Default | Meaning | Consumer |
 |-------|------|--------------|---------|---------|----------|
-| moveUp | bool | true/false | false | Command upward movement | FUNC-005 |
-| moveDown | bool | true/false | false | Command downward movement | FUNC-006 |
-| stop | bool | true/false | false | Command stop | FUNC-007 |
-| error | bool | true/false | false | Error state indicator | FUNC-008 |
+| motor_enable | bool | true/false | false | Enable motor driver | HAL_MoveUp/Down/Stop |
+| motor_direction | bool | false=up, true=down | false | Motor direction | HAL_MoveUp/Down |
+| motor_pwm | uint8_t | 0-255 | 0 | Motor PWM value | HAL_MoveUp/Down |
 
 **Validation Rules:**
-- Mutex constraint: moveUp and moveDown shall not both be true
-- If error=true, all movement commands should be false
-- Application logic ensures valid combinations
-
-**Invariants:**
-- At most one of {moveUp, moveDown} can be true
-- stop=true implies moveUp=false AND moveDown=false
+- If motor_enable is false, motor_pwm must be 0
+- Only valid values for motor_direction (false=up, true=down)
 
 **Memory Footprint:**
-- Size: 4 bytes (4 × bool)
+- Size: 3 bytes (bool, bool, uint8_t)
 - Alignment: 1 byte
 - Packing: None required
 

@@ -17,7 +17,7 @@ Welcome! This project implements a motorized height adjustment system for a mech
 ## Project Overview
 
 - **Purpose:** Automate desk movement (up/down) with safety and reliability.
-- **Technologies:** Arduino UNO, L298N motor driver, modular C++ codebase.
+- **Technologies:** Arduino UNO, BTS7960/IBT-2 motor driver (DeskHigh torque branch), modular C++ codebase.
 - **Features:**
   - Up/Down movement with button control
   - Host-based unit testing
@@ -29,19 +29,20 @@ Welcome! This project implements a motorized height adjustment system for a mech
 
 Choose your path based on your goals:
 
-### 🔧 I Want to Build the Hardware
+
+### 🔧 I Want to Build the Hardware (DeskHigh torque branch)
 
 **Prerequisites:**
 - Arduino UNO board
-- L298N motor driver module
-- DC motor (12V recommended)
+- BTS7960/IBT-2 motor driver module
+- 31ZY-5840 DC Worm Gear Motor (12V/24V, 10 RPM)
 - Push buttons (2x)
 - LEDs and resistors
-- Power supply (12V)
+- Power supply (12V or 24V, 5A+ recommended)
 - See complete parts list in [Hardware Connections](documentation/HardwareConnections.md)
 
 **Steps:**
-1. Review the [Hardware Connections Guide](documentation/HardwareConnections.md) for wiring
+1. Review the [Hardware Connections Guide](documentation/HardwareConnections.md) for BTS7960/31ZY-5840 wiring
 2. Read the [Safety Notes](documentation/SafetyNotes.md) before assembly
 3. Download the firmware: `source/arduino/arduino.ino`
 4. Flash to Arduino using Arduino IDE

@@ -1,3 +1,4 @@
+
 # System Use Cases
 
 **Document Version:** 1.1  
@@ -8,9 +9,13 @@
 
 ---
 
+
 ## Overview
 
-This document describes the main use cases for the Automated Mechanical Desk Lift system. Use cases help clarify user interactions and drive requirements and test cases. Each use case follows IEEE 29148-2018 standard format.
+This document describes the main use cases for the Automated Mechanical Desk Lift system. For the DeskHigh torque branch, the system includes:
+- Monitoring of motor current via R_IS and L_IS (BTS7960/IBT-2 current sense outputs) to detect stalls or overcurrent conditions.
+- PWM soft-start for the worm gear motor to reduce mechanical shock and protect hardware.
+Use cases help clarify user interactions and drive requirements and test cases. Each use case follows IEEE 29148-2018 standard format.
 
 ---
 
@@ -22,6 +27,7 @@ This document describes the main use cases for the Automated Mechanical Desk Lif
 - [Traceability Matrix](TraceabilityMatrix.md)
 
 ---
+
 
 ## Use Case Summary
 
@@ -35,8 +41,11 @@ This document describes the main use cases for the Automated Mechanical Desk Lif
 | UC-06 | Power-Off During Movement | Medium | Low | Approved | SWE-REQ-001, SWE-REQ-009 |
 | UC-07 | Simultaneous Button Presses | High | Low | Approved | SWE-REQ-010, SWE-REQ-014 |
 | UC-08 | Error Indication and Recovery | High | Low | Approved | SWE-REQ-015, SWE-REQ-016 |
+| UC-09 | Motor Current Monitoring (R_IS/L_IS) | High | Continuous | Approved | SWE-REQ-021 |
+| UC-10 | PWM Soft-Start for Motor | High | Every Movement | Approved | SWE-REQ-022 |
 
 ---
+
 
 ## System Use Case Diagram
 
@@ -78,7 +87,10 @@ graph TD
 
 ---
 
-## Use Cases
+
+---
+
+## Detailed Use Cases
 
 ### UC-01: Power-On the Desk Control System
 
@@ -421,7 +433,151 @@ graph TD
 
 ---
 
-### UC-08: Error Indication and Recovery
+
+
+### UC-09: Motor Current Monitoring (R_IS/L_IS)
+
+**Brief Description:**
+The system continuously monitors the BTS7960/IBT-2 current sense outputs (R_IS, L_IS) via Arduino analog inputs (A0, A1) during motor operation. If an overcurrent or stall condition is detected, the system stops the motor and enters ERROR state.
+
+**Actor:** System (automatic monitoring)
+
+**Trigger:** Current on R_IS or L_IS exceeds configured threshold during movement
+
+**Priority:** High (hardware protection)
+
+**Frequency:** Continuous while motor is running
+
+**Preconditions:**
+- System is moving desk (MOVING_UP or MOVING_DOWN)
+- Current sense wiring is present and enabled in software
+
+**Main Flow:**
+1. System commands motor movement (up or down)
+2. System periodically reads A0 (R_IS) and A1 (L_IS)
+3. If current exceeds threshold, system immediately stops the motor
+4. System transitions to ERROR state
+5. Error LED activates
+
+**Alternative Flows:**
+- **AF-09a:** Transient current spike below threshold → Ignore, continue monitoring
+- **AF-09b:** Current returns to normal before threshold exceeded → No action
+
+**Exception Flows:**
+- **EF-09a:** Current sense wiring fault (open/short) → System may ignore or enter ERROR based on configuration
+
+**Postconditions:**
+- **Success:** System in ERROR state, motor stopped, error LED ON
+- **Failure:** (if not detected) Possible hardware damage (should not occur if monitoring is active)
+
+**Related Requirements:** SWE-REQ-021
+
+
+**Test Cases:** IT-008 (if implemented)
+
+---
+
+
+### UC-10: Stall Protection (Current-Based)
+
+### UC-11: PWM Soft-Start for Motor
+
+**Brief Description:**
+The system applies a PWM soft-start ramp when initiating motor movement (up or down) to gradually increase power and reduce mechanical shock to the worm gear motor.
+
+**Actor:** System (automatic control)
+
+**Trigger:** Motor movement command (MOVING_UP or MOVING_DOWN state entry)
+
+**Priority:** High (hardware protection, longevity)
+
+**Frequency:** Every movement initiation
+
+**Preconditions:**
+- System is in IDLE state
+- Movement command is issued (Up or Down)
+
+**Main Flow:**
+1. System receives movement command
+2. System sets PWM output to a low initial value
+3. System gradually ramps PWM to target speed over a configurable time (e.g., 200–500ms)
+4. Motor accelerates smoothly to full speed
+
+**Alternative Flows:**
+- **AF-11a:** Movement is stopped during ramp (button released, limit reached, error) → PWM immediately set to zero
+
+**Exception Flows:**
+- **EF-11a:** Ramp fails to reach target PWM (hardware fault) → System enters ERROR state
+
+**Postconditions:**
+- **Success:** Motor reaches target speed smoothly, reduced mechanical stress
+- **Failure:** System in ERROR state, motor stopped, error LED ON
+
+**Related Requirements:** SWE-REQ-022
+
+**Test Cases:** IT-009 (if implemented)
+
+**Brief Description:**
+The system implements stall protection by monitoring motor current via R_IS and L_IS. If the measured current exceeds a calibrated threshold (indicating a stall or jam), the system immediately stops the motor and enters ERROR state to prevent hardware damage.
+
+**Actor:** System (automatic monitoring)
+
+**Trigger:** Current on R_IS or L_IS exceeds stall threshold during movement
+
+**Priority:** High (motor/driver protection)
+
+**Frequency:** Continuous while motor is running
+
+**Preconditions:**
+- System is moving desk (MOVING_UP or MOVING_DOWN)
+- Current sense wiring is present and enabled in software
+- Stall threshold is calibrated and configured
+
+**Main Flow:**
+1. System commands motor movement (up or down)
+2. System periodically reads A0 (R_IS) and A1 (L_IS)
+3. If current exceeds stall threshold, system immediately stops the motor
+4. System transitions to ERROR state
+5. Error LED activates
+
+**Alternative Flows:**
+- **AF-10a:** Transient current spike below threshold → Ignore, continue monitoring
+- **AF-10b:** Current returns to normal before threshold exceeded → No action
+
+**Exception Flows:**
+- **EF-10a:** Current sense wiring fault (open/short) → System may ignore or enter ERROR based on configuration
+
+**Postconditions:**
+- **Success:** System in ERROR state, motor stopped, error LED ON
+- **Failure:** (if not detected) Possible hardware damage (should not occur if monitoring is active)
+
+**Related Requirements:** SWE-REQ-021
+
+**Test Cases:** IT-008 (if implemented)
+
+**Example Implementation:**
+```cpp
+// Simple stall protection logic (Arduino)
+const int R_IS = A0;
+const int L_IS = A1;
+const int STALL_THRESHOLD = 500; // Calibrate for your hardware
+
+void loop() {
+  int r_current = analogRead(R_IS);
+  int l_current = analogRead(L_IS);
+  if (r_current > STALL_THRESHOLD || l_current > STALL_THRESHOLD) {
+    stopMotor();
+    setErrorState();
+  }
+  // ... rest of control logic ...
+}
+```
+
+**Calibration Instructions:**
+1. With the desk unloaded, run the motor and record typical current readings (analogRead values).
+2. Manually stall the motor and record the peak current value.
+3. Set `STALL_THRESHOLD` to a value above normal running current but below the stall peak.
+4. Test with various loads to ensure reliable stall detection without false positives.
 
 **Brief Description:** System detects internal errors, provides clear indication, and allows user to recover through power cycle.
 
@@ -477,6 +633,28 @@ graph TD
 **Test Cases:** TC-016, TC-017, IT-008
 
 ---
+
+
+---
+
+## Appendix: BTS7960/IBT-2 Enable Pin Safety Rules
+
+**Important:** For safe and correct operation of the BTS7960/IBT-2 driver, the following rules must always be enforced in software:
+
+- `R_EN` and `L_EN` must always be set to the same value (both HIGH to enable, both LOW to disable)
+- Never enable one side and disable the other (do not set one HIGH and the other LOW)
+- PWM alone is not sufficient if EN is LOW (motor will not move)
+
+**Valid combinations:**
+
+| R_EN | L_EN | Result            |
+|------|------|------------------|
+| HIGH | HIGH | Normal operation |
+| LOW  | LOW  | Motor disabled   |
+| HIGH | LOW  | ❌ Invalid       |
+| LOW  | HIGH | ❌ Invalid       |
+
+**Violation of these rules may result in hardware damage or undefined behavior.**
 
 ## Functional Coverage Map
 
