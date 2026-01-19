@@ -6,16 +6,18 @@ Follow these safety guidelines when assembling, wiring, and operating the Automa
 ---
 
 ## General Safety Guidelines
-- **Always disconnect power before wiring.**
-- Motor power must **never** pass through the Arduino.
-- The ON/OFF switch must be placed **between the battery and the motor driver**.
-- Arduino GND and motor driver GND **must be common**.
+- **Always disconnect power before wiring.** Check polarity before powering on.
+- Motor power must **never** pass through the Arduino; use dedicated battery/PSU → motor driver path.
+- The ON/OFF power switch must be placed **between the battery and the motor driver** (with fuse inline).
+- Arduino GND and motor driver GND **must be common** (critical for reliable operation).
+- Motor driver R_EN and L_EN pins must be **tied together** and driven identically for safety (prevents half-bridge conflicts).
+- Rocker switch inputs (PIN 7, 8) must be debounced appropriately; see HAL for current implementation.
 
 ---
 
 
 ## Compliance
-See [Software Detailed Design](09_SoftwareDetailedDesign.md#compliance-statement) for full compliance details. If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
+See [SoftwareDetailedDesign.md](SoftwareDetailedDesign.md) for full compliance and safety requirements details. If you add new hardware or features, update this file and ensure compliance with relevant safety standards.
 
 ---
 
@@ -23,24 +25,53 @@ See [Software Detailed Design](09_SoftwareDetailedDesign.md#compliance-statement
 
 ---
 
-## Error Handling and Recovery
+## v1.0 Design Limitations
 
-The software detects and reports critical hardware faults (for example, both upper and lower limit switches active simultaneously). The following rules apply:
+**Current v1.0 implementation:**
+- Direct rocker switch (ON/OFF/ON) to motor control mapping
+- No end-of-travel limit switches (planned for v2.0)
+- No automatic timeout enforcement (planned for v2.0, SWE-REQ-018)
+- No emergency stop circuit (planned for v2.0, SWE-REQ-010/011)
+- Full-speed motor operation (no ramping or variable PWM in v1.0)
 
-- **Fatal error detection:** When the application detects an invalid sensor combination (both limit switches active) it immediately sets the application error flag and asserts the error indicator. The motor is stopped and further motion commands are inhibited.
-- **Recovery procedure:** To recover from a fatal error:
-	1. Verify and restore correct hardware wiring and sensor states (clear the invalid condition).
-	2. Power-cycle the device or call the application initialization sequence (on the host this is `DeskApp_task_init()`), which returns the application to IDLE when the hardware conditions are safe.
-	3. Confirm normal behavior with a functional test (see `documentation/TESTING_README.md` and run integration tests such as `IT-009`).
+**User responsibility:**
+- Manually release the switch to stop motion
+- Monitor desk height manually (no encoder feedback)
+- Do not leave desk unattended while power is on
 
-Documenting recovery steps and recording the review/approval of the recovery procedure strengthens ASPICE evidence for safety and error handling.
+---
+
+## Error Handling and Recovery (v1.0)
+
+The v1.0 software detects and reports invalid input conditions:
+
+- **NULL pointer detection:** If inputs or outputs pointers are NULL, `DeskApp_task()` returns `APP_TASK_ERROR` and does not drive the motor.
+- **Motor disable on error:** Any error condition immediately disables motor output to prevent uncontrolled motion.
+- **Recovery procedure:** To recover from a NULL pointer error:
+  1. Verify that inputs and outputs structures are properly allocated and passed to `DeskApp_task()`.
+  2. Call `DeskApp_task_init()` to reinitialize the application to a safe IDLE state.
+  3. Confirm normal behavior by sending valid switch commands and observing motor response.
+
+**Future v2.0 features** (planned):
+- Limit switch detection (top and bottom end-of-travel)
+- Invalid state detection (conflicting limit switches)
+- Timeout enforcement and automatic stop after 30 seconds
+- Emergency stop input validation (SWE-REQ-010, 011)
 
 ## Startup and Safe Initialization
 
-- The HAL provides `HAL_wait_startup()` which performs a short startup wait while processing HAL timed events (blink manager). This ensures hardware and human-facing indicators settle before any motion commands are issued.
-- On device startup the software initializes outputs to safe defaults (motor stopped, LEDs off) in `DeskApp_task_init()`.
+- The HAL provides `HAL_wait_startup()` which performs an initial settling period while processing HAL timed events (LED blink manager). This ensures hardware indicators are ready before motion commands are issued.
+- On system startup, `DeskApp_task_init()` initializes all outputs to safe defaults: motor disabled, direction cleared, PWM set to 0.
+- The application starts in IDLE state; motor remains off until a valid switch command is received.
+- See [PinConfig.h](../source/arduino/PinConfig.h) for pin assignments used in hardware initialization.
 
-## Testing and Evidence
+## Testing and Validation
 
-- See `documentation/TESTING_README.md` for instructions to run unit and integration tests. Integration tests verify safety behaviors (e.g., `IT-004`, `IT-009`, `IT-008`).
-- Record the actions taken during any safety incident in `documentation/reviews/` (create `Safety_Review_YYYYMMDD.md`) and include the commit/tag used as the baseline for the corrective action.
+- See [TESTING_README.md](TESTING_README.md) for instructions to run unit and integration tests.
+- Safety behaviors are verified by integration tests:
+  - `IT-004`, `IT-005`: Motor response to commands
+  - `IT-008`: Error detection (NULL inputs/outputs)
+  - `IT-011`: Startup settling time
+  - `SIT-005`: Safety interlock (conflicting inputs during direction reversal)
+- Unit tests validate state handler error paths and timeout logic (planned for v2.0 full implementation).
+- For any safety incidents, document in `documentation/reviews/Safety_Review_YYYYMMDD.md` and include the commit/tag used.

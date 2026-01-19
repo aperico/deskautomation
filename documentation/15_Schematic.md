@@ -26,10 +26,12 @@ flowchart TD
     subgraph ARD["Arduino UNO"]
         VIN["VIN"]
         GND_A["GND"]
-        RPWM["PIN 8 (RPWM)"]
-        LPWM["PIN 9 (LPWM)"]
-        REN["PIN 10 (R_EN)"]
-        LEN["PIN 7 (L_EN)"]
+        SW_UP["PIN 7 (SWITCH_UP)"]
+        SW_DOWN["PIN 8 (SWITCH_DOWN)"]
+        RPWM["PIN 5 (RPWM)"]
+        LPWM["PIN 6 (LPWM)"]
+        REN["PIN 9 (R_EN)"]
+        LEN["PIN 10 (L_EN)"]
         RIS["A0 (R_IS, opt)"]
         LIS["A1 (L_IS, opt)"]
     end
@@ -67,6 +69,7 @@ flowchart TD
 ```
 
 **Key connections shown (BTS7960/IBT-2):**
+- Arduino switch inputs (PIN 7, 8) → Rocker switch (ON/OFF/ON)
 - Arduino → BTS7960/IBT-2 motor driver (control signals: RPWM, LPWM, R_EN, L_EN)
 - BTS7960 → DC Worm Gear Motor (M+, M-)
 - BTS7960 Power: B+ (12V/24V), B- (Power GND)
@@ -94,10 +97,10 @@ graph TD
     ARD -- "GND" --> IBT["B- (GND)"]
     IBT -- "M+" --> MOTOR
     IBT -- "M-" --> MOTOR
-    ARD -- "PIN 8 (RPWM)" --> IBT
-    ARD -- "PIN 9 (LPWM)" --> IBT
-    ARD -- "PIN 10 (R_EN)" --> IBT
-    ARD -- "PIN 7 (L_EN)" --> IBT
+    ARD -- "PIN 5 (RPWM)" --> IBT
+    ARD -- "PIN 6 (LPWM)" --> IBT
+    ARD -- "PIN 9 (R_EN)" --> IBT
+    ARD -- "PIN 10 (L_EN)" --> IBT
     ARD -- "A0 (R_IS, opt)" --> IBT
     ARD -- "A1 (L_IS, opt)" --> IBT
 ```
@@ -108,10 +111,12 @@ graph TD
 
 | Connection         | From           | To                | Notes |
 |--------------------|----------------|-------------------|-------|
-| **Motor Control**  | Arduino PWM X  | BTS7960 RPWM      | Motor direction/speed (PWM) |
-|                    | Arduino PWM Y  | BTS7960 LPWM      | Motor direction/speed (PWM) |
-|                    | Arduino D Z    | BTS7960 R_EN      | Tie HIGH (5V) or digital pin |
-|                    | Arduino D W    | BTS7960 L_EN      | Tie HIGH (5V) or digital pin |
+| **Motor Control**  | Arduino PIN 5 (PWM) | BTS7960 RPWM      | Motor direction/speed (Right PWM) |
+|                    | Arduino PIN 6 (PWM) | BTS7960 LPWM      | Motor direction/speed (Left PWM) |
+|                    | Arduino PIN 9       | BTS7960 R_EN      | Right Enable (tied to LEFT EN for safety) |
+|                    | Arduino PIN 10      | BTS7960 L_EN      | Left Enable (tied to RIGHT EN for safety) |
+| **Switch Input**   | Rocker Switch UP    | Arduino PIN 7     | ON/OFF/ON switch upper position |
+|                    | Rocker Switch DOWN  | Arduino PIN 8     | ON/OFF/ON switch lower position |
 |                    | Arduino A0     | BTS7960 R_IS      | (Optional) Current sense |
 |                    | Arduino A1     | BTS7960 L_IS      | (Optional) Current sense |
 | **Motor Power**    | Power +12V/24V | BTS7960 B+        | Motor supply |
@@ -146,10 +151,12 @@ Refer to [PinConfig.h](../source/arduino/PinConfig.h) for software definitions.
 
 | Arduino Pin | Function/Signal      | Connected To         | Description                       |
 |-------------|----------------------|---------------------|-----------------------------------|
-| 6           | RPWM (Right PWM)     | IBT-2 RPWM          | Motor speed/direction PWM (right) |
-| 7           | LPWM (Left PWM)      | IBT-2 LPWM          | Motor speed/direction PWM (left)  |
-| 8           | R_EN (Right Enable)  | IBT-2 R_EN           | Enable right half-bridge          |
-| 9           | L_EN (Left Enable)   | IBT-2 L_EN           | Enable left half-bridge           |
+| 5           | RPWM (Right PWM)     | IBT-2 RPWM          | Motor speed/direction PWM (right) |
+| 6           | LPWM (Left PWM)      | IBT-2 LPWM          | Motor speed/direction PWM (left)  |
+| 7           | SWITCH_UP (Input)    | Rocker Switch UP    | ON/OFF/ON switch input (up)       |
+| 8           | SWITCH_DOWN (Input)  | Rocker Switch DOWN  | ON/OFF/ON switch input (down)     |
+| 9           | R_EN (Right Enable)  | IBT-2 R_EN           | Enable right half-bridge          |
+| 10          | L_EN (Left Enable)   | IBT-2 L_EN           | Enable left half-bridge           |
 | A0          | R_IS (Right Sense)   | IBT-2 R_IS (analog)  | Current sense (right, optional)   |
 | A1          | L_IS (Left Sense)    | IBT-2 L_IS (analog)  | Current sense (left, optional)    |
 | VIN         | Power Input          | 12V/24V DC Supply    | Main power input                  |
@@ -182,22 +189,29 @@ Refer to [PinConfig.h](../source/arduino/PinConfig.h) for software definitions.
 |                    | Arduino GND           | IBT-2 B-       | Common ground                         |
 
 
-**Required hardware changes for DeskHigh torque:**
-- Use 31ZY-5840 DC Worm Gear Motor
-- Use 12V or 24V DC supply (5A+ recommended)
-- Connect RPWM/LPWM to Arduino PWM pins, R_EN/L_EN to 5V or digital pins
+**v1.0 Hardware Configuration (Minimal Rocker Switch):**
+- Arduino UNO (ATmega328P, 5V logic)
+- 31ZY-5840 DC Worm Gear Motor (12V/24V, high torque)
+- IBT-2/BTS7960 H-Bridge Motor Driver
+- 12V or 24V DC supply (5A+ recommended)
+- ON/OFF/ON Rocker switch (3-position, center-off)
+- Connect RPWM (PIN 5) / LPWM (PIN 6) to IBT-2 PWM inputs
+- Connect R_EN (PIN 9) / L_EN (PIN 10) to IBT-2 enable inputs (tied together for safety)
+- Connect switch inputs (PIN 7, 8) to rocker switch terminals
 - Optionally connect R_IS/L_IS to Arduino A0/A1 for current sensing
-- Maintain common ground between all components
+- **CRITICAL:** Maintain common ground between all components
 
 ---
 
 
 ## Additional Resources
 
-- **Detailed wiring and troubleshooting:** [Schematic.md](Schematic.md)
+- **Pin Configuration:** [PinConfig.h](../source/arduino/PinConfig.h) — Software pin definitions
+- **Hardware Abstraction Layer:** [HAL.h](../source/arduino/HAL.h) / [HAL.cpp](../source/arduino/HAL.cpp)
+- **Software Architecture:** [SoftwareArchitecture.md](SoftwareArchitecture.md)
 - **Bill of Materials (BOM):** See project README
-- **Testing procedures:** [11_SoftwareIntegrationTestsSpecification.md](11_SoftwareIntegrationTestsSpecification.md)
-- **BTS7960/IBT-2 datasheet:** [Example link](https://www.electronicwings.com/nodemcu/bts7960-motor-driver-interfacing-with-nodemcu)
+- **Testing procedures:** [SoftwareIntegrationTestsSpecification.md](SoftwareIntegrationTestsSpecification.md)
+- **BTS7960/IBT-2 datasheet:** [Motor Driver Reference](https://www.electronicwings.com/nodemcu/bts7960-motor-driver-interfacing-with-nodemcu)
 
 ---
 
