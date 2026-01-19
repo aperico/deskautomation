@@ -16,7 +16,7 @@
 // Exposed by HALMock
 extern int pin_states[64];
 
-class SystemIntegrationFixture : public ::testing::Test {
+class SIT : public ::testing::Test {
 protected:
     DeskAppInputs_t inputs{};
     DeskAppOutputs_t outputs{};
@@ -31,7 +31,7 @@ protected:
 };
 
 // SIT-001: UP command drives motor upward via HAL
-TEST_F(SystemIntegrationFixture, SIT001_UpCommand_DrivesMotorUp) {
+TEST_F(SIT, SIT001_UpCommand_DrivesMotorUp) {
     inputs.switch_state = SWITCH_STATE_UP;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
     ASSERT_EQ(ret, APP_TASK_SUCCESS);
@@ -49,7 +49,7 @@ TEST_F(SystemIntegrationFixture, SIT001_UpCommand_DrivesMotorUp) {
 }
 
 // SIT-002: DOWN command drives motor downward via HAL
-TEST_F(SystemIntegrationFixture, SIT002_DownCommand_DrivesMotorDown) {
+TEST_F(SIT, SIT002_DownCommand_DrivesMotorDown) {
     inputs.switch_state = SWITCH_STATE_DOWN;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, &outputs);
     ASSERT_EQ(ret, APP_TASK_SUCCESS);
@@ -67,7 +67,7 @@ TEST_F(SystemIntegrationFixture, SIT002_DownCommand_DrivesMotorDown) {
 }
 
 // SIT-003: OFF command stops motor via HAL
-TEST_F(SystemIntegrationFixture, SIT003_OffCommand_StopsMotor) {
+TEST_F(SIT, SIT003_OffCommand_StopsMotor) {
     // Start with UP to set non-zero state
     inputs.switch_state = SWITCH_STATE_UP;
     DeskApp_task(&inputs, &outputs);
@@ -87,7 +87,7 @@ TEST_F(SystemIntegrationFixture, SIT003_OffCommand_StopsMotor) {
 }
 
 // SIT-004: Null outputs should surface APP_TASK_ERROR and not move motor
-TEST_F(SystemIntegrationFixture, SIT004_NullOutputs_ReturnsErrorAndNoMotion) {
+TEST_F(SIT, SIT004_NullOutputs_ReturnsErrorAndNoMotion) {
     inputs.switch_state = SWITCH_STATE_UP;
     DeskAppTask_Return_t ret = DeskApp_task(&inputs, nullptr);
     EXPECT_EQ(ret, APP_TASK_ERROR);
@@ -100,7 +100,7 @@ TEST_F(SystemIntegrationFixture, SIT004_NullOutputs_ReturnsErrorAndNoMotion) {
 }
 
 // SIT-005: Conflicting inputs (UP+DOWN) result in no movement (safe stop)
-TEST_F(SystemIntegrationFixture, SIT005_ConflictingInputs_StopMotor) {
+TEST_F(SIT, SIT005_ConflictingInputs_StopMotor) {
     // Simulate conflicting inputs: controller treats as OFF (safety)
     inputs.switch_state = SWITCH_STATE_OFF; // Controller has only one switch value; conflict maps to OFF
     DeskApp_task(&inputs, &outputs);
@@ -115,7 +115,7 @@ TEST_F(SystemIntegrationFixture, SIT005_ConflictingInputs_StopMotor) {
 }
 
 // SIT-006: Power cycle reinitializes HAL to safe state
-TEST_F(SystemIntegrationFixture, SIT006_PowerCycle_ReinitializesSafeState) {
+TEST_F(SIT, SIT006_PowerCycle_ReinitializesSafeState) {
     // Move up, then simulate power cycle by re-running HAL_init + DeskApp_task_init
     inputs.switch_state = SWITCH_STATE_UP;
     DeskApp_task(&inputs, &outputs);
