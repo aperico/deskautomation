@@ -53,7 +53,7 @@
  * - Focus: Correct API usage, parameter passing, state management
  * 
  * EXAMPLE:
- * TEST_F(HALIntegrationTests, Integration_IT003_HALMoveUp_PWMAndEnableControl) {
+ * TEST_F(HALIntegration, Integration_IT003_HALMoveUp_PWMAndEnableControl) {
  *     // Call HAL function
  *     HAL_MoveUp(200);
  *     
@@ -73,14 +73,14 @@
 extern int pin_states[64];
 
 /**
- * @class HALIntegrationTests
+ * @class HALIntegration
  * @brief Test fixture for HAL ↔ Arduino OS integration testing
  * 
  * Provides:
  * - Clean pin state before each test
  * - Helper functions to verify pin states
  */
-class HALIntegrationTests : public ::testing::Test {
+class HALIntegration : public ::testing::Test {
 protected:
     /**
      * @brief Reset all pin states before each test
@@ -135,7 +135,7 @@ protected:
  * Note: pinMode() calls are not tracked by pin_states[], but function execution
  * is verified by checking default output states
  */
-TEST_F(HALIntegrationTests, Integration_IT001_HALInit_PinConfiguration) {
+TEST_F(HALIntegration, Integration_IT001_HALInit_PinConfiguration) {
     // Call HAL initialization
     HAL_init();
     
@@ -165,7 +165,7 @@ TEST_F(HALIntegrationTests, Integration_IT001_HALInit_PinConfiguration) {
  * - HAL_ReadSwitchState() → digitalRead(SWITCH_DOWN_PIN)
  * - Correct interpretation of active-LOW inputs
  */
-TEST_F(HALIntegrationTests, Integration_IT002_HALReadSwitchState_DigitalRead) {
+TEST_F(HALIntegration, Integration_IT002_HALReadSwitchState_DigitalRead) {
     HAL_init();
     
     // Test 1: UP switch pressed (active LOW)
@@ -208,7 +208,7 @@ TEST_F(HALIntegrationTests, Integration_IT002_HALReadSwitchState_DigitalRead) {
  * - HAL_MoveUp(speed) → digitalWrite(R_EN_PIN, HIGH)
  * - HAL_MoveUp(speed) → digitalWrite(L_EN_PIN, HIGH)
  */
-TEST_F(HALIntegrationTests, Integration_IT003_HALMoveUp_PWMAndEnableControl) {
+TEST_F(HALIntegration, Integration_IT003_HALMoveUp_PWMAndEnableControl) {
     HAL_init();
     
     // Test upward movement at different speeds
@@ -245,7 +245,7 @@ TEST_F(HALIntegrationTests, Integration_IT003_HALMoveUp_PWMAndEnableControl) {
  * - HAL_MoveDown(speed) → digitalWrite(R_EN_PIN, HIGH)
  * - HAL_MoveDown(speed) → digitalWrite(L_EN_PIN, HIGH)
  */
-TEST_F(HALIntegrationTests, Integration_IT004_HALMoveDown_PWMAndEnableControl) {
+TEST_F(HALIntegration, Integration_IT004_HALMoveDown_PWMAndEnableControl) {
     HAL_init();
     
     // Test downward movement
@@ -277,7 +277,7 @@ TEST_F(HALIntegrationTests, Integration_IT004_HALMoveDown_PWMAndEnableControl) {
  * - HAL_StopMotor() → digitalWrite(R_EN_PIN, LOW)
  * - HAL_StopMotor() → digitalWrite(L_EN_PIN, LOW)
  */
-TEST_F(HALIntegrationTests, Integration_IT005_HALStopMotor_SafeShutdown) {
+TEST_F(HALIntegration, Integration_IT005_HALStopMotor_SafeShutdown) {
     HAL_init();
     
     // Start motor, then stop it
@@ -308,7 +308,7 @@ TEST_F(HALIntegrationTests, Integration_IT005_HALStopMotor_SafeShutdown) {
  * - HAL_ProcessAppState() → HAL_MoveUp() when direction=false
  * - HAL_ProcessAppState() → HAL_MoveDown() when direction=true
  */
-TEST_F(HALIntegrationTests, Integration_IT006_HALProcessAppState_MotorControl) {
+TEST_F(HALIntegration, Integration_IT006_HALProcessAppState_MotorControl) {
     HAL_init();
     
     DeskAppOutputs_t outputs;
@@ -368,7 +368,7 @@ TEST_F(HALIntegrationTests, Integration_IT006_HALProcessAppState_MotorControl) {
  * - HAL_Task() → millis() for timing
  * - HAL_Task() → populates HAL_Ouputs_t structure
  */
-TEST_F(HALIntegrationTests, Integration_IT007_HALTask_SensorReading) {
+TEST_F(HALIntegration, Integration_IT007_HALTask_SensorReading) {
     HAL_init();
     
     HAL_Ouputs_t hal_outputs;
@@ -405,7 +405,7 @@ TEST_F(HALIntegrationTests, Integration_IT007_HALTask_SensorReading) {
  * - HAL_HasError() state management
  * - HAL_ClearError() state reset
  */
-TEST_F(HALIntegrationTests, Integration_IT008_HALError_DetectionAndClearing) {
+TEST_F(HALIntegration, Integration_IT008_HALError_DetectionAndClearing) {
     HAL_init();
     
     // Initially no error
@@ -434,7 +434,7 @@ TEST_F(HALIntegrationTests, Integration_IT008_HALError_DetectionAndClearing) {
  * 
  * Calculation: I = (adc_value * vref / 1024) / volts_per_amp
  */
-TEST_F(HALIntegrationTests, Integration_IT009_HALAdcToAmps_ConversionAccuracy) {
+TEST_F(HALIntegration, Integration_IT009_HALAdcToAmps_ConversionAccuracy) {
     HAL_init();
     
     // Test with default parameters (5V reference, 1V/A sensitivity)
@@ -474,7 +474,7 @@ TEST_F(HALIntegrationTests, Integration_IT009_HALAdcToAmps_ConversionAccuracy) {
  * - HAL_ProcessAppState() → LED control (when hardware added)
  * - State transitions → LED state changes
  */
-TEST_F(HALIntegrationTests, Integration_IT010_LEDIndicators_Consistency) {
+TEST_F(HALIntegration, Integration_IT010_LEDIndicators_Consistency) {
     HAL_init();
     
     // Note: Current v1.0 hardware has no LEDs
@@ -524,7 +524,7 @@ TEST_F(HALIntegrationTests, Integration_IT010_LEDIndicators_Consistency) {
  * - HAL_wait_startup() → delay/timing functions
  * - Startup sequence → hardware stabilization
  */
-TEST_F(HALIntegrationTests, Integration_IT011_HALWaitStartup_HardwareSettling) {
+TEST_F(HALIntegration, Integration_IT011_HALWaitStartup_HardwareSettling) {
     // Call wait_startup (typically called during system init)
     HAL_wait_startup();
     
@@ -554,7 +554,7 @@ TEST_F(HALIntegrationTests, Integration_IT011_HALWaitStartup_HardwareSettling) {
  * - HAL_set_logger() → callback registration
  * - HAL functions → logger callback invocation
  */
-TEST_F(HALIntegrationTests, Integration_IT012_HALSetLogger_DiagnosticOutput) {
+TEST_F(HALIntegration, Integration_IT012_HALSetLogger_DiagnosticOutput) {
     HAL_init();
     
     // Create a simple logger callback
