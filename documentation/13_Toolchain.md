@@ -22,6 +22,30 @@ This guide provides step-by-step instructions for setting up the development env
 
 ## Toolchain Installation
 
+### Step 0: Install Cppcheck (Required for MISRA Checks)
+
+Install Cppcheck for static analysis:
+
+```powershell
+# Install via Windows Package Manager
+winget install --id Cppcheck.Cppcheck --accept-package-agreements --accept-source-agreements
+```
+
+**After installation, RESTART YOUR PC** to update PATH environment variable.
+
+**Verify installation:**
+
+```powershell
+cppcheck --version
+```
+
+Expected output:
+```
+Cppcheck 2.19.0
+```
+
+If not recognized, see [Troubleshooting: Cppcheck not recognized](#troubleshooting) below.
+
 ### Step 1: Search for MSYS2 (Optional)
 
 To verify MSYS2 is available via winget:
@@ -196,6 +220,50 @@ Run tests via VS Code:
 ---
 
 ## Troubleshooting
+
+### Issue: "cppcheck is not recognized"
+
+**Solution 1: Restart PowerShell**
+
+```powershell
+# Close current PowerShell and open a new one
+exit
+
+# Then try again
+cppcheck --version
+```
+
+**Solution 2: Manually add Cppcheck to PATH**
+
+If restart doesn't work, manually add Cppcheck to PATH:
+
+```powershell
+# Find Cppcheck installation location
+$cppcheckPath = (Get-Command cppcheck -ErrorAction SilentlyContinue).Source
+if ($null -eq $cppcheckPath) {
+    # Default installation location
+    $cppcheckBin = "C:\Program Files\Cppcheck"
+    if (Test-Path $cppcheckBin) {
+        Write-Host "Adding $cppcheckBin to PATH"
+        $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        if ($currentPath -notlike "*$cppcheckBin*") {
+            [Environment]::SetEnvironmentVariable("Path", "$currentPath;$cppcheckBin", "User")
+            $env:Path += ";$cppcheckBin"
+        }
+    } else {
+        Write-Host "Cppcheck not found in default location"
+    }
+}
+
+# Verify
+cppcheck --version
+```
+
+**Solution 3: Manual Download (If winget fails)**
+
+1. Download from: https://github.com/danmar/cppcheck/releases
+2. Extract to: `C:\Program Files\Cppcheck`
+3. Add to PATH (see Solution 2 above)
 
 ### Issue: "g++ is not recognized"
 

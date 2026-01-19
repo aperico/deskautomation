@@ -62,22 +62,21 @@ jobs:
     - name: Build
       run: cmake --build build --config ${{env.BUILD_TYPE}}
 
-    - name: Run unit tests and output results (JUnit XML)
+    - name: Run all tests and capture results (JUnit XML)
       working-directory: build
       run: |
-        # run only Unit-labelled tests
-        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -L "Unit" || true
-        if [ -f Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml ]; then
-          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results-unit.xml
-        fi
-
-    - name: Run integration tests and output results (JUnit XML)
-      working-directory: build
-      run: |
-        # run only Integration-labelled tests
-        ctest --output-on-failure -C ${{env.BUILD_TYPE}} -L "Integration" || true
-        if [ -f Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml ]; then
-          cp Testing/$(ls -t Testing | grep '[0-9]' | head -n1)/Test.xml test-results-integration.xml
+        echo "=== Running all tests ==="
+        ctest --output-on-failure -C ${{env.BUILD_TYPE}} 2>&1 | tee test-output.log
+        
+        # Find the most recent Test.xml file
+        TEST_XML=$(find Testing -name "Test.xml" -type f | sort -V | tail -1)
+        if [ -f "$TEST_XML" ]; then
+          echo "Found test results: $TEST_XML"
+          cp "$TEST_XML" test-results.xml
+          echo "Copied to: test-results.xml"
+        else
+          echo "Warning: No Test.xml found in Testing directory"
+          ls -la Testing/ 2>/dev/null || echo "Testing directory not found"
         fi
 
     - name: Upload test results
@@ -86,8 +85,8 @@ jobs:
       with:
         name: test-results
         path: |
-          build/test-results-unit.xml
-          build/test-results-integration.xml
+          build/test-results.xml
+          build/test-output.log
 
     - name: Generate coverage report
       run: |
