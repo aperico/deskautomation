@@ -17,13 +17,14 @@ enable_testing()
 add_library(DeskController STATIC source/arduino/DeskController.cpp)
 target_include_directories(DeskController PUBLIC source/arduino source/arduino/hal_mock)
 
-add_executable(SoftwareTests
+add_executable(ComponentTests
   tests/ComponentTests.cpp
   tests/IntegrationTests.cpp
+  tests/SystemIntegrationTests.cpp
 )
 
 # Ensure HAL and application sources are linked into the test binary so HAL_Init() and other symbols are available
-target_sources(SoftwareTests PRIVATE
+target_sources(ComponentTests PRIVATE
   ${CMAKE_SOURCE_DIR}/source/arduino/HAL.cpp
   ${CMAKE_SOURCE_DIR}/source/arduino/DeskController.cpp
   ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock/HALMock.cpp
@@ -31,23 +32,23 @@ target_sources(SoftwareTests PRIVATE
 )
 
 # Enable test interface for white-box testing
-target_compile_definitions(SoftwareTests PRIVATE 
+target_compile_definitions(ComponentTests PRIVATE 
     DESK_CONTROLLER_ENABLE_TEST_INTERFACE
 )
 
 # ensure include path for test build
-target_include_directories(SoftwareTests PRIVATE
+target_include_directories(ComponentTests PRIVATE
   ${CMAKE_SOURCE_DIR}/source/arduino
   ${CMAKE_SOURCE_DIR}/source/arduino/hal_mock
   ${CMAKE_SOURCE_DIR}/tests
 )
 
-target_link_libraries(SoftwareTests PRIVATE
+target_link_libraries(ComponentTests PRIVATE
     GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(SoftwareTests)
+gtest_discover_tests(ComponentTests)
 
 # Add unit tests executable
 add_executable(UnitTests
