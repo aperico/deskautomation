@@ -43,22 +43,32 @@ jobs:
           echo "System addons not found; fetching from GitHub..."
           mkdir -p /tmp/cppcheck-addons
           
-          # Download and extract if not already cached
-          if [ ! -f /tmp/cppcheck-addons/main.zip ]; then
-            echo "Downloading cppcheck addons archive..."
-            curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o /tmp/cppcheck-addons/main.zip
-          else
-            echo "Using cached cppcheck addons archive..."
+          # Try to download from a stable release tag first (has cert.py)
+          DOWNLOAD_URL="https://github.com/danmar/cppcheck/archive/refs/tags/2.13.zip"
+          echo "Attempting to download cppcheck 2.13 addons (which includes cert.py)..."
+          
+          if ! curl -sL "$DOWNLOAD_URL" -o /tmp/cppcheck-addons/main.zip 2>/dev/null; then
+            echo "Falling back to main branch..."
+            DOWNLOAD_URL="https://github.com/danmar/cppcheck/archive/refs/heads/main.zip"
+            curl -sL "$DOWNLOAD_URL" -o /tmp/cppcheck-addons/main.zip
           fi
           
           # Remove old extraction if it exists
-          rm -rf /tmp/cppcheck-addons/cppcheck-main
+          rm -rf /tmp/cppcheck-addons/cppcheck-*
           
           # Extract to absolute path
           echo "Extracting addons archive..."
           unzip -q /tmp/cppcheck-addons/main.zip -d /tmp/cppcheck-addons
           
-          ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
+          # Find the extracted directory (could be cppcheck-main or cppcheck-2.13)
+          EXTRACTED_DIR=$(find /tmp/cppcheck-addons -maxdepth 1 -type d -name "cppcheck-*" | head -1)
+          if [ -z "$EXTRACTED_DIR" ]; then
+            echo "✗ Failed to find extracted cppcheck directory"
+            exit 1
+          fi
+          
+          ADDON_DIR="$EXTRACTED_DIR/addons"
+          echo "Using addons from: $ADDON_DIR"
           
           # Verify and add available addons
           if [ -f "$ADDON_DIR/misra.py" ]; then
@@ -66,6 +76,7 @@ jobs:
             ADDON_ARGS="$ADDON_ARGS --addon=$ADDON_DIR/misra.py"
           else
             echo "✗ misra.py not found at $ADDON_DIR/misra.py"
+            exit 1
           fi
           
           if [ -f "$ADDON_DIR/cert.py" ]; then
