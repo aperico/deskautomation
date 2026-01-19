@@ -31,15 +31,25 @@ jobs:
     - name: Run Cppcheck (MISRA-C 2012 linting)
       run: |
         echo "=== Running Cppcheck with MISRA-C 2012 checks ==="
+
+        ADDON_DIR="/usr/share/cppcheck/addons"
+        if [ ! -f "$ADDON_DIR/misra.py" ] || [ ! -f "$ADDON_DIR/cert.py" ]; then
+          echo "Fetching cppcheck addons (misra.py, cert.py)..."
+          mkdir -p /tmp/cppcheck-addons
+          curl -sL https://github.com/danmar/cppcheck/archive/refs/heads/main.zip -o /tmp/cppcheck-addons/main.zip
+          unzip -q /tmp/cppcheck-addons/main.zip -d /tmp/cppcheck-addons
+          ADDON_DIR="/tmp/cppcheck-addons/cppcheck-main/addons"
+        fi
+
         cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
           --error-exitcode=1 \
-          --addon=misra --addon=cert \
+          --addon="$ADDON_DIR/misra.py" --addon="$ADDON_DIR/cert.py" \
           --xml --xml-version=2 \
           --output-file=cppcheck-report.xml \
           source
         echo "=== Cppcheck Summary ==="
         cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
-          --addon=misra --addon=cert \
+          --addon="$ADDON_DIR/misra.py" --addon="$ADDON_DIR/cert.py" \
           source 2>&1 | tee cppcheck-summary.txt || true
         echo "=== MISRA Check Complete ==="
 
