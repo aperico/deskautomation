@@ -26,18 +26,22 @@ static void init_inputs(void)
 
 static void init_outputs(void)
 {
-    pinMode(PIN_MOTOR_REN, OUTPUT);
-    pinMode(PIN_MOTOR_LEN, OUTPUT);
-    pinMode(PIN_MOTOR_RPWM, OUTPUT);
-    pinMode(PIN_MOTOR_LPWM, OUTPUT);
-    pinMode(PIN_LED_STATUS, OUTPUT);
+    pinMode(PIN_MOTOR_EN1, OUTPUT);
+    pinMode(PIN_MOTOR_EN2, OUTPUT);
+    pinMode(PIN_MOTOR_PWM, OUTPUT);
+    
+    // Initialize 3 status LEDs
+    pinMode(PIN_LED_BT_UP, OUTPUT);
+    pinMode(PIN_LED_BT_DOWN, OUTPUT);
+    pinMode(PIN_LED_ERROR, OUTPUT);
 
-    // Safe defaults
-    digitalWrite(PIN_MOTOR_REN, LOW);
-    digitalWrite(PIN_MOTOR_LEN, LOW);
-    analogWrite(PIN_MOTOR_RPWM, 0);
-    analogWrite(PIN_MOTOR_LPWM, 0);
-    digitalWrite(PIN_LED_STATUS, LOW);
+    // Safe defaults: Motor stopped, all LEDs off
+    digitalWrite(PIN_MOTOR_EN1, LOW);
+    digitalWrite(PIN_MOTOR_EN2, LOW);
+    analogWrite(PIN_MOTOR_PWM, 0);
+    digitalWrite(PIN_LED_BT_UP, LOW);
+    digitalWrite(PIN_LED_BT_DOWN, LOW);
+    digitalWrite(PIN_LED_ERROR, LOW);
 }
 
 void HAL_init(void)
@@ -84,48 +88,51 @@ void HAL_setMotor(MotorDirection_t dir, uint8_t speed)
     {
         case MOTOR_STOP:
         default:
-            digitalWrite(PIN_MOTOR_REN, LOW);
-            digitalWrite(PIN_MOTOR_LEN, LOW);
-            analogWrite(PIN_MOTOR_RPWM, 0);
-            analogWrite(PIN_MOTOR_LPWM, 0);
+            digitalWrite(PIN_MOTOR_EN1, LOW);
+            digitalWrite(PIN_MOTOR_EN2, LOW);
+            analogWrite(PIN_MOTOR_PWM, 0);
             break;
         case MOTOR_UP:
-            digitalWrite(PIN_MOTOR_REN, HIGH);
-            digitalWrite(PIN_MOTOR_LEN, LOW);
-            analogWrite(PIN_MOTOR_RPWM, speed);
-            analogWrite(PIN_MOTOR_LPWM, 0);
+            digitalWrite(PIN_MOTOR_EN1, HIGH);
+            digitalWrite(PIN_MOTOR_EN2, LOW);
+            analogWrite(PIN_MOTOR_PWM, speed);
             break;
         case MOTOR_DOWN:
-            digitalWrite(PIN_MOTOR_REN, LOW);
-            digitalWrite(PIN_MOTOR_LEN, HIGH);
-            analogWrite(PIN_MOTOR_RPWM, 0);
-            analogWrite(PIN_MOTOR_LPWM, speed);
+            digitalWrite(PIN_MOTOR_EN1, LOW);
+            digitalWrite(PIN_MOTOR_EN2, HIGH);
+            analogWrite(PIN_MOTOR_PWM, speed);
             break;
     }
 }
 
-void HAL_setLED(LEDStatus_t status)
+/**
+ * @brief Set individual LED state
+ * 
+ * Controls one of the 3 independent status LEDs:
+ * - LED_BT_UP (Pin 11): UP button pressed indicator
+ * - LED_BT_DOWN (Pin 12): DOWN button pressed indicator  
+ * - LED_ERROR (Pin 13): Error/fault state indicator
+ * 
+ * @param led - LED identifier (LED_BT_UP, LED_BT_DOWN, LED_ERROR)
+ * @param state - LED state (LED_OFF=0 or LED_ON=1)
+ */
+void HAL_setLED(LEDID_t led, LEDState_t state)
 {
-    switch (status)
+    const bool level = (state == LED_ON) ? HIGH : LOW;
+    
+    switch (led)
     {
-        case LED_OFF:
-            digitalWrite(PIN_LED_STATUS, LOW);
+        case LED_BT_UP:
+            digitalWrite(PIN_LED_BT_UP, level);
             break;
-        case LED_IDLE:
-            digitalWrite(PIN_LED_STATUS, HIGH);
+        case LED_BT_DOWN:
+            digitalWrite(PIN_LED_BT_DOWN, level);
             break;
-        case LED_ACTIVE:
-        {
-            // Blink at 1 Hz
-            const uint32_t t = millis() % 1000U;
-            digitalWrite(PIN_LED_STATUS, (t < 500U) ? HIGH : LOW);
-            break;
-        }
         case LED_ERROR:
-            digitalWrite(PIN_LED_STATUS, HIGH);
+            digitalWrite(PIN_LED_ERROR, level);
             break;
         default:
-            digitalWrite(PIN_LED_STATUS, LOW);
+            // Invalid LED ID - do nothing
             break;
     }
 }
