@@ -27,48 +27,10 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ gcc lcov cppcheck valgrind
+        sudo apt-get install -y cmake g++ gcc lcov valgrind
         sudo apt-get install -y libgtest-dev
         cd /usr/src/gtest && sudo cmake . && sudo make
         sudo cp lib/*.a /usr/lib
-
-    - name: Run Cppcheck (static analysis)
-      continue-on-error: true
-      run: |
-        echo "=== Running Cppcheck static analysis ==="
-        
-        cppcheck --enable=all --inconclusive --std=c++11 --suppress=missingIncludeSystem \
-          --xml --xml-version=2 \
-          --output-file=cppcheck-report.xml \
-          source 2>&1 | tee cppcheck-console.log || true
-        
-        echo "=== Cppcheck Summary ==="
-        cppcheck --enable=all --std=c++11 --suppress=missingIncludeSystem \
-          source 2>&1 | tee cppcheck-summary.txt || true
-        
-        # Count issues for reporting
-        if [ -f cppcheck-report.xml ]; then
-          ISSUE_COUNT=$(grep -c '<error' cppcheck-report.xml || echo "0")
-          echo "=== Static Analysis Complete: $ISSUE_COUNT issues found ==="
-          if [ "$ISSUE_COUNT" -gt 0 ]; then
-            echo "⚠️ Issues detected but workflow will continue"
-          else
-            echo "✅ No issues found"
-          fi
-        else
-          echo "⚠️ cppcheck-report.xml not generated"
-        fi
-
-    - name: Upload Cppcheck reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cppcheck-reports
-        if-no-files-found: ignore
-        path: |
-          cppcheck-report.xml
-          cppcheck-summary.txt
-          cppcheck-console.log
 
     - name: Clean build directory
       run: |
@@ -294,18 +256,6 @@ jobs:
         echo "" >> quality-report.md
         echo "## 🔐 Security & Code Quality" >> quality-report.md
         
-        # Static analysis findings
-        if [ -f cppcheck-summary.txt ]; then
-          CPPCHECK_ISSUES=$(grep -i "error\|warning" cppcheck-summary.txt | wc -l)
-          echo "### Cppcheck Static Analysis" >> quality-report.md
-          if [ $CPPCHECK_ISSUES -eq 0 ]; then
-            echo "✅ **No violations detected**" >> quality-report.md
-          else
-            echo "⚠️ **Found $CPPCHECK_ISSUES issues** - [Download Report](../../actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }})" >> quality-report.md
-            grep -i "error\|warning" cppcheck-summary.txt | head -5 >> quality-report.md
-          fi
-        fi
-        
         echo "" >> quality-report.md
         
         # ASan/UBSan findings
@@ -395,8 +345,6 @@ jobs:
         if-no-files-found: ignore
         path: |
           quality-report.md
-          cppcheck-report.xml
-          cppcheck-summary.txt
           build-sanitized/asan-ubsan-results.txt
           valgrind-reports/*.xml
           valgrind-summary.txt

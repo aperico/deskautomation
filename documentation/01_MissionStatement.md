@@ -22,7 +22,7 @@ Replace the manual crank operation of an existing IKEA mechanical desk with a sa
 
 ### **BY:**
 Implementing an Arduino-based embedded control system that:
-- Integrates a high-torque DC worm gear motor (31ZY-5840) with BTS7960/IBT-2 driver
+- Integrates a high-torque DC worm gear motor (31ZY-5840) with L298N H-bridge driver
 - Provides intuitive single rocker switch control interface
 - Incorporates hardware abstraction layers for modularity and testability
 - Ensures safe operation through emergency stop, current monitoring, and soft-start mechanisms

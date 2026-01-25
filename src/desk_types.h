@@ -24,12 +24,31 @@ typedef enum
     MOTOR_DOWN = 2
 } MotorDirection_t;
 
+/**
+ * @brief LED identifier for independent LED control
+ * 
+ * System has 3 status LEDs for visual feedback:
+ * - LED_BT_UP: Indicates UP button is pressed
+ * - LED_BT_DOWN: Indicates DOWN button is pressed
+ * - LED_ERROR: Indicates system error/fault state
+ */
 typedef enum
 {
-    LED_OFF = 0,
-    LED_IDLE = 1,
-    LED_ACTIVE = 2,
-    LED_ERROR = 3
-} LEDStatus_t;
+    LED_BT_UP = 0,      ///< UP button pressed indicator (Pin 11)
+    LED_BT_DOWN = 1,    ///< DOWN button pressed indicator (Pin 12)
+    LED_ERROR = 2,      ///< Error state indicator (Pin 13, built-in LED)
+    LED_COUNT = 3       ///< Total number of LEDs
+} LEDID_t;
+
+/**
+ * @brief LED state (ON or OFF)
+ * 
+ * Simple binary control for each LED.
+ */
+typedef enum
+{
+    LED_OFF = 0,        ///< LED turned off
+    LED_ON = 1          ///< LED turned on
+} LEDState_t;
 
 #endif // DESK_TYPES_H

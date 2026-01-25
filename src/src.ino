@@ -4,7 +4,7 @@
 #include "motor_controller.h"
 
 // Non-blocking scheduler: run APP logic every 250 ms
-static const uint32_t APP_PERIOD_MS = 250U;
+static const uint32_t APP_PERIOD_MS = 100U;
 static uint32_t last_app_run_ms = 0U;
 static AppOutput_t app_out_cached;
 
@@ -17,7 +17,9 @@ void setup()
     // Initialize cached outputs (safe defaults)
     app_out_cached.motor_cmd = MOTOR_STOP;
     app_out_cached.motor_speed = 0U;
-    app_out_cached.led_status = LED_IDLE;
+    app_out_cached.led_bt_up = LED_OFF;
+    app_out_cached.led_bt_down = LED_OFF;
+    app_out_cached.led_error = LED_OFF;
     app_out_cached.fault_out = false;
     last_app_run_ms = HAL_getTime();
 }
@@ -51,12 +53,16 @@ void loop()
         if (fault_active)
         {
             HAL_setMotor(MOTOR_STOP, 0U);
-            HAL_setLED(LED_ERROR);
+            HAL_setLED(LED_BT_UP, LED_OFF);
+            HAL_setLED(LED_BT_DOWN, LED_OFF);
+            HAL_setLED(LED_ERROR, LED_ON);
         }
         else
         {
             HAL_setMotor(mc_out.dir, mc_out.pwm);
-            HAL_setLED(app_out_cached.led_status);
+            HAL_setLED(LED_BT_UP, app_out_cached.led_bt_up);
+            HAL_setLED(LED_BT_DOWN, app_out_cached.led_bt_down);
+            HAL_setLED(LED_ERROR, app_out_cached.led_error);
         }
     }
 

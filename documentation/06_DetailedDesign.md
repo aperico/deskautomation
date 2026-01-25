@@ -36,9 +36,12 @@ classDiagram
         +PIN_BUTTON_DOWN: uint8_t
         +PIN_LIMIT_UPPER: uint8_t
         +PIN_LIMIT_LOWER: uint8_t
-        +PIN_MOTOR_RPWM: uint8_t
-        +PIN_MOTOR_LPWM: uint8_t
-        +PIN_LED_STATUS: uint8_t
+        +PIN_MOTOR_EN1: uint8_t
+        +PIN_MOTOR_EN2: uint8_t
+        +PIN_MOTOR_PWM: uint8_t
+        +PIN_LED_BT_UP: uint8_t
+        +PIN_LED_BT_DOWN: uint8_t
+        +PIN_LED_ERROR: uint8_t
     }
     
     class HAL {
@@ -299,11 +302,11 @@ END FUNCTION
 
 ### Algorithm 3: Motor Control (HAL Module)
 
-**Purpose:** Translate motor commands into hardware signals for BTS7960 motor driver.
+**Purpose:** Translate motor commands into hardware signals for L298N dual H-bridge motor driver.
 
 **Requirements:** SysReq-002 (response ≤ 1 sec), SysReq-003 (halt ≤ 500 ms)
 
-**BTS7960 Motor Driver Control:**
+**L298N Motor Driver Control:**
 
 | Direction | RPWM (Pin 9) | LPWM (Pin 10) | REN (Pin 6) | LEN (Pin 7) |
 |-----------|-------------|--------------|-------------|-------------|
@@ -317,22 +320,19 @@ END FUNCTION
 FUNCTION HAL_setMotor(direction, speed):
     SWITCH direction:
         CASE MOTOR_STOP:
-            digitalWrite(PIN_MOTOR_REN, LOW)
-            digitalWrite(PIN_MOTOR_LEN, LOW)
-            analogWrite(PIN_MOTOR_RPWM, 0)
-            analogWrite(PIN_MOTOR_LPWM, 0)
+            digitalWrite(PIN_MOTOR_EN1, LOW)
+            digitalWrite(PIN_MOTOR_EN2, LOW)
+            analogWrite(PIN_MOTOR_PWM, 0)
         
         CASE MOTOR_UP:
-            digitalWrite(PIN_MOTOR_REN, HIGH)
-            digitalWrite(PIN_MOTOR_LEN, LOW)
-            analogWrite(PIN_MOTOR_RPWM, speed)  // 0-255
-            analogWrite(PIN_MOTOR_LPWM, 0)
+            digitalWrite(PIN_MOTOR_EN1, HIGH)
+            digitalWrite(PIN_MOTOR_EN2, LOW)
+            analogWrite(PIN_MOTOR_PWM, speed)  // 0-255
         
         CASE MOTOR_DOWN:
-            digitalWrite(PIN_MOTOR_REN, LOW)
-            digitalWrite(PIN_MOTOR_LEN, HIGH)
-            analogWrite(PIN_MOTOR_RPWM, 0)
-            analogWrite(PIN_MOTOR_LPWM, speed)  // 0-255
+            digitalWrite(PIN_MOTOR_EN1, LOW)
+            digitalWrite(PIN_MOTOR_EN2, HIGH)
+            analogWrite(PIN_MOTOR_PWM, speed)  // 0-255
 END FUNCTION
 ```
 
@@ -920,7 +920,7 @@ void APP_Task(...) {
 - [ ] Implement `HAL_init()` with safe defaults
 - [ ] Implement `HAL_readButton()` with debouncing
 - [ ] Implement `HAL_readLimitSensor()`
-- [ ] Implement `HAL_setMotor()` with BTS7960 control
+- [ ] Implement `HAL_setMotor()` with L298N control
 - [ ] Implement `HAL_setLED()` with blink logic
 - [ ] Implement `HAL_getTime()` wrapper
 - [ ] Unit test HAL functions with mock hardware
@@ -969,14 +969,15 @@ void APP_Task(...) {
 #define PIN_LIMIT_UPPER    4   // Digital input with internal pull-up
 #define PIN_LIMIT_LOWER    5   // Digital input with internal pull-up
 
-// Output Pins (Motor Driver - BTS7960)
-#define PIN_MOTOR_REN      6   // Right enable (UP direction enable)
-#define PIN_MOTOR_LEN      7   // Left enable (DOWN direction enable)
-#define PIN_MOTOR_RPWM     9   // Right PWM (UP direction speed control)
-#define PIN_MOTOR_LPWM    10   // Left PWM (DOWN direction speed control)
+// Output Pins (Motor Driver - L298N)
+#define PIN_MOTOR_EN1      6   // Enable 1 (direction control UP)
+#define PIN_MOTOR_EN2      5   // Enable 2 (direction control DOWN)
+#define PIN_MOTOR_PWM      9   // Motor speed control PWM
 
-// Output Pins (LED)
-#define PIN_LED_STATUS    13   // Built-in LED (can be replaced with external)
+// Output Pins (Status LEDs)
+#define PIN_LED_BT_UP     11   // UP button pressed indicator
+#define PIN_LED_BT_DOWN   12   // DOWN button pressed indicator
+#define PIN_LED_ERROR     13   // Error state indicator (built-in LED)
 
 // Hardware Constraints
 #define PWM_FREQUENCY_HZ  490  // Arduino default PWM frequency
@@ -985,18 +986,18 @@ void APP_Task(...) {
 #endif // PIN_CONFIG_H
 ```
 
-### BTS7960 Motor Driver Wiring
+### L298N Motor Driver Wiring
 
-| BTS7960 Pin | Arduino Pin | Signal Type | Description |
+| L298N Pin | Arduino Pin | Signal Type | Description |
 |-------------|-------------|-------------|-------------|
-| RPWM | 9 (PWM) | PWM Output | Right channel PWM (UP direction) |
-| LPWM | 10 (PWM) | PWM Output | Left channel PWM (DOWN direction) |
-| R_EN | 6 (Digital) | Digital Output | Right channel enable |
-| L_EN | 7 (Digital) | Digital Output | Left channel enable |
-| R_IS | (unused) | Analog Input | Right channel current sense (future) |
-| L_IS | (unused) | Analog Input | Left channel current sense (future) |
-| VCC | 5V | Power | Logic power supply |
+| IN1 (RPWM) | 9 (PWM) | PWM Output | Right channel PWM (UP direction) |
+| IN2 (LPWM) | 10 (PWM) | PWM Output | Left channel PWM (DOWN direction) |
+| ENA (REN) | 6 (Digital) | Digital Output | Right channel enable |
+| ENB (LEN) | 7 (Digital) | Digital Output | Left channel enable |
+| OUT1/OUT2 | Motor | Power Output | Motor connection (polarity determines direction) |
+| +12V | Power Supply | Power Input | Motor power supply (12V or 24V) |
 | GND | GND | Ground | Common ground |
+| +5V | 5V (optional) | Logic Power | Logic power (can use Arduino 5V or external) |
 
 ---
 

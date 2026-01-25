@@ -17,11 +17,22 @@ void APP_Init(void)
     fault_latched = false;
 }
 
+/**
+ * @brief Handle fault condition - stop motor and activate error LED
+ * 
+ * Sets all outputs to safe fault state:
+ * - Motor stopped (direction=STOP, speed=0)
+ * - All button LEDs off (no button feedback during fault)
+ * - Error LED on (visual fault indication)
+ * - Fault flag set (for external monitoring)
+ */
 static void handle_fault(AppOutput_t *outputs)
 {
     outputs->motor_cmd = MOTOR_STOP;
     outputs->motor_speed = 0U;
-    outputs->led_status = LED_ERROR;
+    outputs->led_bt_up = LED_OFF;      // Turn off button indicators during fault
+    outputs->led_bt_down = LED_OFF;
+    outputs->led_error = LED_ON;        // Activate error indicator
     outputs->fault_out = true;
 }
 
@@ -32,15 +43,42 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         return;
     }
 
-    // Propagate external fault to application layer
+    // SAFETY-CRITICAL: Check fault recovery conditions first
+    // Allow recovery from fault when command buttons released AND no other faults active
+    if (fault_latched && current_state == APP_STATE_FAULT)
+    {
+        const bool both_buttons_released = !inputs->button_up && !inputs->button_down;
+        const bool no_external_fault = !inputs->fault_in;
+        
+        if (both_buttons_released && no_external_fault)
+        {
+            fault_latched = false;  // Clear latched fault condition
+        }
+    }
+
+    // SAFETY-CRITICAL: Simultaneous button press is a LATCHED fault condition
+    // Both UP and DOWN pressed together indicates user error - requires release to clear
+    if (inputs->button_up && inputs->button_down)
+    {
+        fault_latched = true;
+    }
+
+    // Propagate external fault to application layer (latched)
     if (inputs->fault_in)
     {
         fault_latched = true;
     }
 
-    outputs->fault_out = fault_latched;
+    // SAFETY-CRITICAL: Both limit switches active is a TRANSIENT fault condition
+    // Fault active only while both limits are triggered - clears automatically
+    const bool dual_limit_fault = inputs->limit_upper && inputs->limit_lower;
+    
+    // Combined fault status: latched faults OR transient faults
+    const bool fault_active = fault_latched || dual_limit_fault;
+    
+    outputs->fault_out = fault_active;
 
-    if (fault_latched)
+    if (fault_active)
     {
         current_state = APP_STATE_FAULT;
         handle_fault(outputs);
@@ -54,27 +92,27 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         {
             outputs->motor_cmd = MOTOR_STOP;
             outputs->motor_speed = 0U;
-            outputs->led_status = LED_IDLE;
-
-            // Conflicting inputs: ignore
-            if (inputs->button_up && inputs->button_down)
-            {
-                break;
-            }
+            outputs->led_bt_up = LED_OFF;      // LEDs off in IDLE - motor not moving
+            outputs->led_bt_down = LED_OFF;
+            outputs->led_error = LED_OFF;
 
             if (inputs->button_up && !inputs->limit_upper)
             {
                 transition_to(APP_STATE_MOVING_UP, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_UP;
                 outputs->motor_speed = 255U;
-                outputs->led_status = LED_ACTIVE;
+                outputs->led_bt_up = LED_ON;    // LED ON only when moving up
+                outputs->led_bt_down = LED_OFF;
+                outputs->led_error = LED_OFF;
             }
             else if (inputs->button_down && !inputs->limit_lower)
             {
                 transition_to(APP_STATE_MOVING_DOWN, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_DOWN;
                 outputs->motor_speed = 255U;
-                outputs->led_status = LED_ACTIVE;
+                outputs->led_bt_up = LED_OFF;
+                outputs->led_bt_down = LED_ON;  // LED ON only when moving down
+                outputs->led_error = LED_OFF;
             }
             break;
         }
@@ -83,14 +121,18 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         {
             outputs->motor_cmd = MOTOR_UP;
             outputs->motor_speed = 255U;
-            outputs->led_status = LED_ACTIVE;
+            outputs->led_bt_up = LED_ON;        // Keep UP indicator active while moving
+            outputs->led_bt_down = LED_OFF;
+            outputs->led_error = LED_OFF;
 
             if (!inputs->button_up || inputs->limit_upper)
             {
                 transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_STOP;
                 outputs->motor_speed = 0U;
-                outputs->led_status = LED_IDLE;
+                outputs->led_bt_up = LED_OFF;   // Turn off indicator when stopping
+                outputs->led_bt_down = LED_OFF;
+                outputs->led_error = LED_OFF;
             }
             break;
         }
@@ -99,21 +141,43 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         {
             outputs->motor_cmd = MOTOR_DOWN;
             outputs->motor_speed = 255U;
-            outputs->led_status = LED_ACTIVE;
+            outputs->led_bt_up = LED_OFF;
+            outputs->led_bt_down = LED_ON;      // Keep DOWN indicator active while moving
+            outputs->led_error = LED_OFF;
 
             if (!inputs->button_down || inputs->limit_lower)
             {
                 transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_STOP;
                 outputs->motor_speed = 0U;
-                outputs->led_status = LED_IDLE;
+                outputs->led_bt_up = LED_OFF;
+                outputs->led_bt_down = LED_OFF;  // Turn off indicator when stopping
+                outputs->led_error = LED_OFF;
             }
             break;
         }
 
         case APP_STATE_FAULT:
         {
-            handle_fault(outputs);
+            // Check if all fault conditions have cleared (both latched and transient)
+            const bool dual_limit_fault = inputs->limit_upper && inputs->limit_lower;
+            const bool any_fault_active = fault_latched || dual_limit_fault;
+            
+            if (!any_fault_active)
+            {
+                // All faults cleared - transition back to IDLE
+                transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
+                outputs->motor_cmd = MOTOR_STOP;
+                outputs->motor_speed = 0U;
+                outputs->led_bt_up = LED_OFF;
+                outputs->led_bt_down = LED_OFF;
+                outputs->led_error = LED_OFF;
+            }
+            else
+            {
+                // Faults still active - remain in FAULT state
+                handle_fault(outputs);
+            }
             break;
         }
     }

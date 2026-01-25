@@ -73,8 +73,12 @@ TEST_F(DeskAppComponentTest, TC_SWReq007_001_InitialStateIsIdle)
         << "Initial motor command must be STOP";
     EXPECT_EQ(outputs.motor_speed, 0U) 
         << "Initial motor speed must be zero";
-    EXPECT_EQ(outputs.led_status, LED_IDLE) 
-        << "Initial LED status must be IDLE";
+    EXPECT_EQ(outputs.led_bt_up, LED_OFF) 
+        << "UP button LED must be OFF in IDLE";
+    EXPECT_EQ(outputs.led_bt_down, LED_OFF) 
+        << "DOWN button LED must be OFF in IDLE";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must be OFF in IDLE";
     EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
         << "Application must be in IDLE state";
 }
@@ -128,8 +132,12 @@ TEST_F(DeskAppComponentTest, TC_SWReq001_001_UpButtonCommandsMotorUp)
         << "UP button must command MOTOR_UP";
     EXPECT_GT(outputs.motor_speed, 0U) 
         << "Motor speed must be non-zero when moving up";
-    EXPECT_EQ(outputs.led_status, LED_ACTIVE) 
-        << "LED must indicate active motion";
+    EXPECT_EQ(outputs.led_bt_up, LED_ON) 
+        << "UP button LED must be ON when moving up";
+    EXPECT_EQ(outputs.led_bt_down, LED_OFF) 
+        << "DOWN button LED must be OFF";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must be OFF during normal operation";
     EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_UP) 
         << "State must transition to MOVING_UP";
 }
@@ -183,8 +191,12 @@ TEST_F(DeskAppComponentTest, TC_SWReq002_001_DownButtonCommandsMotorDown)
         << "DOWN button must command MOTOR_DOWN";
     EXPECT_GT(outputs.motor_speed, 0U) 
         << "Motor speed must be non-zero when moving down";
-    EXPECT_EQ(outputs.led_status, LED_ACTIVE) 
-        << "LED must indicate active motion";
+    EXPECT_EQ(outputs.led_bt_up, LED_OFF) 
+        << "UP button LED must be OFF";
+    EXPECT_EQ(outputs.led_bt_down, LED_ON) 
+        << "DOWN button LED must be ON when moving down";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must be OFF during normal operation";
     EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_DOWN) 
         << "State must transition to MOVING_DOWN";
 }
@@ -333,13 +345,78 @@ TEST_F(DeskAppComponentTest, TC_SWReq004_001_ConflictingButtonsForceStop)
     AppOutput_t outputs;
     APP_Task(&inputs, &outputs);
     
-    // SAFETY-CRITICAL: Conflicting inputs must result in STOP
+    // SAFETY-CRITICAL: Simultaneous button press is a fault condition
     EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
         << "SAFETY: Conflicting button inputs must force STOP";
     EXPECT_EQ(outputs.motor_speed, 0U) 
         << "Motor speed must be zero with conflicting inputs";
-    EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
-        << "Must remain in IDLE state with conflicting inputs";
+    EXPECT_TRUE(outputs.fault_out)
+        << "SAFETY: Simultaneous button press must trigger fault";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+        << "Must transition to FAULT state on conflicting button inputs";
+    EXPECT_EQ(outputs.led_error, LED_ON)
+        << "Error LED must be ON to indicate fault condition";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-004-002 - Simultaneous Button Press During Motion
+// ============================================================================
+// Requirement ID: SWReq-004 (Conflicting inputs trigger fault)
+// Requirement ID: SysReq-010 (Fault detection and response)
+//
+// Test Objective:
+//   Verify that simultaneous button press while in MOVING state triggers
+//   fault condition for safety.
+//
+// Preconditions:
+//   - Application initially in IDLE state
+//
+// Test Steps:
+//   1. Transition to MOVING_UP by pressing UP button
+//   2. While moving, press both buttons simultaneously
+//   3. Verify system enters FAULT state with motor stopped
+//
+// Expected Results:
+//   - Motor command = MOTOR_STOP
+//   - Motor speed = 0
+//   - State transitions to APP_STATE_FAULT
+//   - Fault output flag is set
+//   - Error LED is illuminated
+
+TEST_F(DeskAppComponentTest, TC_SWReq004_002_ConflictingButtonsDuringMotion)
+{
+    // Step 1: Transition to MOVING_UP
+    AppInput_t inputs = {0};
+    inputs.button_up = true;
+    inputs.limit_upper = false;
+    inputs.limit_lower = false;
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Verify in MOVING_UP state
+    EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_UP)
+        << "Setup: Should be in MOVING_UP state";
+    
+    // Step 2: Simultaneously press both buttons while moving
+    inputs.button_up = true;
+    inputs.button_down = true;  // Now press DOWN while UP already moving
+    inputs.timestamp_ms = 10U;
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 3: Verify fault state
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "SAFETY: Motor must stop when conflicting buttons pressed";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero during fault";
+    EXPECT_TRUE(outputs.fault_out)
+        << "SAFETY: Simultaneous button press during motion must trigger fault";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+        << "Must transition to FAULT state immediately";
+    EXPECT_EQ(outputs.led_error, LED_ON)
+        << "Error LED must be ON to indicate fault condition";
 }
 
 // ============================================================================
@@ -450,10 +527,161 @@ TEST_F(DeskAppComponentTest, TC_SWReq010_001_FaultInputTriggersErrorState)
         << "Fault must force motor STOP regardless of user input";
     EXPECT_TRUE(outputs.fault_out) 
         << "Fault output flag must be set to propagate fault";
-    EXPECT_EQ(outputs.led_status, LED_ERROR) 
-        << "LED must indicate error state";
+    EXPECT_EQ(outputs.led_bt_up, LED_OFF) 
+        << "Button LEDs must be OFF during fault";
+    EXPECT_EQ(outputs.led_bt_down, LED_OFF) 
+        << "Button LEDs must be OFF during fault";
+    EXPECT_EQ(outputs.led_error, LED_ON) 
+        << "Error LED must be ON to indicate fault state";
     EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
         << "Must transition to FAULT state";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-010-002 - Dual Limit Switch Fault Detection
+// ============================================================================
+// Requirement ID: SWReq-010 (Fault detection and response)
+// Requirement ID: SysReq-007 (Limit switch protection)
+//
+// Test Objective:
+//   Verify that simultaneous activation of both limit switches triggers
+//   a fault condition. This detects hardware malfunction (e.g., sensor failure).
+//
+// Preconditions:
+//   - Application initially in IDLE state
+//
+// Test Steps:
+//   1. Attempt to move UP while both limit switches are active
+//   2. Verify system detects hardware fault
+//   3. Confirm motor stops and error LED activates
+//
+// Expected Results:
+//   - Motor command = MOTOR_STOP
+//   - Motor speed = 0
+//   - Fault output = true
+//   - State = APP_STATE_FAULT
+//   - Error LED = ON
+
+TEST_F(DeskAppComponentTest, TC_SWReq010_002_DualLimitSwitchFault)
+{
+    // Step 1: Trigger dual limit fault
+    AppInput_t inputs = {0};
+    inputs.button_up = true;          // User presses UP
+    inputs.button_down = false;
+    inputs.limit_upper = true;        // BOTH limits active simultaneously
+    inputs.limit_lower = true;        // (hardware fault condition)
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Step 2: Verify fault state
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "Motor must stop when both limits are triggered";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero";
+    EXPECT_TRUE(outputs.fault_out)
+        << "SAFETY: Both limit switches active must trigger fault";
+    EXPECT_EQ(outputs.led_bt_up, LED_OFF) 
+        << "Movement LEDs must be OFF during fault";
+    EXPECT_EQ(outputs.led_bt_down, LED_OFF) 
+        << "Movement LEDs must be OFF during fault";
+    EXPECT_EQ(outputs.led_error, LED_ON) 
+        << "Error LED must be ON to indicate hardware fault";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+        << "Must transition to FAULT state on dual limit activation";
+    
+    // Step 3: Clear dual limit fault (transient fault - auto-clears)
+    inputs.limit_upper = false;      // Only one limit active now
+    inputs.limit_lower = true;       // Fault condition resolved
+    inputs.timestamp_ms = 10U;
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 4: Verify automatic recovery from transient fault
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "Motor remains stopped";
+    EXPECT_FALSE(outputs.fault_out)
+        << "Dual limit fault must auto-clear when condition resolves";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must turn OFF when fault clears";
+    EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
+        << "Must automatically recover to IDLE when dual limit fault clears";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-010-003 - Fault Recovery When Buttons Released
+// ============================================================================
+// Requirement ID: SWReq-010 (Fault state recovery)
+// Requirement ID: SysReq-008 (Reliability: fault recovery mechanism)
+//
+// Test Objective:
+//   Verify that application recovers from FAULT state when both buttons
+//   are released and no other fault conditions remain active.
+//
+// Preconditions:
+//   - Application initially in IDLE state
+//
+// Test Steps:
+//   1. Trigger fault condition (both buttons pressed)
+//   2. Verify system in FAULT state
+//   3. Release both buttons (button_up=false, button_down=false)
+//   4. Call APP_Task() again
+//   5. Verify recovery to IDLE state with all LEDs off
+//
+// Expected Results:
+//   - Motor command = MOTOR_STOP
+//   - Fault output = false (fault cleared)
+//   - All LEDs OFF
+//   - State = APP_STATE_IDLE (recovered)
+//
+// Rationale:
+//   - Allows operator to recover from fault by releasing buttons
+//   - Prevents system lockup in fault state
+//   - Supports user-friendly fault recovery
+// ============================================================================
+
+TEST_F(DeskAppComponentTest, TC_SWReq010_003_FaultRecoveryWhenButtonsReleased)
+{
+    // Step 1: Trigger fault with both buttons pressed
+    AppInput_t inputs = {0};
+    inputs.button_up = true;
+    inputs.button_down = true;    // Simultaneous press = fault
+    inputs.limit_upper = false;
+    inputs.limit_lower = false;
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Step 2: Verify in FAULT state
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT)
+        << "Setup: Should be in FAULT state";
+    EXPECT_TRUE(outputs.fault_out)
+        << "Setup: Fault output should be active";
+    
+    // Step 3-4: Release both buttons
+    inputs.button_up = false;
+    inputs.button_down = false;   // Both released
+    inputs.timestamp_ms = 10U;
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 5: Verify recovery to IDLE
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "Motor must remain stopped";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero";
+    EXPECT_FALSE(outputs.fault_out)
+        << "Fault output must be cleared";
+    EXPECT_EQ(outputs.led_bt_up, LED_OFF) 
+        << "UP button LED must be OFF";
+    EXPECT_EQ(outputs.led_bt_down, LED_OFF) 
+        << "DOWN button LED must be OFF";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must be OFF after recovery";
+    EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
+        << "Must recover to IDLE state when buttons released";
 }
 
 // ============================================================================

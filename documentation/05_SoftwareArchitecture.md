@@ -75,7 +75,7 @@ graph TB
 
 **Components:**
 - Arduino UNO microcontroller
-- BTS7960 motor driver
+- L298N motor driver (dual H-bridge)
 - Push buttons (UP, DOWN)
 - Limit sensors (upper, lower)
 - Status LEDs
@@ -570,11 +570,12 @@ graph LR
 #define PIN_LIMIT_LOWER    5   // Digital input (pull-up)
 
 // Output Pins
-#define PIN_MOTOR_RPWM     9   // PWM output (raise)
-#define PIN_MOTOR_LPWM    10   // PWM output (lower)
-#define PIN_MOTOR_REN      6   // Digital output (raise enable)
-#define PIN_MOTOR_LEN      7   // Digital output (lower enable)
-#define PIN_LED_STATUS    13   // Digital output (status LED)
+#define PIN_MOTOR_EN1      6   // Digital output (direction: UP)
+#define PIN_MOTOR_EN2      5   // Digital output (direction: DOWN)
+#define PIN_MOTOR_PWM      9   // PWM output (speed control)
+#define PIN_LED_BT_UP     11   // Digital output (UP button indicator)
+#define PIN_LED_BT_DOWN   12   // Digital output (DOWN button indicator)
+#define PIN_LED_ERROR     13   // Digital output (error indicator)
 ```
 
 **Timing Constraints:**
