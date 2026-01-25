@@ -1,62 +1,16 @@
 {
-  "version": 4,
+  "version": 8,
   "configurePresets": [
     {
-      "name": "ninja-msys",
-      "displayName": "Ninja (MSYS2)",
+      "name": "Configure preset using toolchain file",
+      "displayName": "Configure preset using toolchain file",
+      "description": "Sets Ninja generator, build and install directory",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_STANDARD": "14",
-        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
-      }
-    },
-    {
-      "name": "ninja-msys-debug",
-      "displayName": "Ninja (MSYS2) Debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-debug",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_STANDARD": "14",
-        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "release",
-      "configurePreset": "ninja-msys",
-      "configuration": "Release"
-    },
-    {
-      "name": "debug",
-      "configurePreset": "ninja-msys-debug",
-      "configuration": "Debug"
-    }
-  ],
-  "testPresets": [
-    {
-      "name": "all-tests",
-      "displayName": "Run all tests (Release)",
-      "configurePreset": "ninja-msys",
-      "configuration": "Release",
-      "output": { "outputOnFailure": true },
-      "execution": {
-        "noTestsAction": "error",
-        "jobs": 8
-      }
-    },
-    {
-      "name": "all-tests-debug",
-      "displayName": "Run all tests (Debug)",
-      "configurePreset": "ninja-msys-debug",
-      "configuration": "Debug",
-      "output": { "outputOnFailure": true },
-      "execution": {
-        "noTestsAction": "error",
-        "jobs": 8
+        "CMAKE_TOOLCHAIN_FILE": "",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
       }
     }
   ]
