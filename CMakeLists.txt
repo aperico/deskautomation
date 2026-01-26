@@ -1,17 +1,31 @@
 cmake_minimum_required(VERSION 3.14)
 project(DeskAutomation)
 
+# Performance optimizations for faster configuration
+set(CMAKE_MESSAGE_LOG_LEVEL WARNING)  # Suppress verbose INFO messages
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG_MODE ON)  # Prefer config mode for faster finds
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Fetch Google Test
 include(FetchContent)
+
+# Performance optimization: Set DOWNLOAD_EXTRACT_TIMESTAMP to use file timestamps
+# This suppresses CMake warning and speeds up cached downloads
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    cmake_policy(SET CMP0135 NEW)
+    set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)  # Try to find existing Google Test first
+endif()
+
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  DOWNLOAD_NO_PROGRESS ON  # Suppress download progress messages for cleaner output
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Performance: Make Google Test available (uses cache if already downloaded)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()

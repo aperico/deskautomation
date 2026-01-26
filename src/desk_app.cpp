@@ -160,7 +160,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         case APP_STATE_FAULT:
         {
             // Check if all fault conditions have cleared (both latched and transient)
-            const bool dual_limit_fault = inputs->limit_upper && inputs->limit_lower;
+            // Note: dual_limit_fault is already defined in outer scope
             const bool any_fault_active = fault_latched || dual_limit_fault;
             
             if (!any_fault_active)

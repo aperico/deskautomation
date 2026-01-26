@@ -103,11 +103,15 @@ function Invoke-Configure {
     # Fixed filename without timestamp
     $configResultFile = Join-Path $script:ResultsDir "cmake_configure.txt"
     
+    # Track configuration time
+    $configStartTime = Get-Date
+    
     $ErrorActionPreference = "Continue"
     $configOutput = cmake -S . -B build 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     
+    $configDuration = (Get-Date) - $configStartTime
     # Save configuration output to file with enhanced header
     $logHeader = @"
 ================================================================================
@@ -139,7 +143,7 @@ compiler detection, dependency resolution, and build system generation.
         return $false
     }
     
-    Write-PipelineSuccess "CMake configuration completed"
+    Write-PipelineSuccess "CMake configuration completed in $($configDuration.TotalSeconds.ToString('F2')) seconds"
     Write-PipelineInfo "Configuration log saved to: $configResultFile"
     return $true
 }
@@ -176,16 +180,21 @@ source files, linking, and any compiler warnings or errors encountered.
     $logHeader | Out-File -FilePath $buildResultFile -Encoding UTF8
     $buildOutput | Out-File -FilePath $buildResultFile -Encoding UTF8 -Append
     
-    # Extract and display compiler warnings
-    $warnings = $buildOutput | Select-String -Pattern "warning C[0-9]+:|warning:|[-Wno-]|note:" -CaseSensitive:$false
-    if ($warnings) {
-        Write-Host "`nCompiler Warnings:" -ForegroundColor Yellow
-        $warnings | ForEach-Object { 
+    # Extract and display compiler diagnostics (warnings, errors, notes, deprecations)
+    # This captures: compiler warnings, errors, informational notes, and diagnostic lines
+    $diagnostics = $buildOutput | Select-String -Pattern "warning|error|note:|deprecated|error:|^\s*\^|In function|undefined reference|multiple definition|conversion|initializer|unused|format" -CaseSensitive:$false
+    if ($diagnostics) {
+        Write-Host "`nCompiler Diagnostics:" -ForegroundColor Yellow
+        $diagnostics | ForEach-Object { 
             $line = $_.ToString()
-            if ($line -match "warning") {
+            if ($line -match "error" -and $line -notmatch "In function") {
+                Write-Host "  $line" -ForegroundColor Red
+            } elseif ($line -match "warning") {
                 Write-Host "  $line" -ForegroundColor Yellow
-            } else {
+            } elseif ($line -match "note:|undefined reference|multiple definition|conversion|deprecated") {
                 Write-Host "  $line" -ForegroundColor Cyan
+            } else {
+                Write-Host "  $line" -ForegroundColor Gray
             }
         }
     }
