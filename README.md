@@ -324,27 +324,27 @@ The script provides color-coded output:
 
 #### Pipeline Results Storage
 
-All pipeline results are stored in the `tests/results/` directory with timestamped filenames:
+All pipeline results are stored in the `tests/results/` directory:
 
 | Result File | Description |
 |-------------|-------------|
-| `cmake_configure_YYYYMMDD_HHmmss.txt` | CMake configuration output with warnings |
-| `build_log_YYYYMMDD_HHmmss.txt` | Complete build log with compiler warnings |
-| `test_results_YYYYMMDD_HHmmss.txt` | Test execution results with pass/fail summary |
-| `static_analysis_YYYYMMDD_HHmmss.txt` | Human-readable static analysis report |
-| `static_analysis_YYYYMMDD_HHmmss.xml` | Machine-readable XML for CI integration |
+| `cmake_configure.txt` | CMake configuration output with warnings |
+| `build_log.txt` | Complete build log with compiler warnings |
+| `test_results.txt` | Test execution results with pass/fail summary |
+| `static_analysis.txt` | Human-readable static analysis report |
+| `static_analysis.xml` | Machine-readable XML for CI integration |
 
-Each result file includes a detailed header with:
+**Note:** Result files are overwritten on each pipeline run. Each file includes a header with:
 - Full command executed
 - Timestamp of execution
 - Brief description of the results
 - Relevant configuration details
 
 These logs are useful for:
-- Tracking build and test history
+- Reviewing the latest build/test/analysis results
 - Debugging compilation issues
-- Reviewing code quality trends
-- Comparing results across runs
+- Quick access to compiler warnings and static analysis findings
+- CI integration via XML output
 
 #### Pipeline Exit Codes
 

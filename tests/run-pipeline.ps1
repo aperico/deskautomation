@@ -100,21 +100,25 @@ function Invoke-Configure {
     Set-Location $script:WorkspaceRoot
     Write-PipelineInfo "Running CMake configuration..."
     
-    # Generate timestamp for result file
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $configResultFile = Join-Path $script:ResultsDir "cmake_configure_$timestamp.txt"
+    # Fixed filename without timestamp
+    $configResultFile = Join-Path $script:ResultsDir "cmake_configure.txt"
     
     $ErrorActionPreference = "Continue"
     $configOutput = cmake -S . -B build 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     
-    # Save configuration output to file with header
+    # Save configuration output to file with enhanced header
     $logHeader = @"
 ================================================================================
-CMake Configuration Log
+CMAKE CONFIGURATION LOG
+================================================================================
+Command: cmake -S . -B build
 Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 Workspace: $script:WorkspaceRoot
+
+This log contains the output from CMake configuration phase, including
+compiler detection, dependency resolution, and build system generation.
 ================================================================================
 
 "@
@@ -146,21 +150,26 @@ function Invoke-Build {
     Set-Location $script:WorkspaceRoot
     Write-PipelineInfo "Building project (Release configuration)..."
     
-    # Generate timestamp for result file
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $buildResultFile = Join-Path $script:ResultsDir "build_log_$timestamp.txt"
+    # Fixed filename without timestamp
+    $buildResultFile = Join-Path $script:ResultsDir "build_log.txt"
     
     $ErrorActionPreference = "Continue"
     $buildOutput = cmake --build build --config Release 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     
-    # Save build output to file with header
+    # Save build output to file with enhanced header
     $logHeader = @"
 ================================================================================
-Build Log (Release Configuration)
+BUILD LOG
+================================================================================
+Command: cmake --build build --config Release
 Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 Workspace: $script:WorkspaceRoot
+Configuration: Release
+
+This log contains the complete build output including compilation of all
+source files, linking, and any compiler warnings or errors encountered.
 ================================================================================
 
 "@
@@ -203,22 +212,26 @@ function Invoke-Test {
     Set-Location $script:WorkspaceRoot
     Write-PipelineInfo "Running all test cases with CTest..."
     
-    # Generate timestamp for result file
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $testResultFile = Join-Path $script:ResultsDir "test_results_$timestamp.txt"
+    # Fixed filename without timestamp
+    $testResultFile = Join-Path $script:ResultsDir "test_results.txt"
     
     $ErrorActionPreference = "Continue"
     $testOutput = ctest --test-dir build -C Release --output-on-failure 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     
-    # Save test output to file with header
+    # Save test output to file with enhanced header
     $logHeader = @"
 ================================================================================
-Test Results
+TEST RESULTS
+================================================================================
+Command: ctest --test-dir build -C Release --output-on-failure
 Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-Configuration: Release
 Workspace: $script:WorkspaceRoot
+Configuration: Release
+
+This log contains the results of all test executions including unit tests,
+component tests, and integration tests. Failed test details are included.
 ================================================================================
 
 "@
@@ -259,30 +272,29 @@ function Invoke-StaticAnalysis {
     Set-Location $script:WorkspaceRoot
     Write-PipelineInfo "Running comprehensive static analysis with cppcheck..."
     
-    # Generate timestamp for result file
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $analysisResultFile = Join-Path $script:ResultsDir "static_analysis_$timestamp.txt"
-    $analysisXmlFile = Join-Path $script:ResultsDir "static_analysis_$timestamp.xml"
+    # Fixed filenames without timestamp
+    $analysisResultFile = Join-Path $script:ResultsDir "static_analysis.txt"
+    $analysisXmlFile = Join-Path $script:ResultsDir "static_analysis.xml"
     
     # Comprehensive cppcheck arguments for safety-critical code
     $cppcheckArgs = @(
-        "--enable=all",                    # Enable all checks (style, performance, portability, information, warning, error)
-        "--std=c++17",                     # C++17 standard
-        "--inconclusive",                  # Enable inconclusive checks (may have false positives but catches more issues)
-        "--inline-suppr",                  # Allow inline suppressions
-        "--force",                         # Check all configurations
-        "--verbose",                       # Verbose output
-        "-I$script:SourceDir",             # Include source directory
-        "--suppress=missingIncludeSystem", # Suppress system include warnings
-        "--suppress=missingInclude",       # Suppress missing include warnings (test-only includes)
-        "--suppress=unusedFunction",       # Suppress unused function warnings (may be used in integration)
-        "--suppress=unmatchedSuppression", # Suppress unmatched suppression warnings
-        "--suppress=checkersReport",       # Suppress checkers report information
-        "--error-exitcode=1",              # Exit with code 1 if issues found
-        "--template=gcc",                  # GCC-style output format
-        "--xml",                           # Also output XML for detailed analysis
-        "--xml-version=2",                 # XML version 2
-        "--output-file=$analysisXmlFile",  # Save XML output
+        "--enable=all",
+        "--std=c++17",
+        "--inconclusive",
+        "--inline-suppr",
+        "--force",
+        "--verbose",
+        "-I$script:SourceDir",
+        "--suppress=missingIncludeSystem",
+        "--suppress=missingInclude",
+        "--suppress=unusedFunction",
+        "--suppress=unmatchedSuppression",
+        "--suppress=checkersReport",
+        "--error-exitcode=1",
+        "--template=gcc",
+        "--xml",
+        "--xml-version=2",
+        "--output-file=$analysisXmlFile",
         $script:SourceDir
     )
     
@@ -291,13 +303,22 @@ function Invoke-StaticAnalysis {
     $analysisOutput = & cppcheck $cppcheckArgs 2>&1
     $exitCode = $LASTEXITCODE
     
-    # Save text analysis output to file with header
+    # Build the full command string for display
+    $fullCommand = "cppcheck " + ($cppcheckArgs -join " ")
+    
+    # Save text analysis output to file with enhanced header
     $logHeader = @"
 ================================================================================
-Static Analysis Report (cppcheck)
+STATIC ANALYSIS REPORT
+================================================================================
+Command: $fullCommand
 Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 Source Directory: $script:SourceDir
-Analysis Level: Comprehensive (all checks enabled)
+Analysis Level: Comprehensive
+
+This report contains static code analysis results using cppcheck with all
+checks enabled: errors, warnings, style, performance, and portability issues.
+Results are saved in both text and XML formats for review and CI integration.
 ================================================================================
 
 "@
