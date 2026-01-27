@@ -1,44 +1,15 @@
-/*
- * Arduino LED Blink Example
- * 
- * A minimal application demonstrating LED blinking every 500ms
- * 
- * Hardware:
- * - Arduino board (UNO, Nano, etc.)
- * - Built-in LED on pin 13
- */
-
-// Pin definition
-const int LED_PIN = 13;
-
-// Blink interval in milliseconds
-const unsigned long BLINK_INTERVAL = 500;
-
-// Variables for timing
-unsigned long previousMillis = 0;
-bool ledState = LOW;
-
+const uint8_t PIN_LED = 2;
+// LED_BUILTIN
+// the setup function runs once when you press reset or power the board
 void setup() {
-  // Initialize the LED pin as an output
-  pinMode(LED_PIN, OUTPUT);
-  
-  // Start with LED off
-  digitalWrite(LED_PIN, LOW);
+  // initialize digital pin LED_BUILTIN as an output.
+  pinMode(PIN_LED, OUTPUT);
 }
 
+// the loop function runs over and over again forever
 void loop() {
-  // Get current time
-  unsigned long currentMillis = millis();
-  
-  // Check if it's time to toggle the LED
-  if (currentMillis - previousMillis >= BLINK_INTERVAL) {
-    // Save the current time
-    previousMillis = currentMillis;
-    
-    // Toggle LED state
-    ledState = !ledState;
-    
-    // Update LED
-    digitalWrite(LED_PIN, ledState);
-  }
+  digitalWrite(PIN_LED, HIGH);  // turn the LED on (HIGH is the voltage level)
+  delay(1000);                      // wait for a second
+  digitalWrite(PIN_LED, LOW);   // turn the LED off by making the voltage LOW
+  delay(1000);                      // wait for a second
 }
