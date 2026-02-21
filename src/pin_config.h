@@ -42,16 +42,15 @@ const uint8_t PIN_LED_ERROR = 4;
 // ============================================================================
 const uint8_t PIN_BUTTON_UP = 2;
 const uint8_t PIN_BUTTON_DOWN = 3;
-const uint8_t PIN_LIMIT_UPPER = 7;
-const uint8_t PIN_LIMIT_LOWER = 8;
+const uint8_t PIN_LIMIT_UPPER = 4;     // Digital input with internal pull-up (SysReq-007)
+const uint8_t PIN_LIMIT_LOWER = 5;     // Digital input with internal pull-up (SysReq-007)
 const uint8_t PIN_MOTOR_SENSE = A0;
 // ============================================================================
 // MOTOR DRIVER PINS (L298N Dual H-Bridge)
 // ============================================================================
- //@brief L298N Enable 1 (EN1) - Motor direction control UP
-const uint8_t PIN_MOTOR_EN1 = 6;
-const uint8_t PIN_MOTOR_EN2 = 5;
-const uint8_t PIN_MOTOR_PWM = 9;
+const uint8_t PIN_MOTOR_EN1 = 6;        // Enable 1 (direction control UP)
+const uint8_t PIN_MOTOR_EN2 = 7;        // Enable 2 (direction control DOWN)
+const uint8_t PIN_MOTOR_PWM = 9;        // PWM signal for motor speed control
 
 
 

@@ -271,3 +271,46 @@ TEST_F(MotorControllerUnitTest, TC_MC_TARGET_001_VaryingTargetPWMValues)
     EXPECT_EQ(out2.dir, MOTOR_UP) 
         << "Direction should be UP";
 }
+// ============================================================================
+// TEST CASE: TC-MC-SAFETY-001 - Motor Controller Handles Zero PWM Gracefully
+// ============================================================================
+// Requirement: Motor controller must handle zero PWM safely (no motion)
+//
+// Test Objective:
+//   Verify that motor controller correctly handles edge case of zero PWM
+//   request, producing zero output regardless of direction.
+//
+// Preconditions:
+//   - Motor initialized
+//
+// Test Steps:
+//   1. Command MOTOR_UP with target_pwm=0
+//   2. Verify no motion is commanded
+//   3. Command MOTOR_DOWN with target_pwm=0
+//   4. Verify no motion is commanded
+//
+// Expected Results:
+//   - PWM = 0 for both UP and DOWN with zero target
+//   - Direction follows request but PWM is zero (motor stopped)
+//   - No fault condition
+//
+// Rationale:
+//   - Handles edge case of zero power request
+//   - Ensures safe handling when speed is set to minimum
+// ============================================================================
+TEST_F(MotorControllerUnitTest, TC_MC_SAFETY_001_ZeroPWMProducesNoMotion)
+{
+    const uint32_t now = HAL_getTime();
+    
+    // Command UP with zero power
+    MotorControllerOutput_t out1 = MotorController_update(MOTOR_UP, 0U, now);
+    EXPECT_EQ(out1.pwm, 0U) 
+        << "PWM must be zero when target is zero";
+    EXPECT_FALSE(out1.fault) 
+        << "No fault from zero PWM";
+    
+    // Command DOWN with zero power
+    MotorControllerOutput_t out2 = MotorController_update(MOTOR_DOWN, 0U, now + 100U);
+    EXPECT_EQ(out2.pwm, 0U) 
+        << "PWM must remain zero for DOWN with zero target";
+}

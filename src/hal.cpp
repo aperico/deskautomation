@@ -7,8 +7,8 @@
 #include <Arduino.h>
 #endif
 
-// Debounce configuration
-static const uint32_t DEBOUNCE_MS = 50U;
+// Debounce configuration (SWReq-009: 20ms ± 5ms)
+static const uint32_t DEBOUNCE_MS = 20U;
 
 static uint32_t last_button_time[BUTTON_COUNT] = {0, 0};
 static bool button_raw_state[BUTTON_COUNT] = {false, false};

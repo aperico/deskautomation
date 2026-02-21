@@ -19,6 +19,7 @@ This Technical Safety Concept (TeSaCo) defines the safety-related architecture a
 ## 2. Inputs and References
 
 - [02_02_HARA-complete.md](02_02_HARA-complete.md)
+- [02_03_SafetyGoals.md](02_03_SafetyGoals.md)
 - [03_00_SystemRequirements.md](03_00_SystemRequirements.md)
 - [03_01_SystemArchitecture.md](03_01_SystemArchitecture.md)
 - [11_HardwareDocumentation.md](11_HardwareDocumentation.md)
@@ -27,14 +28,7 @@ This Technical Safety Concept (TeSaCo) defines the safety-related architecture a
 
 ## 3. Safety Goals and FSRs in Scope
 
-| Safety Goal | Functional Safety Requirements |
-|-------------|--------------------------------|
-| SG-001 Prevent unintended motion without valid command | FSR-001 |
-| SG-002 Stop within 500 ms of release | FSR-002 |
-| SG-003 Prevent motion beyond travel limits | FSR-004 |
-| SG-004 Prevent motion on conflicting inputs | FSR-003 |
-| SG-005 Prevent/stop motor runaway | FSR-006 |
-| SG-006 Prevent unintended motion after reset | FSR-005 |
+Safety goal statements and their mappings to Functional Safety Requirements are maintained as the authoritative source in [02_03_SafetyGoals.md](02_03_SafetyGoals.md). See that document for complete Safety Goals (SG-001 through SG-006) and their traceability to FSRs (FSR-001 through FSR-007).
 
 ---
 

@@ -4,7 +4,6 @@
 **Version:** 1.1  
 **Date:** January 26, 2026  
 **Status:** Active / In Development  
-**Author:** System Engineering Team  
 **Compliance:** ISO 25119, ASPICE SYS.1
 
 ---

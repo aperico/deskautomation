@@ -66,9 +66,7 @@ AgPLr values below are **confirmed** by the Functional Safety Engineer.
 
 ---
 
-## 6. Candidate Hazard Identification (Pre-Workshop)
-
-The table below lists candidate hazards to seed the HARA workshop. Values are **TBD** until the safety review.
+## 6. Hazard Identification 
 
 | Hazard ID | Hazardous Event | Operational Situation | Potential Harm | S / E / C | AgPLr | Status / Notes |
 |-----------|-----------------|-----------------------|----------------|-----------|-------|----------------|
@@ -86,36 +84,18 @@ The table below lists candidate hazards to seed the HARA workshop. Values are **
 
 ## 7. Safety Goals
 
-Safety Goals are derived from hazards with AgPLr assigned.
-
-| Safety Goal ID | Safety Goal Statement | Related Hazards | AgPLr Target |
-|---------------|-----------------------|----------------|--------------|
-| SG-001 | Prevent any unintended motion when no valid user command is present. | HZ-001, HZ-002, HZ-007 | b |
-| SG-002 | Ensure motion stops within 500 ms of button release. | HZ-003 | b |
-| SG-003 | Prevent motion beyond upper and lower travel limits. | HZ-004 | a |
-| SG-004 | Prevent motion on conflicting UP/DOWN inputs. | HZ-005 | a |
-| SG-005 | Prevent or safely stop motor runaway due to electrical faults or stuck-on driver outputs. | HZ-006, HZ-009 | b |
-| SG-006 | Prevent unintended motion following brownout or reset events. | HZ-008 | a |
+Safety Goals are maintained as a standalone artifact. See [02_03_SafetyGoals.md](02_03_SafetyGoals.md) for the authoritative list and hazard mapping.
 
 ---
 
 ## 8. Functional Safety Requirements
 
-Functional Safety Requirements (FSR) are derived from Safety Goals.
-
-| FSR ID | Requirement Statement | Safety Goal | AgPLr Target | Verification |
-|--------|-----------------------|-------------|--------------|--------------|
-| FSR-001 | The system shall command motor STOP when no valid UP/DOWN command is present. | SG-001 | b | Unit + system test: verify motor remains STOP with no input |
-| FSR-002 | The system shall require continuous button press to maintain motion; release shall stop motion within 500 ms. | SG-002 | b | System test: measure stop time <= 500 ms |
-| FSR-003 | The system shall prevent motion when both UP and DOWN buttons are pressed simultaneously. | SG-004 | a | Unit + system test: conflict input -> STOP |
-| FSR-004 | The system shall stop motion when an upper or lower limit switch is active, regardless of user command. | SG-003 | a | System test: limit active -> STOP |
-| FSR-005 | The system shall enter a safe STOP state after power reset or brownout before accepting motion commands. | SG-006 | a | Integration test: reset -> STOP state |
-| FSR-006 | The system shall detect motor driver stuck-on or runaway behavior and command STOP with fault indication. | SG-005 | b | Integration test: injected fault -> STOP + fault LED |
+Functional Safety Requirements (FSRs) are defined and maintained in the System Requirements specification. See [03_00_SystemRequirements.md](03_00_SystemRequirements.md) for the authoritative list and verification methods.
 
 ---
 
 
-## 10. Approvals
+## 9. Approvals
 
 - **Functional Safety Engineer:** Armando FuSaGuy - [Pending]  
 - **System Engineer:** [Pending]  

@@ -16,9 +16,11 @@ This document defines functional system requirements derived from system objecti
 - [01_MissionStatement.md](01_MissionStatement.md)
 - [01_SystemObjectives.md](01_SystemObjectives.md)
 - [02_ConceptOfOperations.md](02_ConceptOfOperations.md)
+- [02_03_SafetyGoals.md](02_03_SafetyGoals.md)
 
 **Functional Safety Status:**
 - HARA completed; AgPLr assignment confirmed.
+- Safety goals are maintained in [02_03_SafetyGoals.md](02_03_SafetyGoals.md).
 - Functional safety requirements are specified below (see [02_02_HARA-complete.md](02_02_HARA-complete.md)).
 
 ---
@@ -40,6 +42,13 @@ All system requirements are listed below. Safety-critical requirements are ident
 | **SysReq-010** | The system shall command motor STOP when no valid UP/DOWN command is present. | **Yes** | **FSR-001** | **b** | Prevents unintended motion in the absence of user intent. | System test SYS-TC-013: verify motor remains STOP with no valid input. | SG-001 |
 | **SysReq-011** | The system shall enter a safe STOP state after reset or brownout before accepting motion commands. | **Yes** | **FSR-005** | **a** | Prevents unintended motion on power recovery events. | Integration test SYS-TC-014: reset/brownout → STOP state, then valid command required to move. | SG-006 |
 | **SysReq-012** | The system shall detect motor driver stuck-on or runaway behavior and command STOP with fault indication. | **Yes** | **FSR-006** | **b** | Mitigates electrical fault conditions that could cause uncontrolled motion. Detection logic in DeskApp with current-sense monitoring; see src/safety_config.h for thresholds. | Fault injection test SYS-TC-015: motor current > 150 mA when STOP commanded → FAULT state within 500 ms. | SG-005 |
+| **SysReq-013** | The system shall detect an obstruction or jam during motion and command STOP within 500 ms of detection. | **Yes** | **FSR-007** | **b** | Ensures rapid halt when abnormal load or motion indicates a jam. | System test: induce obstruction during motion and verify STOP within 500 ms and fault indication. | OBJ-003, Scenario 6, SG-002 |
+
+---
+
+## Functional Safety Requirements
+
+Functional Safety Requirements (FSRs) are captured in the main requirements table via the FSR-ID column. Each FSR is flagged by `Safety-Critical = Yes` and linked to safety goals in the `Derived From` column.
 
 ---
 
@@ -64,28 +73,19 @@ All system requirements are listed below. Safety-critical requirements are ident
 | Scenario 3: Motion Halt | SysReq-003 |
 | Scenario 4: Full-Stroke Adjustment | SysReq-001, SysReq-004, SysReq-007 |
 | Scenario 5: Simultaneous Button Press | SysReq-005 |
+| Scenario 6: Jam Detected | SysReq-013 |
 
 ### Safety Goals Coverage
+
+Safety goal statements are maintained in [02_03_SafetyGoals.md](02_03_SafetyGoals.md).
 
 | Safety Goal | Derived System Requirements |
 |-------------|----------------------------|
 | SG-001: Prevent unintended motion without valid command | SysReq-010 |
-| SG-002: Stop within 500 ms of release | SysReq-003 |
+| SG-002: Stop within 500 ms of release | SysReq-003, SysReq-013 |
 | SG-003: Prevent motion beyond travel limits | SysReq-007 |
 | SG-004: Prevent motion on conflicting inputs | SysReq-005 |
 | SG-005: Prevent or stop motor runaway | SysReq-012 |
 | SG-006: Prevent unintended motion after reset | SysReq-011 |
 
----
-
-## Verification Summary
-
-| Verification Method | Requirements Verified | Notes |
-|---------------------|----------------------|-------|
-| Physical Measurement | SysReq-001, SysReq-004 | Height, load, timing measurements |
-| Timing Measurement | SysReq-002, SysReq-003 | Electrical signal instrumentation |
-| Functional Testing | SysReq-005, SysReq-007 | Button combination tests, limit tests |
-| Fault Injection Testing | SysReq-011, SysReq-012 | Reset/brownout handling, driver fault response |
-| Vibration Analysis | SysReq-006 | Accelerometer on desktop surface |
-| Endurance Testing | SysReq-008 | Automated cyclic testing |
 

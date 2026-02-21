@@ -13,6 +13,9 @@ This document provides implementation-level design details for the Standing Desk
 - [04_SoftwareRequirements.md](04_SoftwareRequirements.md)
 - [03_00_SystemRequirements.md](03_00_SystemRequirements.md)
 
+**Related Documents:**
+- [06_01_InteractionDiagrams.md](06_01_InteractionDiagrams.md) - Sequence diagrams and data flow visualizations
+
 ---
 
 ## Document Purpose
@@ -88,202 +91,18 @@ classDiagram
 
 ---
 
-## Interaction Diagrams
+## Interaction Diagrams and Data Flow
 
-### Sequence 1: Normal Desk Raise (SysReq-002, SysReq-004)
+Detailed sequence diagrams and data flow visualizations are provided in the standalone document [06_01_InteractionDiagrams.md](06_01_InteractionDiagrams.md). This includes:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor as Motor Hardware
-    
-    User->>Main: Press UP button
-    Note over Main: loop() iteration start
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: true
-    Main->>HAL: HAL_readLimitSensor(LIMIT_UPPER)
-    HAL-->>Main: false (not at limit)
-    Note over Main: Populate AppInput_t
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: IDLE -> MOVING_UP
-    App-->>Main: motor_cmd=UP, speed=255
-    Main->>HAL: HAL_setMotor(MOTOR_UP, 255)
-    HAL->>Motor: analogWrite(PWM_PIN, 255)
-    Note over Motor: Desk begins rising<br/>Time: +100ms from button press
-    
-    Note over Main: Subsequent loop iterations
-    loop While UP held
-        Main->>HAL: HAL_readButton(BUTTON_UP)
-        HAL-->>Main: true
-        Main->>App: APP_Task(&inputs, &outputs)
-        Note over App: State: MOVING_UP (no change)
-        App-->>Main: motor_cmd=UP, speed=255
-        Main->>HAL: HAL_setMotor(MOTOR_UP, 255)
-    end
-    
-    User->>Main: Release UP button
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: false
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: MOVING_UP -> IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: analogWrite(PWM_PIN, 0)
-    Note over Motor: Desk stops<br/>Time: +50ms from button release
-```
+- **Sequence 1:** Normal Desk Raise (SysReq-002, SysReq-004)
+- **Sequence 2:** Emergency Halt via Button Release (SysReq-003)
+- **Sequence 3:** Conflicting Button Inputs (SysReq-005, SWReq-004)
+- **Sequence 4:** Upper Limit Protection (SysReq-007, SWReq-005)
+- **Sequence 5:** Full System Initialization (SysReq-001, SWReq-007)
+- **Data Flow Diagram:** Module interactions and data structure flow
 
-### Sequence 2: Emergency Halt via Button Release (SysReq-003)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    
-    Note over App,Motor: Desk is moving up<br/>State: MOVING_UP
-    
-    User->>Main: Release UP button
-    Note over Main: Detect button release within 50ms
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: false (released)
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: MOVING_UP -> IDLE<br/>Safety transition
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: digitalWrite(EN_PIN, LOW)
-    Note over Motor: Motor stops immediately<br/>Total time: <=50ms
-    Note over Main: LED changes to IDLE
-```
-
-### Sequence 3: Conflicting Button Inputs (SysReq-005, SWReq-004)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    
-    Note over App: State: IDLE
-    User->>Main: Press UP and DOWN simultaneously
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: true
-    Main->>HAL: HAL_readButton(BUTTON_DOWN)
-    HAL-->>Main: true
-    Note over Main: Both buttons pressed!
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: Detect conflicting inputs<br/>Safety rule: ignore command
-    Note over App: State remains IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    Note over Motor: Motor remains stopped<br/>System safe
-```
-
-### Sequence 4: Upper Limit Protection (SysReq-007, SWReq-005)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    participant Sensor as Limit Sensor
-    
-    Note over App,Motor: Desk moving up<br/>State: MOVING_UP
-    Note over Sensor: Desk approaches upper limit
-    
-    Sensor->>HAL: Limit sensor triggered
-    Main->>HAL: HAL_readLimitSensor(LIMIT_UPPER)
-    HAL-->>Main: true (limit reached)
-    Note over Main: UP button still pressed
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: Safety override:<br/>Limit takes priority over button
-    Note over App: State: MOVING_UP -> IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: digitalWrite(EN_PIN, LOW)
-    Note over Motor: Motor stops at limit<br/>No over-travel
-```
-
-### Sequence 5: Full System Initialization (SysReq-001, SWReq-007)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Power
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant HW as Hardware
-    
-    Power->>Main: Power on / Reset
-    Main->>HAL: HAL_init()
-    HAL->>HW: pinMode() for all pins
-    HAL->>HW: Set safe defaults
-    Note over HW: Motor: STOP<br/>LED: OFF
-    HAL-->>Main: Init complete
-    
-    Main->>App: APP_Init()
-    Note over App: Initialize state machine<br/>State: IDLE
-    Note over App: Clear diagnostics
-    App-->>Main: Init complete
-    
-    Note over Main: Enter main loop()
-    Main->>HAL: HAL_setLED(LED_IDLE)
-    Note over Main: System ready for user input
-```
-
----
-
-## Data Flow Diagram
-
-```mermaid
-graph LR
-    subgraph Inputs
-        BTN[Buttons<br/>UP/DOWN]
-        LIM[Limit Sensors<br/>Upper/Lower]
-    end
-    
-    subgraph HAL_Layer[HAL Layer]
-        DB[Debounce<br/>20ms]
-        READ[Read GPIO]
-    end
-    
-    subgraph APP_Layer[APP Layer]
-        SM[State Machine<br/>IDLE/UP/DOWN/FAULT]
-        SAFE[Safety Logic<br/>Conflict/Limit Check]
-    end
-    
-    subgraph Outputs
-        MOT[Motor Driver<br/>PWM + Direction]
-        LED[Status LED]
-    end
-    
-    BTN --> READ
-    LIM --> READ
-    READ --> DB
-    DB -->|AppInput_t| SM
-    SM --> SAFE
-    SAFE -->|AppOutput_t| HAL_Layer
-    HAL_Layer --> MOT
-    HAL_Layer --> LED
-    
-    style HAL_Layer fill:#87CEEB
-    style APP_Layer fill:#90EE90
-    style Inputs fill:#FFE6E6
-    style Outputs fill:#FFD700
-```
+See [06_01_InteractionDiagrams.md](06_01_InteractionDiagrams.md) for complete descriptions and timing analysis.
 
 ---
 
@@ -386,15 +205,21 @@ Motor current sense parameters are defined in [src/safety_config.h](../src/safet
 
 ```cpp
 // Motor current sense (safety monitoring)
-static const uint16_t MOTOR_SENSE_THRESHOLD_MA = 150U;
-static const uint32_t MOTOR_SENSE_FAULT_TIME_MS = 100U;
+static const uint16_t MOTOR_SENSE_THRESHOLD_MA = 150U;  // Stuck-on threshold (FSR-006 → SysReq-012)
+static const uint16_t MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA = 200U;  // Obstruction during motion (FSR-007 → SysReq-013)
+static const uint32_t MOTOR_SENSE_FAULT_TIME_MS = 100U;  // Time to confirm fault condition
 static const uint16_t ADC_REF_MV = 5000U;
 static const uint16_t SHUNT_MILLIOHMS = 500U;
 ```
 
 **Notes:**
-- Threshold is the maximum allowed current when `motor_cmd` is STOP.
-- Values are initial safety targets and may be tuned after hardware characterization.
+- `MOTOR_SENSE_THRESHOLD_MA` (150 mA): Maximum allowed current when motor is commanded STOP (stuck-on detection).
+- `MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA` (200 mA): Abnormal current threshold during active motion (jam/obstruction detection).
+- `MOTOR_SENSE_FAULT_TIME_MS` (100 ms): Confirmation window before transitioning to FAULT state (allows system to halt within 500 ms total per SysReq-013).
+- Values are initial safety targets and must be tuned after hardware characterization with actual motor and load profile.
+- **Traceability:**
+  - Stuck-on → FSR-006 → SysReq-012 → SG-005
+  - Obstruction → FSR-007 → SysReq-013 → SG-002
 
 ---
 
@@ -524,14 +349,20 @@ END FUNCTION
 
 ### Algorithm 3: Motor Current Fault Detection (DeskApp Module)
 
-**Purpose:** Detect stuck-on or runaway motor behavior while STOP is commanded.
+**Purpose:** Detect motor faults: (a) stuck-on/runaway behavior while STOP commanded (FSR-006), and (b) obstruction/jam during motion (FSR-007).
 
-**Requirements:** FSR-006, SysReq-012, SWReq-014
+**Requirements:** FSR-006, FSR-007, SysReq-012, SysReq-013, SWReq-014
+
+**Fault Detection Cases:**
+
+1. **Stuck-On Detection (FSR-006, SysReq-012)**: Motor command STOP but current remains high
+2. **Obstruction Detection (FSR-007, SysReq-013)**: Motor commanded to move but current exceeds threshold (indicates jam or abnormal resistance)
 
 **Pseudocode:**
 
 ```
 FUNCTION check_motor_current_fault(inputs, outputs):
+    // Case 1: Stuck-on detection (motor should be off but current is high)
     IF outputs.motor_cmd == MOTOR_STOP:
         IF inputs.motor_current_ma > MOTOR_SENSE_THRESHOLD_MA:
             IF fault_timer_ms == 0:
@@ -540,14 +371,28 @@ FUNCTION check_motor_current_fault(inputs, outputs):
                 transitionTo(APP_STATE_FAULT)
         ELSE:
             fault_timer_ms = 0
+    
+    // Case 2: Obstruction detection (motor moving but current exceeds threshold)
+    ELSE IF outputs.motor_cmd != MOTOR_STOP:
+        IF inputs.motor_current_ma > MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA:
+            IF obstruction_timer_ms == 0:
+                obstruction_timer_ms = inputs.timestamp_ms
+            ELSE IF (inputs.timestamp_ms - obstruction_timer_ms) >= MOTOR_SENSE_FAULT_TIME_MS:
+                // Halt within 500 ms as per SysReq-013 & FSR-007
+                transitionTo(APP_STATE_FAULT)
+        ELSE:
+            obstruction_timer_ms = 0
     ELSE:
         fault_timer_ms = 0
+        obstruction_timer_ms = 0
 END FUNCTION
 ```
 
 **Notes:**
-- `fault_timer_ms` is a static variable initialized to 0.
+- `fault_timer_ms` and `obstruction_timer_ms` are static variables initialized to 0.
 - The check runs once per control loop cycle after outputs are computed.
+- Both thresholds are defined in [src/safety_config.h](../src/safety_config.h).
+- Obstruction threshold likely > stuck-on threshold to account for normal loaded motion.
 
 ---
 
@@ -1251,8 +1096,8 @@ void APP_Task(...) {
 
 // Output Pins (Motor Driver - L298N)
 #define PIN_MOTOR_EN1      6   // Enable 1 (direction control UP)
-#define PIN_MOTOR_EN2      5   // Enable 2 (direction control DOWN)
-#define PIN_MOTOR_PWM      9   // Motor speed control PWM
+#define PIN_MOTOR_EN2      7   // Enable 2 (direction control DOWN)
+#define PIN_MOTOR_PWM      9   // Motor speed control PWM (single PWM for both directions)
 
 // Output Pins (Status LEDs)
 #define PIN_LED_BT_UP     11   // UP button pressed indicator
@@ -1268,14 +1113,22 @@ void APP_Task(...) {
 
 ### L298N Motor Driver Wiring
 
+**Note:** This design uses a **single-PWM control scheme** where:
+- EN1/EN2 pins select the motor direction (UP or DOWN)
+- PIN_MOTOR_PWM (pin 9) controls speed for whichever direction is active
+- Only one EN pin is HIGH at any time (cannot be simultaneous)
+
 | L298N Pin | Arduino Pin | Signal Type | Description |
-|-------------|-------------|-------------|-------------|
-| IN1 (RPWM) | 9 (PWM) | PWM Output | Right channel PWM (UP direction) |
-| IN2 (LPWM) | 10 (PWM) | PWM Output | Left channel PWM (DOWN direction) |
-| ENA (REN) | 6 (Digital) | Digital Output | Right channel enable |
-| ENB (LEN) | 7 (Digital) | Digital Output | Left channel enable |
-| OUT1/OUT2 | Motor | Power Output | Motor connection (polarity determines direction) |
-| +12V | Power Supply | Power Input | Motor power supply (12V or 24V) |
+|-----------|-------------|-------------|-------------|
+| IN1 (REN) | 6 (Digital) | Digital Output | Enable for UP direction |
+| IN2 (LEN) | 7 (Digital) | Digital Output | Enable for DOWN direction |
+| PWM | 9 (PWM) | PWM Output | Speed control for active direction (0-255) |
 | GND | GND | Ground | Common ground |
-| +5V | 5V (optional) | Logic Power | Logic power (can use Arduino 5V or external) |
+| +12V | Power Supply | Power Input | Motor power supply |
+| OUT1/OUT2 | Motor | Power Output | Motor connection (polarity determines direction) |
+
+**Traceability:**
+- Single-PWM approach implements SysReq-002 (response ≤ 1 sec) via immediate direction + speed activation
+- Supports SysReq-003 (halt ≤ 500 ms) via immediate PWM deactivation to 0
+- Supports SysReq-004 (full 90 cm stroke in ≤ 30 sec) via constant maximum PWM speed (255)
 

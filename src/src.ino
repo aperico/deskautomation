@@ -3,8 +3,8 @@
 #include "desk_app.h"
 #include "motor_controller.h"
 
-// Non-blocking scheduler: run APP logic every 250 ms
-static const uint32_t APP_PERIOD_MS = 100U;
+// Non-blocking scheduler: run APP logic every 250 ms (SWReq-011: 250 ± 10 ms)
+static const uint32_t APP_PERIOD_MS = 250U;
 static uint32_t last_app_run_ms = 0U;
 static AppOutput_t app_out_cached;
 

@@ -202,6 +202,37 @@ This document describes operational scenarios for the Standing Desk Automation S
 
 ---
 
+### Scenario 6: Obstruction or Jam Detected During Motion
+
+**Objective Coverage:** OBJ-003
+
+**Initial State:**
+- Desk height: 85 cm (mid-range)
+- Desk motion: Moving upward at normal speed
+- UP button: Pressed (held by user)
+- System: MOVING_UP state
+
+**User Actions:**
+1. User continues holding UP button
+
+**System Response:**
+1. System detects abnormal motion or load indicating a jam
+2. Motor power is cut and motion halts
+3. System transitions to a safe STOP/FAULT state
+4. System indicates a fault and awaits user action or reset
+
+**Final State:**
+- Desk height: Stops at current position
+- Motor: STOP
+- System: Safe STOP/FAULT state
+
+**Success Criteria:**
+- Motion halts within 500 ms of jam detection
+- No further motion until fault is cleared
+- User receives clear indication of the stop condition
+
+---
+
 ## Operational Constraints
 
 1. **Continuous Press Required:** Motion continues only while button is actively held
@@ -221,10 +252,11 @@ This document describes operational scenarios for the Standing Desk Automation S
 | Scenario 3: Motion Halt | — | — | ✓ | — | — |
 | Scenario 4: Full Stroke | ✓ | — | — | ✓ | — |
 | Scenario 5: Simultaneous Press | — | — | ✓ | — | — |
+| Scenario 6: Jam Detected | — | — | ✓ | — | — |
 
 **Coverage Analysis:**
 - All 5 system objectives covered by at least one scenario
-- Safety objective (OBJ-003) covered by 2 scenarios
+- Safety objective (OBJ-003) covered by 3 scenarios
 - Normal operation scenarios validate responsiveness and smoothness
-- Edge cases (full stroke, conflicts) validate robustness
+- Edge cases (full stroke, conflicts, jam) validate robustness
 

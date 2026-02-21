@@ -210,6 +210,16 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         motor_fault_start_ms = 0U;
     }
 
+    // SAFETY-CRITICAL: Detect obstruction/jam during motion (Algorithm 3, Case 2 - SysReq-013, FSR-007)
+    // If motor is commanded to move but current exceeds obstruction threshold, flag fault
+    if (outputs->motor_cmd != MOTOR_STOP)
+    {
+        if (inputs->motor_current_ma > MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA)
+        {
+            fault_latched = true;
+        }
+    }
+
     if (fault_latched)
     {
         current_state = APP_STATE_FAULT;

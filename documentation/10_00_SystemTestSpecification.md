@@ -23,7 +23,7 @@ This document specifies test cases for **system-level testing** of the Automated
 
 **Approach:**
 - Manual execution of predefined test cases
-- Traceable to system requirements (SysReq-001 through SysReq-012)
+- Traceable to system requirements (SysReq-001 through SysReq-013)
 - ISTQB-compliant documentation
 - Mix of positive (happy path) and negative (error handling) scenarios
 
@@ -47,18 +47,19 @@ This document specifies test cases for **system-level testing** of the Automated
 | SysReq-010: No Motion Without Valid Command | SYS-TC-013 | ✅ COVERED |
 | SysReq-011: Safe STOP After Reset/Brownout | SYS-TC-014 | ✅ COVERED |
 | SysReq-012: Stuck-On/Runaway Detection | SYS-TC-015 | ✅ COVERED |
+| SysReq-013: Obstruction/Jam Detection | SYS-TC-016 | ✅ COVERED |
 
-**Coverage Summary:** 12/12 system requirements (100%)
+**Coverage Summary:** 13/13 system requirements (100%)
 
 ### 2.2 Test Categories
 
 | Category | Type | Count | Purpose |
 |----------|------|-------|---------|
 | Functional | Happy Path | 7 | Verify normal operation meets requirements |
-| Safety-Critical | Error Handling | 5 | Verify safe behavior under edge conditions |
+| Safety-Critical | Error Handling | 6 | Verify safe behavior under edge conditions |
 | Performance | Load/Timing | 2 | Verify speed and responsiveness |
 | Endurance | Reliability | 1 | Verify long-term durability |
-| **Total** | — | **15** | System verification complete |
+| **Total** | — | **16** | System verification complete |
 
 ---
 
@@ -688,6 +689,41 @@ Mitigates electrical fault hazards by ensuring the system fails safe if the moto
 
 ---
 
+## SYS-TC-016: Obstruction/Jam Detection During Motion
+
+**Test Case ID:** SYS-TC-016  
+**Title:** Verify system detects obstruction/jam during motion and commands STOP within 500 ms  
+**Requirement Traceability:** SysReq-013 (Obstruction/Jam Detection)  
+**Test Type:** Safety-Critical, Fault Injection  
+**Priority:** Must-Have  
+
+### Preconditions
+1. System is powered on and in IDLE state
+2. Desk is at mid-range height (≈75 cm)
+3. Motor control signal monitoring equipment available
+4. Safe method available to introduce a controlled obstruction or jam
+5. Fault indicator LED or diagnostic output available
+
+### Test Steps
+
+| Step | Action | Expected Outcome |
+|------|--------|-----------------|
+| 1 | Start upward motion by holding UP button | Motor activates; desk moves upward |
+| 2 | Introduce a controlled obstruction/jam | Motor current rises or motion stalls |
+| 3 | Observe system response within 500 ms of detection | Motor command transitions to STOP; fault indicator activates |
+| 4 | Clear the obstruction/jam | System remains in safe STOP/FAULT state |
+| 5 | Attempt to command motion | Motion blocked until fault is cleared/reset per design |
+
+### Expected Result
+- Obstruction/jam condition is detected
+- System transitions to safe STOP and indicates fault
+- **Acceptance Criteria:** STOP command asserted within 500 ms of jam detection
+
+### Rationale
+Confirms the system halts motion quickly when a mechanical obstruction or jam is detected, aligning with safety objectives.
+
+---
+
 ## 5. Test Execution Guidelines
 
 ### 5.1 Test Execution Process
@@ -768,20 +804,21 @@ If a test fails or anomaly is observed:
 | **SysReq-010** No Motion Without Valid Command | SYS-TC-013 | ✅ **COVERED** | Motor remains STOP with no valid input |
 | **SysReq-011** Safe STOP After Reset/Brownout | SYS-TC-014 | ✅ **COVERED** | No motion after reset until valid command |
 | **SysReq-012** Stuck-On/Runaway Detection | SYS-TC-015 | ✅ **COVERED** | Fault detection and safe STOP behavior |
+| **SysReq-013** Obstruction/Jam Detection | SYS-TC-016 | ✅ **COVERED** | Jam detected; STOP within 500 ms |
 
-**Summary:** 9/9 system requirements fully covered by 12 system test cases (100% traceability)
+**Summary:** 13/13 system requirements fully covered by 16 system test cases (100% traceability)
 
 ### 6.2 Test Case Categories
 
 | Category | Test Case IDs | Count | Purpose |
 |----------|---------------|-------|---------|
 | **Functional** | SYS-TC-001, SYS-TC-002, SYS-TC-003, SYS-TC-004, SYS-TC-007 | 5 | Normal operation; verify core functionality |
-| **Safety-Critical** | SYS-TC-005, SYS-TC-007, SYS-TC-009, SYS-TC-010, SYS-TC-013, SYS-TC-014, SYS-TC-015 | 7 | Edge cases; emergency response; hazard mitigation |
+| **Safety-Critical** | SYS-TC-005, SYS-TC-007, SYS-TC-009, SYS-TC-010, SYS-TC-013, SYS-TC-014, SYS-TC-015, SYS-TC-016 | 8 | Edge cases; emergency response; hazard mitigation |
 | **Performance** | SYS-TC-002, SYS-TC-006 | 2 | Timing, speed, load capacity |
 | **Quality** | SYS-TC-008 | 1 | Smooth operation; user comfort |
 | **Reliability** | SYS-TC-011 | 1 | Long-term endurance; durability |
 | **Architectural** | SYS-TC-012 | 1 | System design; timing guarantees |
-| **TOTAL** | — | **15** | Comprehensive system verification |
+| **TOTAL** | — | **16** | Comprehensive system verification |
 
 ### 6.3 Scenario Mapping
 
@@ -795,6 +832,7 @@ If a test fails or anomaly is observed:
 | Extended Use (Durability) | SYS-TC-011 | ✅ Complete |
 | Power Recovery Safety | SYS-TC-014 | ✅ Complete |
 | Faulted Driver Behavior | SYS-TC-015 | ✅ Complete |
+| Obstruction/Jam Detected | SYS-TC-016 | ✅ Complete |
 
 ---
 
@@ -803,14 +841,14 @@ If a test fails or anomaly is observed:
 ### 7.1 Key Metrics
 
 **Test Coverage:**
-- Requirements Coverage: 12/12 (100%)
-- Test Case Count: 15
+- Requirements Coverage: 13/13 (100%)
+- Test Case Count: 16
 - Functional Test Cases: 5
-- Safety-Critical Test Cases: 7
+- Safety-Critical Test Cases: 8
 - Performance Test Cases: 2
 
 **Execution Metrics (Tracked During Test Campaign):**
-- Total Planned Tests: 15
+- Total Planned Tests: 16
 - Total Executed: [To be recorded during execution]
 - Passed: [To be recorded]
 - Failed: [To be recorded]
@@ -898,7 +936,7 @@ Product Owner: ________________  Date: __________
 ## 9. References
 
 **Upstream Documents:**
-- [03_00_SystemRequirements.md](03_00_SystemRequirements.md) — System-level requirements (SysReq-001 through SysReq-012)
+- [03_00_SystemRequirements.md](03_00_SystemRequirements.md) — System-level requirements (SysReq-001 through SysReq-013)
 - [02_ConceptOfOperations.md](02_ConceptOfOperations.md) — Operational scenarios and use cases
 - [01_SystemObjectives.md](01_SystemObjectives.md) — System-level objectives
 - [01_MissionStatement.md](01_MissionStatement.md) — Project mission and vision
@@ -1028,6 +1066,7 @@ Witness Signature: ________________________  Date: ___/___/___
 | SYS-TC-010 | Lower limit position | 30 cm ± 1 cm | cm | No over-travel |
 | SYS-TC-011 | Cycle endurance | 10,000 cycles | count | All cycles without failure |
 | SYS-TC-012 | Loop period | 250 ms ± 12.5 ms | ms | 4 Hz ± 5% execution rate |
+| SYS-TC-016 | Jam stop time | ≤ 500 ms | ms | Obstruction detection to STOP |
 
 ---
 

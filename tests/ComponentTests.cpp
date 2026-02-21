@@ -791,3 +791,246 @@ TEST_F(DeskAppComponentTest, TC_SWReq011_001_PeriodicControlLoopExecution)
     // (Test framework timeout would catch infinite loops)
 }
 
+// ============================================================================
+// TEST CASE: TC-SWReq-012-001 - Motor Stop When No Valid Command
+// ============================================================================
+// Requirement ID: SWReq-012 (Motor STOP when no valid UP/DOWN command)
+// Requirement ID: SysReq-010 (No unintended motion without user intent)
+//
+// Test Objective:
+//   Verify that motor stops and remains stopped when neither UP nor DOWN
+//   button is pressed (no valid motion command). This ensures the system
+//   cannot produce unintended motion.
+//
+// Preconditions:
+//   - Application in IDLE state
+//   - Both buttons released (not pressed)
+//
+// Test Steps:
+//   1. Create AppInput_t with button_up=false, button_down=false
+//   2. Call APP_Task()
+//   3. Verify motor commanded to STOP
+//
+// Expected Results:
+//   - Motor command: MOTOR_STOP
+//   - Motor speed: 0
+//   - State: IDLE
+//
+// Rationale:
+//   - Prevents unintended continuous motion
+//   - Ensures fail-safe behavior when inputs released
+//   - Meets SysReq-010 requirement for no motion without command
+// ============================================================================
+TEST_F(DeskAppComponentTest, TC_SWReq012_001_MotorStopWhenNoValidCommand)
+{
+    AppInput_t inputs = {0};
+    inputs.button_up = false;    // No UP command
+    inputs.button_down = false;  // No DOWN command
+    inputs.limit_upper = false;
+    inputs.limit_lower = false;
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Expected: Motor stopped with no valid command
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "Motor must stop when no valid button command";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero without valid command";
+    EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
+        << "State must remain IDLE without valid command";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-013-001 - Safe Initialization After Reset
+// ============================================================================
+// Requirement ID: SWReq-013 (Initialize to safe STOP state after reset/brownout)
+// Requirement ID: SysReq-011 (Safe STOP after power recovery)
+//
+// Test Objective:
+//   Verify that application initializes to safe STOP state and requires
+//   a new valid command before motion can occur. This prevents unintended
+//   motion on power recovery.
+//
+// Preconditions:
+//   - APP_Init() called explicitly (simulating power-on reset)
+//   - No prior state
+//
+// Test Steps:
+//   1. Call APP_Init() to initialize
+//   2. Call APP_Task() with empty inputs
+//   3. Verify motor is stopped and IDLE
+//   4. Verify that state remains IDLE until explicit button press
+//
+// Expected Results (after APP_Init):
+//   - Motor command: MOTOR_STOP
+//   - Motor speed: 0
+//   - State: IDLE
+//   - System ready for new valid command
+//
+// Rationale:
+//   - Prevents unintended motion on power recovery (brownout tolerance)
+//   - Ensures predictable startup behavior
+//   - Meets SysReq-011 safe initialization requirement
+// ============================================================================
+TEST_F(DeskAppComponentTest, TC_SWReq013_001_SafeInitializationAfterReset)
+{
+    // Reinitialize (simulating fresh power-on)
+    APP_Init();
+    
+    AppInput_t inputs = {0};
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Expected: Safe STOP state on initialization
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "Motor must be STOP on initialization";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero on initialization";
+    EXPECT_EQ(outputs.led_error, LED_OFF) 
+        << "Error LED must be OFF on normal initialization";
+    EXPECT_EQ(APP_GetState(), APP_STATE_IDLE) 
+        << "State must be IDLE on initialization";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-014-002 - Obstruction Detection During MOVING_UP
+// ============================================================================
+// Requirement ID: SWReq-014 (Detect motor driver stuck-on/runaway/jam)
+// Requirement ID: SysReq-013 (Jam/obstruction detection - FSR-007)
+//
+// Test Objective:
+//   SAFETY-CRITICAL: Verify that excessive motor current during upward motion
+//   is detected as obstruction/jam and latches fault. This protects against
+//   mechanical jam conditions, foreign object detection, or power-off faults.
+//
+// Preconditions:
+//   - Application initially in IDLE state
+//
+// Test Steps:
+//   1. Transition to MOVING_UP by pressing UP button with no current
+//   2. While in MOVING_UP, simulate obstruction current (>200mA)
+//   3. Verify system immediately detects jam and enters FAULT state
+//
+// Expected Results:
+//   - Motor command: MOTOR_STOP (stops immediately on obstruction)
+//   - Motor speed: 0
+//   - State: FAULT
+//   - Fault output: true
+//   - Error LED: ON
+//   - No time-delay required (immediate detection)
+//
+// Rationale:
+//   - SAFETY-CRITICAL: Prevents motor damage from jam conditions
+//   - Prevents continued force against obstruction
+//   - Meets SysReq-013 functional safety requirement for jam detection
+//   - Meets FSR-007 safety goal traceability
+//   - Faster response than stuck-on detection (immediate vs 100ms timeout)
+// ============================================================================
+TEST_F(DeskAppComponentTest, TC_SWReq014_002_ObstructionDetectionDuringMovingUp)
+{
+    // Step 1: Transition to MOVING_UP with normal current
+    AppInput_t inputs = {0};
+    inputs.button_up = true;
+    inputs.motor_current_ma = 50U;  // Normal current during motion
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Verify in MOVING_UP state with normal current
+    EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_UP)
+        << "Setup: Should be in MOVING_UP state";
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_UP)
+        << "Setup: Motor should be commanding UP";
+    
+    // Step 2: Simulate obstruction (excessive current during motion)
+    inputs.motor_current_ma = 250U;  // Obstruction threshold is 200mA
+    inputs.timestamp_ms = 10U;
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 3: Verify immediate obstruction detection
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "SAFETY-CRITICAL: Motor must stop immediately on obstruction";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero on obstruction";
+    EXPECT_TRUE(outputs.fault_out)
+        << "SAFETY-CRITICAL: Obstruction must set fault output";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+        << "SAFETY-CRITICAL: Must enter FAULT state on jam detection";
+    EXPECT_EQ(outputs.led_error, LED_ON)
+        << "Error LED must be ON during obstruction fault";
+}
+
+// ============================================================================
+// TEST CASE: TC-SWReq-014-003 - Obstruction Detection During MOVING_DOWN
+// ============================================================================
+// Requirement ID: SWReq-014 (Detect motor driver stuck-on/runaway/jam)
+// Requirement ID: SysReq-013 (Jam/obstruction detection - FSR-007)
+//
+// Test Objective:
+//   SAFETY-CRITICAL: Verify that excessive motor current during downward motion
+//   is detected as obstruction/jam and latches fault. Symmetric test with
+//   upward motion to ensure bidirectional jam detection.
+//
+// Preconditions:
+//   - Application initially in IDLE state
+//
+// Test Steps:
+//   1. Transition to MOVING_DOWN by pressing DOWN button with normal current
+//   2. While in MOVING_DOWN, simulate obstruction current (>200mA)
+//   3. Verify system immediately detects jam and enters FAULT state
+//
+// Expected Results:
+//   - Motor command: MOTOR_STOP (stops immediately on obstruction)
+//   - Motor speed: 0
+//   - State: FAULT
+//   - Fault output: true
+//   - Error LED: ON
+//
+// Rationale:
+//   - SAFETY-CRITICAL: Protects both upward and downward motion directions
+//   - Ensures consistent jam detection regardless of direction
+//   - Meets bidirectional safety requirements
+// ============================================================================
+TEST_F(DeskAppComponentTest, TC_SWReq014_003_ObstructionDetectionDuringMovingDown)
+{
+    // Step 1: Transition to MOVING_DOWN with normal current
+    AppInput_t inputs = {0};
+    inputs.button_down = true;
+    inputs.motor_current_ma = 60U;  // Normal current during downward motion
+    inputs.timestamp_ms = 0U;
+    
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    
+    // Verify in MOVING_DOWN state with normal current
+    EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_DOWN)
+        << "Setup: Should be in MOVING_DOWN state";
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_DOWN)
+        << "Setup: Motor should be commanding DOWN";
+    
+    // Step 2: Simulate obstruction (excessive current during motion)
+    inputs.motor_current_ma = 210U;  // Obstruction threshold is 200mA
+    inputs.timestamp_ms = 10U;
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 3: Verify immediate obstruction detection
+    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+        << "SAFETY-CRITICAL: Motor must stop immediately on obstruction";
+    EXPECT_EQ(outputs.motor_speed, 0U) 
+        << "Motor speed must be zero on obstruction";
+    EXPECT_TRUE(outputs.fault_out)
+        << "SAFETY-CRITICAL: Obstruction must set fault output";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+        << "SAFETY-CRITICAL: Must enter FAULT state on jam detection";
+    EXPECT_EQ(outputs.led_error, LED_ON)
+        << "Error LED must be ON during obstruction fault";
+}
+
+
