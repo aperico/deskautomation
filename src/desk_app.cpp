@@ -4,7 +4,7 @@
 static AppState_t current_state = APP_STATE_IDLE;
 static uint32_t state_entry_time = 0U;
 static bool fault_latched = false;
-static uint32_t motor_fault_start_ms = 0U;
+static uint32_t motor_fault_start_ms = UINT32_MAX;  // Use UINT32_MAX as sentinel for "timer not running"
 
 
 static void transition_to(AppState_t next_state, uint32_t now_ms)
@@ -18,7 +18,7 @@ void APP_Init(void)
     current_state = APP_STATE_IDLE;
     state_entry_time = 0U;
     fault_latched = false;
-    motor_fault_start_ms = 0U;
+    motor_fault_start_ms = UINT32_MAX;  // Timer not started
 }
 
 /**
@@ -191,23 +191,27 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
     {
         if (inputs->motor_current_ma > MOTOR_SENSE_THRESHOLD_MA)
         {
-            if (motor_fault_start_ms == 0U)
+            // High current while stopped - start timer or latch fault if timeout expired
+            if (motor_fault_start_ms == UINT32_MAX)  // Timer not running
             {
-                motor_fault_start_ms = inputs->timestamp_ms;
+                motor_fault_start_ms = inputs->timestamp_ms;  // Start the timer
             }
             else if ((inputs->timestamp_ms - motor_fault_start_ms) >= MOTOR_SENSE_FAULT_TIME_MS)
             {
+                // Timeout expired - current was high for long enough, latch fault
                 fault_latched = true;
             }
         }
         else
         {
-            motor_fault_start_ms = 0U;
+            // Current returned to normal - reset timer
+            motor_fault_start_ms = UINT32_MAX;
         }
     }
     else
     {
-        motor_fault_start_ms = 0U;
+        // Motor not commanded to STOP - reset timer (normal operation or motion)
+        motor_fault_start_ms = UINT32_MAX;
     }
 
     // SAFETY-CRITICAL: Detect obstruction/jam during motion (Algorithm 3, Case 2 - SysReq-013, FSR-007)
