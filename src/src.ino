@@ -31,12 +31,15 @@ void loop()
     // Time-based schedule: update application at 250 ms cadence
     if ((now_ms - last_app_run_ms) >= APP_PERIOD_MS)
     {
+        const uint16_t motor_current_ma = HAL_readMotorCurrent();
+
         AppInput_t inputs;
         inputs.button_up = HAL_readButton(BUTTON_UP);
         inputs.button_down = HAL_readButton(BUTTON_DOWN);
         inputs.limit_upper = HAL_readLimitSensor(LIMIT_UPPER);
         inputs.limit_lower = HAL_readLimitSensor(LIMIT_LOWER);
-        inputs.fault_in = false; // placeholder for external fault propagation
+        inputs.fault_in = false;
+        inputs.motor_current_ma = motor_current_ma;
         inputs.timestamp_ms = now_ms;
 
         AppOutput_t new_out;

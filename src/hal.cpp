@@ -1,4 +1,5 @@
 #include "hal.h"
+#include "safety_config.h"
 
 #ifdef TESTENVIRONMENT
 #include "hal_mock/HALMock.h"
@@ -16,12 +17,14 @@ static bool button_stable_state[BUTTON_COUNT] = {false, false};
 static const uint8_t button_pins[BUTTON_COUNT] = {PIN_BUTTON_UP, PIN_BUTTON_DOWN};
 static const uint8_t limit_pins[LIMIT_COUNT] = {PIN_LIMIT_UPPER, PIN_LIMIT_LOWER};
 
+
 static void init_inputs(void)
 {
     pinMode(PIN_BUTTON_UP, INPUT_PULLUP);
     pinMode(PIN_BUTTON_DOWN, INPUT_PULLUP);
     pinMode(PIN_LIMIT_UPPER, INPUT_PULLUP);
     pinMode(PIN_LIMIT_LOWER, INPUT_PULLUP);
+    pinMode(PIN_MOTOR_SENSE, INPUT);
 }
 
 static void init_outputs(void)
@@ -80,6 +83,14 @@ bool HAL_readLimitSensor(LimitID_t sensor)
 {
     // Active-low sensors with pull-ups
     return (digitalRead(limit_pins[sensor]) == LOW);
+}
+
+uint16_t HAL_readMotorCurrent(void)
+{
+    const uint16_t adc = static_cast<uint16_t>(analogRead(PIN_MOTOR_SENSE));
+    const uint32_t voltage_mv = (static_cast<uint32_t>(adc) * ADC_REF_MV) / 1023U;
+    const uint32_t current_ma = (voltage_mv * 1000U) / SHUNT_MILLIOHMS;
+    return static_cast<uint16_t>(current_ma);
 }
 
 void HAL_setMotor(MotorDirection_t dir, uint8_t speed)

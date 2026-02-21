@@ -1,8 +1,11 @@
 #include "desk_app.h"
+#include "safety_config.h"
 
 static AppState_t current_state = APP_STATE_IDLE;
 static uint32_t state_entry_time = 0U;
 static bool fault_latched = false;
+static uint32_t motor_fault_start_ms = 0U;
+
 
 static void transition_to(AppState_t next_state, uint32_t now_ms)
 {
@@ -15,6 +18,7 @@ void APP_Init(void)
     current_state = APP_STATE_IDLE;
     state_entry_time = 0U;
     fault_latched = false;
+    motor_fault_start_ms = 0U;
 }
 
 /**
@@ -180,6 +184,36 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
             }
             break;
         }
+    }
+
+    // SAFETY-CRITICAL: Detect stuck-on/runaway when STOP is commanded
+    if (outputs->motor_cmd == MOTOR_STOP)
+    {
+        if (inputs->motor_current_ma > MOTOR_SENSE_THRESHOLD_MA)
+        {
+            if (motor_fault_start_ms == 0U)
+            {
+                motor_fault_start_ms = inputs->timestamp_ms;
+            }
+            else if ((inputs->timestamp_ms - motor_fault_start_ms) >= MOTOR_SENSE_FAULT_TIME_MS)
+            {
+                fault_latched = true;
+            }
+        }
+        else
+        {
+            motor_fault_start_ms = 0U;
+        }
+    }
+    else
+    {
+        motor_fault_start_ms = 0U;
+    }
+
+    if (fault_latched)
+    {
+        current_state = APP_STATE_FAULT;
+        handle_fault(outputs);
     }
 }
 

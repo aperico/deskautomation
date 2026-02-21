@@ -55,6 +55,13 @@ bool HAL_readButton(ButtonID_t button);
 bool HAL_readLimitSensor(LimitID_t sensor);
 
 /**
+ * @brief Read motor current sense (mA)
+ * 
+ * @return uint16_t - Motor current in milliamps
+ */
+uint16_t HAL_readMotorCurrent(void);
+
+/**
  * @brief Set motor direction and speed
  * 
  * Controls L298N motor driver via PWM and enable signals.

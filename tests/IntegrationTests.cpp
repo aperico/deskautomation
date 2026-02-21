@@ -3,6 +3,7 @@
 #include "motor_controller.h"
 #include "desk_app.h"
 #include "desk_types.h"
+#include "hal_mock/HALMock.h"
 
 // ============================================================================
 // INTEGRATION TESTS: HAL/Signal Layer + Motor Controller
@@ -41,6 +42,31 @@ TEST_F(HALIntegrationTest, LimitSensorReadReturnsValidValue)
 {
     bool limit_state = HAL_readLimitSensor(LIMIT_UPPER);
     EXPECT_TRUE(limit_state == true || limit_state == false);
+}
+
+// REQ-HAL-005: Motor current read should convert ADC counts to milliamps
+TEST_F(HALIntegrationTest, MotorCurrentReadReturnsMilliamps)
+{
+    const int adc_value = 512;
+    pin_states[PIN_MOTOR_SENSE] = adc_value;
+
+    const uint16_t current_ma = HAL_readMotorCurrent();
+    const uint32_t voltage_mv = (static_cast<uint32_t>(adc_value) * 5000U) / 1023U;
+    const uint32_t expected_ma = (voltage_mv * 1000U) / 500U;
+
+    EXPECT_EQ(current_ma, expected_ma);
+}
+
+TEST_F(HALIntegrationTest, MotorCurrentReadZeroAtAdcZero)
+{
+    pin_states[PIN_MOTOR_SENSE] = 0;
+    EXPECT_EQ(HAL_readMotorCurrent(), 0U);
+}
+
+TEST_F(HALIntegrationTest, MotorCurrentReadMaxAtAdcMax)
+{
+    pin_states[PIN_MOTOR_SENSE] = 1023;
+    EXPECT_EQ(HAL_readMotorCurrent(), 10000U);
 }
 
 // REQ-HAL-004: Time function should be monotonically increasing

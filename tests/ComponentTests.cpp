@@ -202,6 +202,51 @@ TEST_F(DeskAppComponentTest, TC_SWReq002_001_DownButtonCommandsMotorDown)
 }
 
 // ============================================================================
+// TEST CASE: TC-SWReq-014-001 - Current Sense Fault Latches Error
+// ============================================================================
+// Requirement ID: SWReq-014 (Stuck-on/runaway detection)
+//
+// Test Objective:
+//   Verify that excessive motor current while STOP is commanded latches fault.
+//
+// Preconditions:
+//   - Application in IDLE state
+//   - No buttons pressed
+//
+// Test Steps:
+//   1. Provide motor_current_ma above threshold at t=0
+//   2. Call APP_Task() -> should not fault yet (timer starts)
+//   3. Provide same current at t=150ms
+//   4. Call APP_Task() -> fault should latch
+//
+// Expected Results:
+//   - Fault output asserted
+//   - Error LED ON
+//   - State transitions to FAULT
+// ============================================================================
+TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
+{
+    AppInput_t inputs = {0};
+    inputs.motor_current_ma = 200U;
+    inputs.timestamp_ms = 0U;
+
+    AppOutput_t outputs;
+    APP_Task(&inputs, &outputs);
+    EXPECT_FALSE(outputs.fault_out)
+        << "Fault should not latch on first sample";
+
+    inputs.timestamp_ms = 150U;
+    APP_Task(&inputs, &outputs);
+
+    EXPECT_TRUE(outputs.fault_out)
+        << "Fault must latch after current exceeds threshold for >100ms";
+    EXPECT_EQ(outputs.led_error, LED_ON)
+        << "Error LED must be ON during fault";
+    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT)
+        << "State must transition to FAULT";
+}
+
+// ============================================================================
 // TEST CASE: TC-SWReq-005-001 - Upper Limit Stops Upward Movement
 // ============================================================================
 // Requirement ID: SWReq-005 (Upper limit override: stop when limit active)

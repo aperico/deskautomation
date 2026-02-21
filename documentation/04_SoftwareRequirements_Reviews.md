@@ -18,7 +18,7 @@
 **Instructions:** 
 - Identify missing requirements
 - Verify requirements are testable and unambiguous
-- Ensure safety requirements are included and properly marked
+- Ensure safety requirements are included and properly marked (SWReq-003, SWReq-004, SWReq-005, SWReq-006, SWReq-012, SWReq-013, SWReq-014)
 - Verify traceability links to source requirements and tests
 - Ensure document structure and formatting follow project standards
 - Adheres to [Requirements Writing Guidelines](https://github.deere.com/Brazooka/quality-management-system-handbook/blob/main/src/requirements-writing-guidelines.md)

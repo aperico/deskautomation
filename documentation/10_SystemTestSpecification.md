@@ -23,7 +23,7 @@ This document specifies test cases for **system-level testing** of the Automated
 
 **Approach:**
 - Manual execution of predefined test cases
-- Traceable to system requirements (SysReq-001 through SysReq-009)
+- Traceable to system requirements (SysReq-001 through SysReq-012)
 - ISTQB-compliant documentation
 - Mix of positive (happy path) and negative (error handling) scenarios
 
@@ -44,18 +44,21 @@ This document specifies test cases for **system-level testing** of the Automated
 | SysReq-007: Mechanical Limit Protection | SYS-TC-009, SYS-TC-010 | ✅ COVERED |
 | SysReq-008: Endurance (10,000 cycles) | SYS-TC-011 | ✅ COVERED |
 | SysReq-009: Scheduler Timing (4 Hz / 250 ms) | SYS-TC-012 | ✅ COVERED |
+| SysReq-010: No Motion Without Valid Command | SYS-TC-013 | ✅ COVERED |
+| SysReq-011: Safe STOP After Reset/Brownout | SYS-TC-014 | ✅ COVERED |
+| SysReq-012: Stuck-On/Runaway Detection | SYS-TC-015 | ✅ COVERED |
 
-**Coverage Summary:** 9/9 system requirements (100%)
+**Coverage Summary:** 12/12 system requirements (100%)
 
 ### 2.2 Test Categories
 
 | Category | Type | Count | Purpose |
 |----------|------|-------|---------|
 | Functional | Happy Path | 7 | Verify normal operation meets requirements |
-| Safety-Critical | Error Handling | 3 | Verify safe behavior under edge conditions |
+| Safety-Critical | Error Handling | 5 | Verify safe behavior under edge conditions |
 | Performance | Load/Timing | 2 | Verify speed and responsiveness |
 | Endurance | Reliability | 1 | Verify long-term durability |
-| **Total** | — | **13** | System verification complete |
+| **Total** | — | **15** | System verification complete |
 
 ---
 
@@ -583,6 +586,108 @@ Verification uses objective timing measurements rather than code inspection, con
 
 ---
 
+## SYS-TC-013: No Motion Without Valid Command
+
+**Test Case ID:** SYS-TC-013  
+**Title:** Verify motor remains STOP when no valid UP/DOWN command is present  
+**Requirement Traceability:** SysReq-010 (No Motion Without Valid Command)  
+**Test Type:** Functional, Safety-Critical  
+**Priority:** Must-Have  
+
+### Preconditions
+1. System is powered on and in IDLE state
+2. Desk is at mid-range height (≈75 cm)
+3. Motor control signal monitoring equipment available
+4. No buttons are pressed
+
+### Test Steps
+
+| Step | Action | Expected Outcome |
+|------|--------|-----------------|
+| 1 | Verify baseline with no button input for 10 seconds | Motor control signal remains inactive; no desk motion |
+| 2 | Gently tap buttons without latching (simulate contact bounce) | No motor activation; system remains IDLE |
+| 3 | Hold no buttons and observe for 30 seconds | No motion; no motor current draw |
+
+### Expected Result
+- Motor remains STOP when no valid command is present
+- No unintended motion occurs
+- **Acceptance Criteria:** Motor control signal stays at 0V/0% PWM throughout
+
+### Rationale
+Ensures the system fails safe in the absence of user intent, preventing unintended motion and reducing hazard exposure.
+
+---
+
+## SYS-TC-014: Safe STOP After Reset/Brownout
+
+**Test Case ID:** SYS-TC-014  
+**Title:** Verify system enters STOP state after reset or brownout before accepting motion commands  
+**Requirement Traceability:** SysReq-011 (Safe STOP After Reset/Brownout)  
+**Test Type:** Functional, Safety-Critical, Fault Injection  
+**Priority:** Must-Have  
+
+### Preconditions
+1. System is powered on and in IDLE state
+2. Desk is at mid-range height (≈75 cm)
+3. Motor control signal monitoring equipment available
+4. Means available to trigger reset or controlled brownout
+
+### Test Steps
+
+| Step | Action | Expected Outcome |
+|------|--------|-----------------|
+| 1 | Trigger a reset or controlled brownout event | System resets; motor control output is inactive |
+| 2 | Observe motor control output during restart | Motor remains STOP; no motion occurs |
+| 3 | After restart, press no buttons for 5 seconds | Motor remains STOP; system stays IDLE |
+| 4 | Press and hold UP button | Motor activates and desk moves upward normally |
+| 5 | Release button | Motor stops; system returns to IDLE |
+
+### Expected Result
+- System does not move immediately after reset or brownout
+- Motion only begins after a valid user command
+- **Acceptance Criteria:** No motor activation until a valid button press occurs
+
+### Rationale
+Confirms safe behavior on power recovery and prevents unintended motion following reset or brownout conditions.
+
+---
+
+## SYS-TC-015: Motor Driver Stuck-On / Runaway Detection
+
+**Test Case ID:** SYS-TC-015  
+**Title:** Verify system detects stuck-on motor driver or runaway behavior and enters safe STOP with fault indication  
+**Requirement Traceability:** SysReq-012 (Stuck-On/Runaway Detection)  
+**Test Type:** Safety-Critical, Fault Injection  
+**Priority:** Must-Have  
+
+### Preconditions
+1. System is powered on and in IDLE state
+2. Desk is at mid-range height (≈75 cm)
+3. Motor control signal monitoring equipment available
+4. Motor current sense measurement available (ADC readout or multimeter across shunt)
+5. Fault injection method available (driver enable forced high or simulated feedback)
+6. Fault indicator LED or diagnostic output available
+
+### Test Steps
+
+| Step | Action | Expected Outcome |
+|------|--------|-----------------|
+| 1 | Verify baseline current with motor STOP commanded | Current sense <= threshold; no motion |
+| 2 | Inject a stuck-on condition at motor driver output while no command is active | Current sense rises above threshold or unexpected motion observed |
+| 3 | Observe system response within 500 ms | Motor command transitions to STOP; fault indicator activates |
+| 4 | Clear the injected fault | System remains in safe STOP state |
+| 5 | Attempt to command motion (UP/DOWN) | System blocks motion until fault is cleared/reset per design |
+
+### Expected Result
+- Stuck-on/runaway condition is detected
+- System transitions to safe STOP and indicates fault
+- **Acceptance Criteria:** Current exceeds threshold during fault; STOP command asserted and fault indicated within 500 ms
+
+### Rationale
+Mitigates electrical fault hazards by ensuring the system fails safe if the motor driver is stuck-on or runaway behavior is detected.
+
+---
+
 ## 5. Test Execution Guidelines
 
 ### 5.1 Test Execution Process
@@ -660,6 +765,9 @@ If a test fails or anomaly is observed:
 | **SysReq-007** Mechanical Limit Protection | SYS-TC-009, SYS-TC-010 | ✅ **COVERED** | Verified for both upper and lower limits; no over-travel |
 | **SysReq-008** Endurance (10,000 cycles) | SYS-TC-011 | ✅ **COVERED** | Long-term durability and performance stability verified |
 | **SysReq-009** Scheduler Timing (4 Hz / 250 ms) | SYS-TC-012 | ✅ **COVERED** | Non-blocking execution and steady timing confirmed |
+| **SysReq-010** No Motion Without Valid Command | SYS-TC-013 | ✅ **COVERED** | Motor remains STOP with no valid input |
+| **SysReq-011** Safe STOP After Reset/Brownout | SYS-TC-014 | ✅ **COVERED** | No motion after reset until valid command |
+| **SysReq-012** Stuck-On/Runaway Detection | SYS-TC-015 | ✅ **COVERED** | Fault detection and safe STOP behavior |
 
 **Summary:** 9/9 system requirements fully covered by 12 system test cases (100% traceability)
 
@@ -668,12 +776,12 @@ If a test fails or anomaly is observed:
 | Category | Test Case IDs | Count | Purpose |
 |----------|---------------|-------|---------|
 | **Functional** | SYS-TC-001, SYS-TC-002, SYS-TC-003, SYS-TC-004, SYS-TC-007 | 5 | Normal operation; verify core functionality |
-| **Safety-Critical** | SYS-TC-005, SYS-TC-007, SYS-TC-009, SYS-TC-010 | 4 | Edge cases; emergency response; hazard mitigation |
+| **Safety-Critical** | SYS-TC-005, SYS-TC-007, SYS-TC-009, SYS-TC-010, SYS-TC-013, SYS-TC-014, SYS-TC-015 | 7 | Edge cases; emergency response; hazard mitigation |
 | **Performance** | SYS-TC-002, SYS-TC-006 | 2 | Timing, speed, load capacity |
 | **Quality** | SYS-TC-008 | 1 | Smooth operation; user comfort |
 | **Reliability** | SYS-TC-011 | 1 | Long-term endurance; durability |
 | **Architectural** | SYS-TC-012 | 1 | System design; timing guarantees |
-| **TOTAL** | — | **12** | Comprehensive system verification |
+| **TOTAL** | — | **15** | Comprehensive system verification |
 
 ### 6.3 Scenario Mapping
 
@@ -685,6 +793,8 @@ If a test fails or anomaly is observed:
 | Full-Stroke Adjustment | SYS-TC-001, SYS-TC-002, SYS-TC-006, SYS-TC-009, SYS-TC-010 | ✅ Complete |
 | Simultaneous Button Press | SYS-TC-007 | ✅ Complete |
 | Extended Use (Durability) | SYS-TC-011 | ✅ Complete |
+| Power Recovery Safety | SYS-TC-014 | ✅ Complete |
+| Faulted Driver Behavior | SYS-TC-015 | ✅ Complete |
 
 ---
 
@@ -693,14 +803,14 @@ If a test fails or anomaly is observed:
 ### 7.1 Key Metrics
 
 **Test Coverage:**
-- Requirements Coverage: 9/9 (100%)
-- Test Case Count: 12
+- Requirements Coverage: 12/12 (100%)
+- Test Case Count: 15
 - Functional Test Cases: 5
-- Safety-Critical Test Cases: 4
+- Safety-Critical Test Cases: 7
 - Performance Test Cases: 2
 
 **Execution Metrics (Tracked During Test Campaign):**
-- Total Planned Tests: 12
+- Total Planned Tests: 15
 - Total Executed: [To be recorded during execution]
 - Passed: [To be recorded]
 - Failed: [To be recorded]
@@ -736,7 +846,7 @@ EXECUTIVE SUMMARY
 [Brief 2–3 sentence summary of testing outcome]
 
 METRICS
-- Total Test Cases: 12
+- Total Test Cases: 15
 - Executed: ___
 - Passed: ___
 - Failed: ___
@@ -788,10 +898,10 @@ Product Owner: ________________  Date: __________
 ## 9. References
 
 **Upstream Documents:**
-- [03_SystemRequirements.md](03_SystemRequirements.md) — System-level requirements (SysReq-001 through SysReq-009)
+- [03_00_SystemRequirements.md](03_00_SystemRequirements.md) — System-level requirements (SysReq-001 through SysReq-012)
 - [02_ConceptOfOperations.md](02_ConceptOfOperations.md) — Operational scenarios and use cases
 - [01_SystemObjectives.md](01_SystemObjectives.md) — System-level objectives
-- [00_SystemMissionStatement.md](00_SystemMissionStatement.md) — Project mission and vision
+- [01_MissionStatement.md](01_MissionStatement.md) — Project mission and vision
 
 **Related Test Plans:**
 - Software Test Plan (component/unit/integration tests) — `tests/` directory

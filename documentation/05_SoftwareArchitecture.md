@@ -9,7 +9,8 @@ This document defines the software architecture for the Standing Desk Automation
 ## Traceability
 
 **Derived from:**
-- [03_SystemRequirements.md](03_SystemRequirements.md)
+- [03_00_SystemRequirements.md](03_00_SystemRequirements.md)
+- [03_01_SystemArchitecture.md](03_01_SystemArchitecture.md)
 - [04_SoftwareRequirements.md](04_SoftwareRequirements.md)
 
 ---
@@ -645,12 +646,48 @@ graph LR
 **Rationale:** Prevents mechanical over-travel; safety-critical requirement.  
 **Traceability:** SysReq-007, SWReq-005, SWReq-006.
 
+### AD-008: Non-Blocking Main Loop with Time-Based Scheduler
+**Decision:** Main loop is non-blocking and executes application control logic at 4 Hz (every 250 ms).  
+**Rationale:** 
+- Prevents blocking delays that can impair safety-critical button response
+- 4 Hz scheduler provides predictable timing for application task invocation
+- Arduino loop() is called frequently; explicit timing check prevents excessive application task calls
+- Allows I/O operations (HAL calls) to complete without waiting
+**Implementation:** 
+```cpp
+static uint32_t last_task_time = 0;
+const uint32_t TASK_INTERVAL_MS = 250;  // 4 Hz
+
+void loop() {
+    uint32_t now = HAL_getTime();
+    if (now - last_task_time >= TASK_INTERVAL_MS) {
+        last_task_time = now;
+        
+        // Read inputs
+        AppInput_t inputs = { ... };
+        inputs.timestamp_ms = now;
+        
+        // Run application task
+        AppOutput_t outputs = { 0 };
+        APP_Task(&inputs, &outputs);
+        
+        // Execute outputs
+        HAL_setMotor(outputs.motor_cmd, outputs.motor_speed);
+        HAL_setLED(outputs.led_status);
+    }
+}
+```
+**Traceability:** Foundational to responsive button handling (SysReq-002: ≤1 sec response) and halt timing (SysReq-003: ≤500 ms halt).
+
 ---
 
 ## Design Constraints
 
 1. **Memory:** Arduino UNO has 2 KB SRAM; minimize global variables
-2. **Timing:** Control loop must execute in ≤50 ms
+2. **Timing:** 
+   - Main loop scheduler executes application task at 4 Hz (every 250 ms)
+   - Individual I/O operations (button read, motor write) must complete in <50 ms
+   - No blocking delays in main loop; utilize non-blocking scheduler (see AD-008)
 3. **Safety:** All motor commands must be fail-safe (default to STOP)
 4. **Testability:** APP layer must be testable without Arduino hardware
 

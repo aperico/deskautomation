@@ -9,7 +9,7 @@ This document defines functional software requirements derived from system requi
 ## Traceability
 
 **Derived from:**
-- [03_SystemRequirements.md](03_SystemRequirements.md)
+- [03_00_SystemRequirements.md](03_00_SystemRequirements.md)
 
 ---
 
@@ -29,6 +29,9 @@ This document defines functional software requirements derived from system requi
 | **SWReq-010** | The software subsystem shall maintain operational state and command history for diagnostic purposes. | Supports reliability and maintainability goals (SysReq-008). Enables post-failure analysis and verification of state transitions during testing. | Unit test: execute sequence of button commands; retrieve state history; verify all state transitions logged with timestamps; confirm motor commands recorded. | SysReq-008 |
 
 | **SWReq-011** | The software subsystem shall implement a non-blocking scheduler that invokes `APP_Task()` at a fixed period of 250 ms (±10 ms). | Provides deterministic application-level timing while avoiding blocking calls in the main loop, enabling timely safety reactions and I/O servicing. | Unit/integration test with mock timer: advance time and verify `APP_Task()` is called at 4 Hz over ≥ 60 s; static analysis to confirm absence of blocking delays in the main loop. | SysReq-009 |
+| **SWReq-012** | The software subsystem shall command motor STOP when no valid UP/DOWN command is present. | Prevents unintended motion in the absence of user intent (SysReq-010). | Unit test with mock GPIO: no buttons pressed -> motor command remains STOP; verify no state change. | SysReq-010 |
+| **SWReq-013** | The software subsystem shall initialize to a safe STOP state after reset or brownout and require a new valid command before motion. | Prevents unintended motion on power recovery (SysReq-011). | Integration test with reset simulation: verify STOP state after reset; verify motion only after valid command. | SysReq-011 |
+| **SWReq-014** | The software subsystem shall detect motor driver stuck-on or runaway behavior and enter a fault state that commands STOP and indicates error. | Mitigates electrical fault hazards (SysReq-012). | Integration test with fault injection: simulate stuck-on condition; verify STOP command and fault indication. | SysReq-012 |
 
 ---
 
@@ -44,6 +47,9 @@ This document defines functional software requirements derived from system requi
 | SysReq-007: Limit Protection | SWReq-005, SWReq-006 |
 | SysReq-008: Reliability | SWReq-010 |
 | SysReq-009: Scheduler Cadence | SWReq-011, SWReq-008 |
+| SysReq-010: No Motion Without Valid Command | SWReq-012 |
+| SysReq-011: Safe STOP After Reset/Brownout | SWReq-013 |
+| SysReq-012: Stuck-On/Runaway Detection | SWReq-014 |
 
 ---
 
@@ -63,10 +69,18 @@ All software requirements are unit-testable using the following mock hardware ab
    - Measure elapsed time
    - Trigger periodic events
 
-3. **Mock Motor Controller**: Records motor commands for verification
+3. **Mock Reset/Power Event**: Simulates reset or brownout conditions
+   - Trigger reset event
+   - Verify safe STOP initialization
+
+4. **Mock Motor Controller**: Records motor commands for verification
    - Capture motor direction commands (UP/DOWN/STOP)
    - Log command timestamps
    - Verify command sequences
+
+5. **Mock Fault Injector**: Simulates motor driver stuck-on behavior
+   - Force motor output active without command
+   - Verify fault handling and STOP response
 
 ### Test Coverage Requirements
 
@@ -74,7 +88,7 @@ All software requirements are unit-testable using the following mock hardware ab
 - ✅ All state transitions tested
 - ✅ All input combinations tested (normal and edge cases)
 - ✅ Timing requirements verified with mock timer
-- ✅ Safety-critical requirements (SWReq-003, SWReq-004, SWReq-005, SWReq-006) have multiple test cases
+- ✅ Safety-critical requirements (SWReq-003, SWReq-004, SWReq-005, SWReq-006, SWReq-012, SWReq-013, SWReq-014) have multiple test cases
 
 ---
 
@@ -84,8 +98,10 @@ All software requirements are unit-testable using the following mock hardware ab
 |-------------------|------------------------|
 | Button Input Handler | SWReq-001, SWReq-002, SWReq-003, SWReq-009 |
 | State Machine | SWReq-007, SWReq-010 |
-| Safety Logic | SWReq-004, SWReq-005, SWReq-006 |
+| Safety Logic | SWReq-004, SWReq-005, SWReq-006, SWReq-012 |
 | Control Loop Manager | SWReq-008 |
+| Startup/Reset Handling | SWReq-013 |
+| Fault Handling/Diagnostics | SWReq-014 |
 
 ---
 

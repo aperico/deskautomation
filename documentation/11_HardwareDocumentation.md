@@ -11,6 +11,11 @@
 - **Purpose:** Drives the DC motor for desk lift/lower operations.
 - **Key Pins:** IN1, IN2 (direction), ENA (PWM speed control)
 
+### 2.1 Motor Current Sense
+- **Type:** Shunt resistor on L298N SENSE pins
+- **Purpose:** Measures motor current for stuck-on/runaway detection.
+- **Notes:** Routed to MCU ADC input via RC filter as needed.
+
 ### 3. DC Motor
 - **Type:** JGY-370 12V 30RPM (High-torque geared motor)
 - **Purpose:** Raises and lowers the desk.
@@ -69,6 +74,7 @@ graph TD
     MCU -->|Down Limit| LIMIT_DOWN
     MCU -->|Up Btn| BTN_UP
     MCU -->|Down Btn| BTN_DOWN
+    MCU -->|Sense| L298N
     PSU --> L298N
     PSU --> MCU
 ```
@@ -87,11 +93,13 @@ graph LR
         PIN8[8: Down Limit]
         PIN2[2: Up Button]
         PIN3[3: Down Button]
+        PINA0[A0: Motor Current Sense]
     end
     subgraph L298N
         IN1[IN1]
         IN2[IN2]
         ENA[ENA]
+        SENSE[SENSE]
         OUT1[OUT1]
         OUT2[OUT2]
     end
@@ -116,6 +124,7 @@ graph LR
     PIN8 -- Down --> DOWN_LIMIT
     PIN2 -- Up --> UP_BTN
     PIN3 -- Down --> DOWN_BTN
+    PINA0 -- Sense --> SENSE
 ```
 
 ---
@@ -130,6 +139,7 @@ graph LR
 | Motor IN1               | 5           | IN1       | Motor direction control                |
 | Motor IN2               | 6           | IN2       | Motor direction control                |
 | Motor ENA (PWM)         | 9           | ENA       | Motor speed control (PWM)              |
+| Motor Current Sense     | A0          | SENSE     | Shunt resistor to ADC for current sense |
 | Up Limit Sensor         | 7           | -         | Detects desk at upper limit (KW11-3Z-5) |
 | Down Limit Sensor       | 8           | -         | Detects desk at lower limit (KW11-3Z-5) |
 | Up Button               | 2           | -         | User input: raise desk (with resistor)  |
@@ -142,6 +152,7 @@ graph LR
 - Current-limiting resistors (220Ω) are required between MCU pins and LEDs to prevent overcurrent.
 - Pull-up or pull-down resistors (10kΩ) are recommended for push buttons to ensure stable readings.
 - Motor: JGY-370 12V 30RPM requires adequate current supply (2A+ recommended).
+- Motor current sense uses L298N SENSE pins with shunt resistor to MCU ADC (A0).
 - Ensure correct power supply polarity and current rating for the motor.
 - Use proper wire gauge for motor and power connections.
 - For safety, add fuses and ESD protection as needed.
@@ -162,6 +173,7 @@ graph LR
 | LED (Green) | 5mm LED | 2 | Up/Down movement indicators |
 | Resistor (220Ω) | 1/4W resistor | 3 | LED current limiting |
 | Resistor (10kΩ) | 1/4W resistor | 4 | Button pull-up/down |
+| Shunt Resistor | 0.5Ω, 2W | 1 | Motor current sense (L298N SENSE) |
 | Power Supply | 12V DC, 2A+ | 1 | System power |
 | Fuse | 2A fast-blow | 1 | Overcurrent protection |
 | Wire (Power) | 18-20 AWG | As needed | Motor and power connections |

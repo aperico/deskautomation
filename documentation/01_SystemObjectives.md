@@ -8,7 +8,7 @@ This document defines measurable system objectives derived from the mission stat
 
 ## Traceability
 
-**Derived from:** [00_SystemMissionStatement.md](00_SystemMissionStatement.md)
+**Derived from:** [01_MissionStatement.md](01_MissionStatement.md)
 
 ---
 
@@ -86,6 +86,6 @@ This document defines measurable system objectives derived from the mission stat
 
 ---
 
-**Document Version:** 1.0  
-**Date:** January 24, 2026  
+**Document Version:** 2.0  
+**Date:** February 21, 2026  
 **Status:** Approved  

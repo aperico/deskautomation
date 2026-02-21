@@ -11,7 +11,7 @@ This document provides implementation-level design details for the Standing Desk
 **Derived from:**
 - [05_SoftwareArchitecture.md](05_SoftwareArchitecture.md)
 - [04_SoftwareRequirements.md](04_SoftwareRequirements.md)
-- [03_SystemRequirements.md](03_SystemRequirements.md)
+- [03_00_SystemRequirements.md](03_00_SystemRequirements.md)
 
 ---
 
@@ -39,6 +39,7 @@ classDiagram
         +PIN_MOTOR_EN1: uint8_t
         +PIN_MOTOR_EN2: uint8_t
         +PIN_MOTOR_PWM: uint8_t
+        +PIN_MOTOR_SENSE: uint8_t
         +PIN_LED_BT_UP: uint8_t
         +PIN_LED_BT_DOWN: uint8_t
         +PIN_LED_ERROR: uint8_t
@@ -50,6 +51,7 @@ classDiagram
         +HAL_init() void
         +HAL_readButton(ButtonID) bool
         +HAL_readLimitSensor(LimitID) bool
+        +HAL_readMotorCurrent() uint16_t
         +HAL_setMotor(MotorDirection, uint8_t) void
         +HAL_setLED(LEDStatus) void
         +HAL_getTime() uint32_t
@@ -135,6 +137,7 @@ typedef struct {
     bool button_down;        // True if DOWN button currently pressed (debounced)
     bool limit_upper;        // True if upper limit sensor active
     bool limit_lower;        // True if lower limit sensor active
+    uint16_t motor_current_ma; // Motor current in mA (from current sense)
     uint32_t timestamp_ms;   // Current system time in milliseconds
 } AppInput_t;
 
@@ -173,6 +176,22 @@ static uint32_t last_button_time[BUTTON_COUNT] = {0, 0};
 static bool button_stable_state[BUTTON_COUNT] = {false, false};
 static bool button_raw_state[BUTTON_COUNT] = {false, false};
 ```
+
+### 5. Motor Current Sense Parameters
+
+Motor current sense parameters are defined in [src/safety_config.h](../src/safety_config.h):
+
+```cpp
+// Motor current sense (safety monitoring)
+static const uint16_t MOTOR_SENSE_THRESHOLD_MA = 150U;
+static const uint32_t MOTOR_SENSE_FAULT_TIME_MS = 100U;
+static const uint16_t ADC_REF_MV = 5000U;
+static const uint16_t SHUNT_MILLIOHMS = 500U;
+```
+
+**Notes:**
+- Threshold is the maximum allowed current when `motor_cmd` is STOP.
+- Values are initial safety targets and may be tuned after hardware characterization.
 
 ---
 
@@ -300,7 +319,36 @@ END FUNCTION
 
 ---
 
-### Algorithm 3: Motor Control (HAL Module)
+### Algorithm 3: Motor Current Fault Detection (DeskApp Module)
+
+**Purpose:** Detect stuck-on or runaway motor behavior while STOP is commanded.
+
+**Requirements:** FSR-006, SysReq-012, SWReq-014
+
+**Pseudocode:**
+
+```
+FUNCTION check_motor_current_fault(inputs, outputs):
+    IF outputs.motor_cmd == MOTOR_STOP:
+        IF inputs.motor_current_ma > MOTOR_SENSE_THRESHOLD_MA:
+            IF fault_timer_ms == 0:
+                fault_timer_ms = inputs.timestamp_ms
+            ELSE IF (inputs.timestamp_ms - fault_timer_ms) >= MOTOR_SENSE_FAULT_TIME_MS:
+                transitionTo(APP_STATE_FAULT)
+        ELSE:
+            fault_timer_ms = 0
+    ELSE:
+        fault_timer_ms = 0
+END FUNCTION
+```
+
+**Notes:**
+- `fault_timer_ms` is a static variable initialized to 0.
+- The check runs once per control loop cycle after outputs are computed.
+
+---
+
+### Algorithm 4: Motor Control (HAL Module)
 
 **Purpose:** Translate motor commands into hardware signals for L298N dual H-bridge motor driver.
 
@@ -372,12 +420,13 @@ void HAL_init(void);
 
 **Algorithm:**
 1. Configure button pins as INPUT_PULLUP (pins 2, 3)
-2. Configure limit sensor pins as INPUT_PULLUP (pins 4, 5)
-3. Configure motor driver pins as OUTPUT (pins 6, 7, 9, 10)
-4. Configure LED pin as OUTPUT (pin 13)
-5. Set motor to STOP (all enable/PWM pins LOW/0)
-6. Set LED to OFF
-7. Initialize debounce arrays to default state
+2. Configure limit sensor pins as INPUT_PULLUP (pins 7, 8)
+3. Configure motor driver pins as OUTPUT (pins 5, 6, 9)
+4. Configure motor current sense pin as INPUT (analog pin A0)
+5. Configure LED pins as OUTPUT (pins 4, 10, 11)
+6. Set motor to STOP (all enable/PWM pins LOW/0)
+7. Set LEDs to OFF
+8. Initialize debounce arrays to default state
 
 **Execution Time:** < 5 ms
 
@@ -435,6 +484,34 @@ bool HAL_readLimitSensor(LimitID sensor);
 
 ---
 
+#### HAL_readMotorCurrent()
+
+```cpp
+uint16_t HAL_readMotorCurrent(void);
+```
+
+**Purpose:** Read motor current sense and return current in milliamps.
+
+**Parameters:** None
+
+**Returns:** Motor current in mA
+
+**Preconditions:** HAL_init() called
+
+**Algorithm:**
+```
+1. Read analog value from PIN_MOTOR_SENSE
+2. Convert ADC counts to voltage (V = counts * 5.0 / 1023)
+3. Convert voltage to current (I = V / MOTOR_SENSE_SHUNT_OHMS)
+4. Return current in mA
+```
+
+**Execution Time:** < 1 ms
+
+**SWReq Traceability:** SWReq-014
+
+---
+
 #### HAL_setMotor()
 
 ```cpp
@@ -451,7 +528,7 @@ void HAL_setMotor(MotorDirection dir, uint8_t speed);
 
 **Preconditions:** HAL_init() called
 
-**Algorithm:** See Algorithm 3 (Motor Control) above
+**Algorithm:** See Algorithm 4 (Motor Control) above
 
 **Execution Time:** < 2 ms
 

@@ -14,6 +14,7 @@ typedef struct
     bool limit_upper;
     bool limit_lower;
     bool fault_in;       // external fault input (e.g., motor controller)
+    uint16_t motor_current_ma;
     uint32_t timestamp_ms;
 } AppInput_t;
 

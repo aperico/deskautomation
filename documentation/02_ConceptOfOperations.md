@@ -9,7 +9,7 @@ This document describes operational scenarios for the Standing Desk Automation S
 ## Traceability
 
 **Derived from:**
-- [00_SystemMissionStatement.md](00_SystemMissionStatement.md)
+- [01_MissionStatement.md](01_MissionStatement.md)
 - [01_SystemObjectives.md](01_SystemObjectives.md)
 
 ---

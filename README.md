@@ -7,12 +7,17 @@
 | [01_MissionStatement.md](documentation/01_MissionStatement.md) | Project mission and overall purpose |
 | [01_SystemObjectives.md](documentation/01_SystemObjectives.md) | High-level system objectives and goals |
 | [02_ConceptOfOperations.md](documentation/02_ConceptOfOperations.md) | Operational concept and use cases |
-| [03_SystemRequirements.md](documentation/03_SystemRequirements.md) | System-level requirements specification |
+| [02_01_HARA.md](documentation/02_01_HARA.md) | Hazard analysis and risk assessment (HARA) |
+| [03_00_SystemRequirements.md](documentation/03_00_SystemRequirements.md) | System-level requirements specification |
+| [03_01_SystemArchitecture.md](documentation/03_01_SystemArchitecture.md) | System architecture and interfaces |
+| [03_02_RequirementsTraceabilityMatrix.md](documentation/03_02_RequirementsTraceabilityMatrix.md) | Requirements traceability matrix |
 | [04_SoftwareRequirements.md](documentation/04_SoftwareRequirements.md) | Software requirements and functional specifications |
 | [05_SoftwareArchitecture.md](documentation/05_SoftwareArchitecture.md) | Software architecture design and component structure |
 | [06_DetailedDesign.md](documentation/06_DetailedDesign.md) | Detailed software design and implementation details |
 | [10_SystemTestSpecification.md](documentation/10_SystemTestSpecification.md) | System test plan and test specifications |
+| [10_01_SystemTestReport.md](documentation/10_01_SystemTestReport.md) | System test report and results |
 | [11_HardwareDocumentation.md](documentation/11_HardwareDocumentation.md) | Hardware components and wiring documentation |
+| [feature-pdrs/](documentation/feature-pdrs/) | System feature concept reviews |
 
 ## Building
 
@@ -73,6 +78,23 @@ After a successful build, you'll find:
 - `build/ComponentTests.exe` - Component test executable (12 tests)
 - `build/IntegrationTests.exe` - Integration test executable (6 tests)
 - Build artifacts in `build/` directory
+
+## Configuration
+
+Safety-related thresholds and ADC conversion constants are defined in [src/safety_config.h](src/safety_config.h).
+
+```cpp
+static const uint16_t MOTOR_SENSE_THRESHOLD_MA = 150U;
+static const uint32_t MOTOR_SENSE_FAULT_TIME_MS = 100U;
+static const uint16_t ADC_REF_MV = 5000U;
+static const uint16_t SHUNT_MILLIOHMS = 500U;
+```
+
+**Tuning guidance:**
+- Measure motor current at idle STOP and normal motion with a meter.
+- Set `MOTOR_SENSE_THRESHOLD_MA` above STOP current noise but below expected motion current.
+- Verify `MOTOR_SENSE_FAULT_TIME_MS` avoids false positives during brief transients.
+- If you change the shunt resistor, update `SHUNT_MILLIOHMS` to keep current conversion accurate.
 
 ## Testing
 

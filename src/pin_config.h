@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#ifndef A0
+#define A0 14
+#endif
+
 
 // ============================================================================
 // STATUS LED PINS (Visual Feedback Indicators)
@@ -40,6 +44,7 @@ const uint8_t PIN_BUTTON_UP = 2;
 const uint8_t PIN_BUTTON_DOWN = 3;
 const uint8_t PIN_LIMIT_UPPER = 7;
 const uint8_t PIN_LIMIT_LOWER = 8;
+const uint8_t PIN_MOTOR_SENSE = A0;
 // ============================================================================
 // MOTOR DRIVER PINS (L298N Dual H-Bridge)
 // ============================================================================
