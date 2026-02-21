@@ -2,6 +2,22 @@
 
 For build, test, and development instructions, see [src/README.md](src/README.md).
 
+## Project Overview
+
+The Automated Mechanical Desk Lift System is a motorized solution for height-adjustable desks, enabling users to easily switch between sitting and standing positions. The system features responsive controls, safety mechanisms to prevent accidents, and reliable operation over the product lifetime. Key features include:
+- Motorized height adjustment from 30 cm to 120 cm
+- Support for up to 20 kg load (monitor, keyboard, etc.)
+- UP/DOWN buttons for intuitive control
+- Immediate halt on button release or obstruction detection
+- Robust safety features including limit sensors and current sensing for jam detection
+- Smooth, predictable motion for user comfort
+- Designed for office environments to improve health and productivity
+- Modular architecture for maintainability and future feature expansion
+- Comprehensive documentation and testing to ensure quality and reliability
+- Open-source hardware and software design for community collaboration and innovation
+
+
+
 ## Documentation Index
 
 | Document | Description |
