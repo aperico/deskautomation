@@ -4,6 +4,10 @@
 
 This document defines functional system requirements derived from system objectives and operational scenarios. These requirements specify **what** the system shall do at the system level, serving as the basis for software and hardware requirements decomposition.
 
+**Document Version:** 1.2  
+**Date:** February 21, 2026  
+**Status:** Updated
+
 ---
 
 ## Traceability
@@ -85,8 +89,3 @@ All system requirements are listed below. Safety-critical requirements are ident
 | Vibration Analysis | SysReq-006 | Accelerometer on desktop surface |
 | Endurance Testing | SysReq-008 | Automated cyclic testing |
 
----
-
-**Document Version:** 1.2  
-**Date:** February 21, 2026  
-**Status:** Updated  

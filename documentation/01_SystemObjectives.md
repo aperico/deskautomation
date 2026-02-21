@@ -4,6 +4,10 @@
 
 This document defines measurable system objectives derived from the mission statement to guide design and verification activities.
 
+**Document Version:** 2.0  
+**Date:** February 21, 2026  
+**Status:** Approved
+
 ---
 
 ## Traceability
@@ -84,8 +88,3 @@ This document defines measurable system objectives derived from the mission stat
 | OBJ-004 | Reliable, effortless | Full stroke ≤ 30 sec | Performance testing, endurance |
 | OBJ-005 | Health and comfort | Smooth operation | User testing, vibration analysis |
 
----
-
-**Document Version:** 2.0  
-**Date:** February 21, 2026  
-**Status:** Approved  

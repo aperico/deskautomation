@@ -3,7 +3,6 @@
 **Project Name:** Automated Mechanical Desk Lift System  
 **Date:** February 21, 2026  
 **Version:** 1.0  
-**Prepared By:** System Engineering Team
 
 ---
 

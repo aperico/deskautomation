@@ -4,6 +4,15 @@
 
 This document defines the software architecture for the Standing Desk Automation System. The architecture follows a layered design pattern with clear separation of concerns to enable testability, maintainability, and safety.
 
+**Document Purpose and Detail Level**
+- **Purpose:** Define the software structure, responsibilities, and interfaces needed to implement the system requirements.
+- **Detail Level:** Software layers, modules, data flow, and state machine behavior; no system hardware decomposition.
+- **Use:** Input to detailed design and test development; aligns with system architecture constraints.
+
+**Document Version:** 1.0  
+**Date:** January 24, 2026  
+**Status:** Approved
+
 ---
 
 ## Traceability
@@ -20,22 +29,13 @@ This document defines the software architecture for the Standing Desk Automation
 1. **Testability**: Application logic is hardware-independent and unit-testable with mocks
 2. **Simplicity**: Suitable for resource-constrained Arduino environment
 3. **Safety**: State machine enforces safety rules and deterministic behavior
-4. **Real-time**: Button response ≤ 1 sec achieved through efficient control loop
+4. **Real-time**: Software design meets system-level timing constraints
 
 ---
 
-## System Context
+## Timing and Safety Constraints
 
-```mermaid
-graph TD
-    User[User] -->|Press/Release Buttons| System[Desk Automation System]
-    System -->|Move Desk Up/Down| Desk[Physical Desk]
-    System -->|LED Feedback| User
-    
-    style System fill:#90EE90
-    style User fill:#87CEEB
-    style Desk fill:#FFE6E6
-```
+System-level timing and safety requirements are defined in the System Architecture and Technical Safety Concept. The software design implements these constraints via the control loop, state machine, and safety logic.
 
 ---
 
@@ -70,19 +70,11 @@ graph TB
     style HW fill:#FFE6E6
 ```
 
-### Layer 1: Hardware (Physical Components)
+### Layer 1: Hardware (External)
 
-**Responsibility:** Physical interface to buttons, motor driver, limit sensors, LEDs.
+**Responsibility:** Provide physical inputs/outputs to the software via GPIO, PWM, and ADC signals.
 
-**Components:**
-- Arduino UNO microcontroller
-- L298N motor driver (dual H-bridge)
-- Push buttons (UP, DOWN)
-- Limit sensors (upper, lower)
-- Status LEDs
-- 12V DC motor
-
-**Description:** Physical hardware layer; no software components.
+**Description:** Hardware composition and wiring are defined at the system level; see System Architecture for component details.
 
 ---
 
@@ -90,63 +82,11 @@ graph TB
 
 **Responsibility:** Encapsulate all hardware-specific code; provide hardware-independent API to upper layers.
 
-**File:** `HAL.h`, `HAL.cpp`, `PinConfig.h`
+**Files:** `HAL.h`, `HAL.cpp`, `PinConfig.h`
 
-**Public API:**
+**Key Interfaces:** Hardware I/O functions for buttons, limits, motor, LEDs, and time services. Detailed signatures and data types are defined in the Detailed Design Specification.
 
-```cpp
-// Initialization
-void HAL_init(void);
-
-// Button Input (debounced)
-bool HAL_readButton(ButtonID button);  // Returns true if pressed
-uint8_t HAL_readButtons(void);          // Returns bitmask of all buttons
-
-// Limit Sensors
-bool HAL_readLimitSensor(LimitID sensor);  // Returns true if limit reached
-
-// Motor Control
-void HAL_setMotor(MotorDirection dir, uint8_t speed);  // dir: STOP/UP/DOWN, speed: 0-255
-
-// LED Output
-void HAL_setLED(LEDStatus status);  // status: OFF/IDLE/ACTIVE/ERROR
-
-// Timing
-uint32_t HAL_getTime(void);  // Returns milliseconds since startup
-void HAL_delay(uint32_t ms);  // Blocking delay (use sparingly)
-
-// Diagnostics
-void HAL_logMessage(const char* msg);  // Debug output to serial
-```
-
-**Data Types:**
-
-```cpp
-typedef enum {
-    BUTTON_UP = 0,
-    BUTTON_DOWN = 1
-} ButtonID;
-
-typedef enum {
-    LIMIT_UPPER = 0,
-    LIMIT_LOWER = 1
-} LimitID;
-
-typedef enum {
-    MOTOR_STOP = 0,
-    MOTOR_UP = 1,
-    MOTOR_DOWN = 2
-} MotorDirection;
-
-typedef enum {
-    LED_OFF = 0,
-    LED_IDLE = 1,      // Steady green
-    LED_ACTIVE = 2,    // Blinking green
-    LED_ERROR = 3      // Steady red
-} LEDStatus;
-```
-
-**Description:** HAL is the only layer with direct access to Arduino libraries (digitalWrite, analogWrite, millis). All pin numbers defined in `PinConfig.h`.
+**Description:** HAL is the only layer with direct access to Arduino libraries (digitalWrite, analogWrite, millis). Pin assignments and concrete data types are specified in the Detailed Design.
 
 ---
 
@@ -156,50 +96,9 @@ typedef enum {
 
 **File:** `DeskController.h`, `DeskController.cpp`
 
-**Public API:**
-
-```cpp
-// Initialization
-void APP_Init(void);
-
-// Main Task (called every control loop cycle)
-void APP_Task(const AppInput_t* inputs, AppOutput_t* outputs);
-
-// Diagnostics (optional)
-AppState_t APP_GetState(void);
-uint32_t APP_GetStateTransitionCount(void);
-```
-
-**Data Structures:**
-
-```cpp
-// Input Structure (from Main Loop)
-typedef struct {
-    bool button_up;          // True if UP button pressed
-    bool button_down;        // True if DOWN button pressed
-    bool limit_upper;        // True if upper limit reached
-    bool limit_lower;        // True if lower limit reached
-    uint32_t timestamp_ms;   // Current time in milliseconds
-} AppInput_t;
-
-// Output Structure (to Main Loop)
-typedef struct {
-    MotorDirection motor_cmd;    // Motor command: STOP/UP/DOWN
-    uint8_t motor_speed;         // Motor speed: 0-255 (255 = full speed)
-    LEDStatus led_status;        // LED indicator status
-    bool diagnostics_enabled;    // Enable diagnostic logging
-} AppOutput_t;
-
-// Application State
-typedef enum {
-    APP_STATE_IDLE = 0,
-    APP_STATE_MOVING_UP = 1,
-    APP_STATE_MOVING_DOWN = 2,
-    APP_STATE_FAULT = 3
-} AppState_t;
-```
-
 **Description:** DeskApp contains the state machine and business logic. It is fully testable with mock inputs/outputs.
+
+**Interfaces:** Function signatures and data structures are defined in the Detailed Design Specification.
 
 ---
 
@@ -209,37 +108,7 @@ typedef enum {
 
 **File:** `arduino.ino`
 
-**Pseudocode:**
-
-```cpp
-void setup() {
-    HAL_init();
-    APP_Init();
-}
-
-void loop() {
-    // 1. Read hardware inputs via HAL
-    AppInput_t inputs;
-    inputs.button_up = HAL_readButton(BUTTON_UP);
-    inputs.button_down = HAL_readButton(BUTTON_DOWN);
-    inputs.limit_upper = HAL_readLimitSensor(LIMIT_UPPER);
-    inputs.limit_lower = HAL_readLimitSensor(LIMIT_LOWER);
-    inputs.timestamp_ms = HAL_getTime();
-    
-    // 2. Call application task
-    AppOutput_t outputs;
-    APP_Task(&inputs, &outputs);
-    
-    // 3. Execute outputs via HAL
-    HAL_setMotor(outputs.motor_cmd, outputs.motor_speed);
-    HAL_setLED(outputs.led_status);
-    
-    // 4. Maintain loop timing (target: ≤ 50 ms)
-    // Loop naturally runs fast enough; no explicit delay needed
-}
-```
-
-**Description:** Main loop orchestrates the system; it has no business logic, only I/O coordination.
+**Description:** Main loop orchestrates I/O coordination and schedules the application task. Implementation details are specified in the Detailed Design.
 
 ---
 
@@ -326,202 +195,9 @@ stateDiagram-v2
 
 ---
 
-## Sequence Diagrams
+## Interaction Diagrams
 
-### Sequence 1: Normal Desk Raise (SysReq-002, SysReq-004)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor as Motor Hardware
-    
-    User->>Main: Press UP button
-    Note over Main: loop() iteration start
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: true
-    Main->>HAL: HAL_readLimitSensor(LIMIT_UPPER)
-    HAL-->>Main: false (not at limit)
-    Note over Main: Populate AppInput_t
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: IDLE → MOVING_UP
-    App-->>Main: motor_cmd=UP, speed=255
-    Main->>HAL: HAL_setMotor(MOTOR_UP, 255)
-    HAL->>Motor: analogWrite(PWM_PIN, 255)
-    Note over Motor: Desk begins rising<br/>Time: +100ms from button press
-    
-    Note over Main: Subsequent loop iterations
-    loop While UP held
-        Main->>HAL: HAL_readButton(BUTTON_UP)
-        HAL-->>Main: true
-        Main->>App: APP_Task(&inputs, &outputs)
-        Note over App: State: MOVING_UP (no change)
-        App-->>Main: motor_cmd=UP, speed=255
-        Main->>HAL: HAL_setMotor(MOTOR_UP, 255)
-    end
-    
-    User->>Main: Release UP button
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: false
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: MOVING_UP → IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: analogWrite(PWM_PIN, 0)
-    Note over Motor: Desk stops<br/>Time: +50ms from button release
-```
-
-### Sequence 2: Emergency Halt via Button Release (SysReq-003)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    
-    Note over App,Motor: Desk is moving up<br/>State: MOVING_UP
-    
-    User->>Main: Release UP button
-    Note over Main: Detect button release within 50ms
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: false (released)
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: State: MOVING_UP → IDLE<br/>Safety transition
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: digitalWrite(EN_PIN, LOW)
-    Note over Motor: Motor stops immediately<br/>Total time: ≤50ms
-    Note over Main: LED changes to IDLE
-```
-
-### Sequence 3: Conflicting Button Inputs (SysReq-005, SWReq-004)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    
-    Note over App: State: IDLE
-    User->>Main: Press UP and DOWN simultaneously
-    Main->>HAL: HAL_readButton(BUTTON_UP)
-    HAL-->>Main: true
-    Main->>HAL: HAL_readButton(BUTTON_DOWN)
-    HAL-->>Main: true
-    Note over Main: Both buttons pressed!
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: Detect conflicting inputs<br/>Safety rule: ignore command
-    Note over App: State remains IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    Note over Motor: Motor remains stopped<br/>System safe
-```
-
-### Sequence 4: Upper Limit Protection (SysReq-007, SWReq-005)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant Motor
-    participant Sensor as Limit Sensor
-    
-    Note over App,Motor: Desk moving up<br/>State: MOVING_UP
-    Note over Sensor: Desk approaches upper limit
-    
-    Sensor->>HAL: Limit sensor triggered
-    Main->>HAL: HAL_readLimitSensor(LIMIT_UPPER)
-    HAL-->>Main: true (limit reached)
-    Note over Main: UP button still pressed
-    Main->>App: APP_Task(&inputs, &outputs)
-    Note over App: Safety override:<br/>Limit takes priority over button
-    Note over App: State: MOVING_UP → IDLE
-    App-->>Main: motor_cmd=STOP, speed=0
-    Main->>HAL: HAL_setMotor(MOTOR_STOP, 0)
-    HAL->>Motor: digitalWrite(EN_PIN, LOW)
-    Note over Motor: Motor stops at limit<br/>No over-travel
-```
-
-### Sequence 5: Full System Initialization (SysReq-001, SWReq-007)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Power
-    participant Main as Main Loop
-    participant App as DeskApp
-    participant HAL
-    participant HW as Hardware
-    
-    Power->>Main: Power on / Reset
-    Main->>HAL: HAL_init()
-    HAL->>HW: pinMode() for all pins
-    HAL->>HW: Set safe defaults
-    Note over HW: Motor: STOP<br/>LED: OFF
-    HAL-->>Main: Init complete
-    
-    Main->>App: APP_Init()
-    Note over App: Initialize state machine<br/>State: IDLE
-    Note over App: Clear diagnostics
-    App-->>Main: Init complete
-    
-    Note over Main: Enter main loop()
-    Main->>HAL: HAL_setLED(LED_IDLE)
-    Note over Main: System ready for user input
-```
-
----
-
-## Data Flow Diagram
-
-```mermaid
-graph LR
-    subgraph Inputs
-        BTN[Buttons<br/>UP/DOWN]
-        LIM[Limit Sensors<br/>Upper/Lower]
-    end
-    
-    subgraph HAL_Layer[HAL Layer]
-        DB[Debounce<br/>20ms]
-        READ[Read GPIO]
-    end
-    
-    subgraph APP_Layer[APP Layer]
-        SM[State Machine<br/>IDLE/UP/DOWN/FAULT]
-        SAFE[Safety Logic<br/>Conflict/Limit Check]
-    end
-    
-    subgraph Outputs
-        MOT[Motor Driver<br/>PWM + Direction]
-        LED[Status LED]
-    end
-    
-    BTN --> READ
-    LIM --> READ
-    READ --> DB
-    DB -->|AppInput_t| SM
-    SM --> SAFE
-    SAFE -->|AppOutput_t| HAL_Layer
-    HAL_Layer --> MOT
-    HAL_Layer --> LED
-    
-    style HAL_Layer fill:#87CEEB
-    style APP_Layer fill:#90EE90
-    style Inputs fill:#FFE6E6
-    style Outputs fill:#FFD700
-```
+Interaction sequences and data flow diagrams are maintained in the Detailed Design Specification to keep implementation-level behavior in a single location.
 
 ---
 
@@ -559,55 +235,7 @@ graph LR
 
 ## Interface Specifications
 
-### HAL ↔ Hardware Interface
-
-**GPIO Pin Assignments** (defined in `PinConfig.h`):
-
-```cpp
-// Input Pins
-#define PIN_BUTTON_UP      2   // Digital input (pull-up)
-#define PIN_BUTTON_DOWN    3   // Digital input (pull-up)
-#define PIN_LIMIT_UPPER    4   // Digital input (pull-up)
-#define PIN_LIMIT_LOWER    5   // Digital input (pull-up)
-
-// Output Pins
-#define PIN_MOTOR_EN1      6   // Digital output (direction: UP)
-#define PIN_MOTOR_EN2      5   // Digital output (direction: DOWN)
-#define PIN_MOTOR_PWM      9   // PWM output (speed control)
-#define PIN_LED_BT_UP     11   // Digital output (UP button indicator)
-#define PIN_LED_BT_DOWN   12   // Digital output (DOWN button indicator)
-#define PIN_LED_ERROR     13   // Digital output (error indicator)
-```
-
-**Timing Constraints:**
-- Button debounce: 20 ms
-- Sensor read: <5 ms
-- Motor command: <10 ms
-
----
-
-### APP ↔ Main Loop Interface
-
-**Input Structure:** `AppInput_t` (passed by pointer, read-only)
-
-| Field | Type | Range | Description |
-|-------|------|-------|-------------|
-| button_up | bool | 0/1 | True if UP button pressed (debounced) |
-| button_down | bool | 0/1 | True if DOWN button pressed (debounced) |
-| limit_upper | bool | 0/1 | True if upper limit sensor active |
-| limit_lower | bool | 0/1 | True if lower limit sensor active |
-| timestamp_ms | uint32_t | 0 - 2^32 | Current time in milliseconds |
-
-**Output Structure:** `AppOutput_t` (passed by pointer, written by APP)
-
-| Field | Type | Range | Description |
-|-------|------|-------|-------------|
-| motor_cmd | MotorDirection | 0/1/2 | STOP=0, UP=1, DOWN=2 |
-| motor_speed | uint8_t | 0-255 | Motor PWM duty cycle (0=off, 255=full) |
-| led_status | LEDStatus | 0/1/2/3 | OFF=0, IDLE=1, ACTIVE=2, ERROR=3 |
-| diagnostics_enabled | bool | 0/1 | Enable diagnostic logging |
-
----
+Detailed interface definitions, pin assignments, and timing budgets are specified in the Detailed Design Specification.
 
 ## Architectural Decisions
 
@@ -653,30 +281,6 @@ graph LR
 - 4 Hz scheduler provides predictable timing for application task invocation
 - Arduino loop() is called frequently; explicit timing check prevents excessive application task calls
 - Allows I/O operations (HAL calls) to complete without waiting
-**Implementation:** 
-```cpp
-static uint32_t last_task_time = 0;
-const uint32_t TASK_INTERVAL_MS = 250;  // 4 Hz
-
-void loop() {
-    uint32_t now = HAL_getTime();
-    if (now - last_task_time >= TASK_INTERVAL_MS) {
-        last_task_time = now;
-        
-        // Read inputs
-        AppInput_t inputs = { ... };
-        inputs.timestamp_ms = now;
-        
-        // Run application task
-        AppOutput_t outputs = { 0 };
-        APP_Task(&inputs, &outputs);
-        
-        // Execute outputs
-        HAL_setMotor(outputs.motor_cmd, outputs.motor_speed);
-        HAL_setLED(outputs.led_status);
-    }
-}
-```
 **Traceability:** Foundational to responsive button handling (SysReq-002: ≤1 sec response) and halt timing (SysReq-003: ≤500 ms halt).
 
 ---
@@ -685,9 +289,8 @@ void loop() {
 
 1. **Memory:** Arduino UNO has 2 KB SRAM; minimize global variables
 2. **Timing:** 
-   - Main loop scheduler executes application task at 4 Hz (every 250 ms)
-   - Individual I/O operations (button read, motor write) must complete in <50 ms
-   - No blocking delays in main loop; utilize non-blocking scheduler (see AD-008)
+    - Meet system-level response and halt timing constraints
+    - No blocking delays in main loop; utilize non-blocking scheduler (see AD-008)
 3. **Safety:** All motor commands must be fail-safe (default to STOP)
 4. **Testability:** APP layer must be testable without Arduino hardware
 
@@ -701,9 +304,4 @@ void loop() {
 - Serial command interface for diagnostics
 - Watchdog timer for fault detection
 
----
-
-**Document Version:** 1.0  
-**Date:** January 24, 2026  
-**Status:** Approved  
 

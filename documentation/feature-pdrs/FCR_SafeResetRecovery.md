@@ -3,7 +3,6 @@
 **Feature Name:** Safe STOP After Reset or Brownout  
 **Date:** February 21, 2026  
 **Version:** 1.0  
-**Prepared By:** System Engineering Team  
 **Review Type:** Initial
 
 ## Feature Overview

@@ -4,6 +4,10 @@
 
 This document defines functional software requirements derived from system requirements. These requirements specify **what** the software subsystem shall do, independent of hardware implementation. All requirements are designed to be unit-testable using mock hardware abstractions.
 
+**Document Version:** 1.1  
+**Date:** January 25, 2026  
+**Status:** Updated
+
 ---
 
 ## Traceability
@@ -134,9 +138,4 @@ Software requirements are intentionally **hardware-independent**:
 - `HAL_setMotor(direction, speed)` → motor control
 - `HAL_getTime()` → system time in ms
 
----
-
-**Document Version:** 1.1  
-**Date:** January 25, 2026  
-**Status:** Updated  
 

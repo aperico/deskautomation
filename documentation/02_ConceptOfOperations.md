@@ -4,6 +4,10 @@
 
 This document describes operational scenarios for the Standing Desk Automation System, illustrating how users interact with the system during normal and emergency conditions. These scenarios guide system and software requirements development.
 
+**Document Version:** 1.0  
+**Date:** January 24, 2026  
+**Status:** Approved
+
 ---
 
 ## Traceability
@@ -224,8 +228,3 @@ This document describes operational scenarios for the Standing Desk Automation S
 - Normal operation scenarios validate responsiveness and smoothness
 - Edge cases (full stroke, conflicts) validate robustness
 
----
-
-**Document Version:** 1.0  
-**Date:** January 24, 2026  
-**Status:** Approved  

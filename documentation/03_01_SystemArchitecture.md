@@ -5,11 +5,8 @@
 **Date:** February 21, 2026  
 **Version:** 1.0  
 **Status:** Draft  
-**Prepared By:** System Engineering Team  
-**Reviewed By:** [Pending]  
 **Compliance:** ISO/IEC/IEEE 42010, IEEE 29148
 
----
 
 ## 1. Purpose and Scope
 
@@ -17,6 +14,11 @@ This document defines the system-level architecture, subsystem decomposition, an
 
 **In Scope:** subsystem roles, hardware/electronic interfaces, control and safety flows, timing constraints.  
 **Out of Scope:** software code design (see Software Architecture and Detailed Design).
+
+**Document Purpose and Detail Level**
+- **Purpose:** Provide a system-level view that enables requirement allocation to hardware and software and defines the system interfaces and constraints.
+- **Detail Level:** System/subsystem decomposition and interactions; no software module or code-level design.
+- **Use:** Baseline for safety concept and downstream software architecture.
 
 ---
 
@@ -83,10 +85,9 @@ graph TD
 - **Purpose:** Central control and safety logic.
 - **Processing Model:** Periodic control loop; non-blocking scheduling.
 - **Key Responsibilities:**
-  - Debounce inputs
-  - Resolve conflicting commands
-  - Stop motion on command release
-  - Enforce limit conditions
+  - Execute control and safety logic for motion commands
+  - Interface with sensing and actuation subsystems
+  - Enforce system-level timing and safety constraints
 
 #### Actuation
 - **Purpose:** Execute desk motion.

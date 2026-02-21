@@ -5,7 +5,6 @@
 **Date:** February 21, 2026  
 **Version:** 1.0  
 **Status:** Draft  
-**Prepared By:** System Engineering Team  
 **Functional Safety Engineer:** Armando FuSaGuy  
 **Compliance:** ISO 25119-2
 
