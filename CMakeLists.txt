@@ -30,6 +30,19 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+# Coverage configuration for Debug builds
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  if(MSVC)
+    # MSVC doesn't support --coverage, use alternatives
+    message(STATUS "Building for MSVC - coverage flags not added")
+  else()
+    # GCC/Clang coverage flags
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
+    message(STATUS "Coverage flags enabled for Debug build")
+  endif()
+endif()
+
 # Core desk automation library (production code, no .ino)
 add_library(DeskAutomation STATIC
   src/hal.cpp
