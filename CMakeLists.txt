@@ -30,6 +30,32 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+# ============================================================================
+# MOTOR DRIVER TYPE CONFIGURATION
+# ============================================================================
+# Select which motor driver implementation to use:
+# - MT_BASIC (0):   L298N Dual H-Bridge (default, cost-optimized)
+# - MT_ROBUST (1):  IBT_2 Intelligent Motor Driver (high-capacity)
+#
+# This affects which pins and control signals are used.
+# The HAL provides a unified interface regardless of driver type.
+#
+# Usage: cmake -S . -B build -DMOTOR_TYPE=MT_ROBUST
+# ============================================================================
+
+if(NOT DEFINED MOTOR_TYPE)
+    set(MOTOR_TYPE "MT_BASIC" CACHE STRING "Motor driver type: MT_BASIC or MT_ROBUST")
+    set_property(CACHE MOTOR_TYPE PROPERTY STRINGS "MT_BASIC" "MT_ROBUST")
+    message(STATUS "MOTOR_TYPE not specified; using default: MT_BASIC (L298N)")
+else()
+    message(STATUS "Motor Driver Type: ${MOTOR_TYPE}")
+    
+    # Validate MOTOR_TYPE value
+    if(NOT (MOTOR_TYPE STREQUAL "MT_BASIC" OR MOTOR_TYPE STREQUAL "MT_ROBUST"))
+        message(FATAL_ERROR "MOTOR_TYPE must be 'MT_BASIC' or 'MT_ROBUST', got: ${MOTOR_TYPE}")
+    endif()
+endif()
+
 # Coverage configuration for Debug builds
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   if(MSVC)
@@ -58,8 +84,10 @@ target_include_directories(DeskAutomation PUBLIC
 )
 
 # Define TESTENVIRONMENT for HAL mock usage in test builds
+# Also define MOTOR_TYPE compile definition so C++ source can use #if MOTOR_TYPE == MT_BASIC
 target_compile_definitions(DeskAutomation PUBLIC
     TESTENVIRONMENT
+    MOTOR_TYPE=${MOTOR_TYPE}
 )
 
 # Component tests executable - Application layer logic

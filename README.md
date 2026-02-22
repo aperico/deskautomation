@@ -5,6 +5,7 @@ For build, test, and development instructions, see [src/README.md](src/README.md
 ## Project Overview
 
 The Automated Mechanical Desk Lift System is a motorized solution for height-adjustable desks, enabling users to easily switch between sitting and standing positions. The system features responsive controls, safety mechanisms to prevent accidents, and reliable operation over the product lifetime. Key features include:
+- **Configurable motor drivers:** Support for both L298N (cost-optimized) and IBT_2 (high-capacity) motor controllers
 - Motorized height adjustment from 30 cm to 120 cm
 - Support for up to 20 kg load (monitor, keyboard, etc.)
 - UP/DOWN buttons for intuitive control
@@ -15,6 +16,17 @@ The Automated Mechanical Desk Lift System is a motorized solution for height-adj
 - Modular architecture for maintainability and future feature expansion
 - Comprehensive documentation and testing to ensure quality and reliability
 - Open-source hardware and software design for community collaboration and innovation
+
+### Motor Driver Options
+
+The system supports two motor driver configurations, selectable at compile-time:
+
+| Driver | Model | Cost | Capacity | Use Case |
+|--------|-------|------|----------|----------|
+| **MT_BASIC** | L298N Dual H-Bridge | Low (~$2-5) | Standard (~50kg) | Cost-optimized office desks |
+| **MT_ROBUST** | IBT_2 Intelligent Driver | Moderate (~$10-15) | High (~100kg+) | Heavy-duty commercial desks |
+
+Both drivers share the same software (unified HAL interface) and provide equivalent safety and functionality. See [Motor Driver Configuration Guide](documentation/07_MotorDriverConfiguration.md) for build and switching instructions.
 
 
 
@@ -35,6 +47,7 @@ The Automated Mechanical Desk Lift System is a motorized solution for height-adj
 | [04_SoftwareRequirements.md](documentation/04_SoftwareRequirements.md) | Software requirements and functional specifications |
 | [05_SoftwareArchitecture.md](documentation/05_SoftwareArchitecture.md) | Software architecture design and component structure |
 | [06_DetailedDesign.md](documentation/06_DetailedDesign.md) | Detailed software design and implementation details |
+| [07_MotorDriverConfiguration.md](documentation/07_MotorDriverConfiguration.md) | Motor driver configuration guide (L298N vs IBT_2) |
 | [10_SystemTestSpecification.md](documentation/10_SystemTestSpecification.md) | System test plan and test specifications |
 | [10_01_SystemTestReport.md](documentation/10_01_SystemTestReport.md) | System test report and results |
 | [11_HardwareDocumentation.md](documentation/11_HardwareDocumentation.md) | Hardware components and wiring documentation |
@@ -66,8 +79,9 @@ The Automated Mechanical Desk Lift System is a motorized solution for height-adj
 | `desk_app.cpp/h` | Main application logic and state machine |
 | `desk_types.h` | Type definitions and data structures |
 | `hal.cpp/h` | Hardware Abstraction Layer (HAL) interface |
+| `motor_config.h` | Motor driver type configuration (MT_BASIC or MT_ROBUST) |
 | `motor_controller.cpp/h` | Motor control logic and algorithms |
-| `pin_config.h` | Arduino pin assignments and hardware configuration |
+| `pin_config.h` | Arduino pin assignments (configurable per motor type) |
 | `src.ino` | Arduino firmware entry point |
 
 ### Tests (`tests/`)

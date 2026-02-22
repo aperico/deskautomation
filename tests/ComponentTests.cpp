@@ -220,9 +220,9 @@ TEST_F(DeskAppComponentTest, TC_SWReq002_001_DownButtonCommandsMotorDown)
 //   4. Call APP_Task() -> fault should latch
 //
 // Expected Results:
-//   - Fault output asserted
-//   - Error LED ON
-//   - State transitions to FAULT
+//   - Fault output asserted (MT_ROBUST) or no fault (MT_BASIC)
+//   - Error LED ON (MT_ROBUST only)
+//   - State transitions appropriately based on motor type
 // ============================================================================
 TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
 {
@@ -238,12 +238,22 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
     inputs.timestamp_ms = 150U;
     APP_Task(&inputs, &outputs);
 
-    EXPECT_TRUE(outputs.fault_out)
-        << "Fault must latch after current exceeds threshold for >100ms";
-    EXPECT_EQ(outputs.led_error, LED_ON)
-        << "Error LED must be ON during fault";
-    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT)
-        << "State must transition to FAULT";
+#if TESTENVIRONMENT
+    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    {
+        EXPECT_TRUE(outputs.fault_out)
+            << "MT_ROBUST: Fault must latch after current exceeds threshold for >100ms";
+        EXPECT_EQ(outputs.led_error, LED_ON)
+            << "MT_ROBUST: Error LED must be ON during fault";
+        EXPECT_EQ(APP_GetState(), APP_STATE_FAULT)
+            << "MT_ROBUST: State must transition to FAULT";
+    }
+    else  // MT_BASIC
+    {
+        EXPECT_FALSE(outputs.fault_out)
+            << "MT_BASIC: No current sensing, no fault detection";
+    }
+#endif
 }
 
 // ============================================================================
@@ -953,17 +963,30 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_002_ObstructionDetectionDuringMovingUp)
     
     APP_Task(&inputs, &outputs);
     
-    // Step 3: Verify immediate obstruction detection
-    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
-        << "SAFETY-CRITICAL: Motor must stop immediately on obstruction";
-    EXPECT_EQ(outputs.motor_speed, 0U) 
-        << "Motor speed must be zero on obstruction";
-    EXPECT_TRUE(outputs.fault_out)
-        << "SAFETY-CRITICAL: Obstruction must set fault output";
-    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
-        << "SAFETY-CRITICAL: Must enter FAULT state on jam detection";
-    EXPECT_EQ(outputs.led_error, LED_ON)
-        << "Error LED must be ON during obstruction fault";
+    // Step 3: Verify behavior based on motor type
+#if TESTENVIRONMENT
+    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    {
+        EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+            << "MT_ROBUST: Motor must stop immediately on obstruction";
+        EXPECT_EQ(outputs.motor_speed, 0U) 
+            << "MT_ROBUST: Motor speed must be zero on obstruction";
+        EXPECT_TRUE(outputs.fault_out)
+            << "MT_ROBUST: Obstruction must set fault output";
+        EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+            << "MT_ROBUST: Must enter FAULT state on jam detection";
+        EXPECT_EQ(outputs.led_error, LED_ON)
+            << "MT_ROBUST: Error LED must be ON during obstruction fault";
+    }
+    else  // MT_BASIC
+    {
+        // MT_BASIC has no current sensing - continues moving
+        EXPECT_EQ(outputs.motor_cmd, MOTOR_UP)
+            << "MT_BASIC: No current sensing, continues moving";
+        EXPECT_FALSE(outputs.fault_out)
+            << "MT_BASIC: No fault detection (no current sensing)";
+    }
+#endif
 }
 
 // ============================================================================
@@ -1020,17 +1043,28 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_003_ObstructionDetectionDuringMovingDow
     
     APP_Task(&inputs, &outputs);
     
-    // Step 3: Verify immediate obstruction detection
-    EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
-        << "SAFETY-CRITICAL: Motor must stop immediately on obstruction";
-    EXPECT_EQ(outputs.motor_speed, 0U) 
-        << "Motor speed must be zero on obstruction";
-    EXPECT_TRUE(outputs.fault_out)
-        << "SAFETY-CRITICAL: Obstruction must set fault output";
-    EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
-        << "SAFETY-CRITICAL: Must enter FAULT state on jam detection";
-    EXPECT_EQ(outputs.led_error, LED_ON)
-        << "Error LED must be ON during obstruction fault";
+    // Step 3: Verify behavior based on motor type
+#if TESTENVIRONMENT
+    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    {
+        EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
+            << "MT_ROBUST: Motor must stop immediately on obstruction";
+        EXPECT_EQ(outputs.motor_speed, 0U) 
+            << "MT_ROBUST: Motor speed must be zero on obstruction";
+        EXPECT_TRUE(outputs.fault_out)
+            << "MT_ROBUST: Obstruction must set fault output";
+        EXPECT_EQ(APP_GetState(), APP_STATE_FAULT) 
+            << "MT_ROBUST: Must enter FAULT state on jam detection";
+        EXPECT_EQ(outputs.led_error, LED_ON)
+            << "MT_ROBUST: Error LED must be ON during obstruction fault";
+    }
+    else  // MT_BASIC
+    {
+        // MT_BASIC has no current sensing - continues moving
+        EXPECT_EQ(outputs.motor_cmd, MOTOR_DOWN)
+            << "MT_BASIC: No current sensing, continues moving";
+        EXPECT_FALSE(outputs.fault_out)
+            << "MT_BASIC: No fault detection (no current sensing)";
+    }
+#endif
 }
-
-

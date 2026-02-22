@@ -7,6 +7,15 @@
 #include <Arduino.h>
 #endif
 
+// Motor type: Set at runtime via HAL_setMotorType()
+// Allows HAL to adapt pin initialization and control based on actual motor driver
+static MotorType_t g_motor_type = MT_BASIC;  // Default to MT_BASIC if not explicitly set
+
+void HAL_setMotorType(MotorType_t motor_type)
+{
+    g_motor_type = motor_type;
+}
+
 // Debounce configuration (SWReq-009: 20ms ± 5ms)
 static const uint32_t DEBOUNCE_MS = 20U;
 
@@ -24,24 +33,54 @@ static void init_inputs(void)
     pinMode(PIN_BUTTON_DOWN, INPUT_PULLUP);
     pinMode(PIN_LIMIT_UPPER, INPUT_PULLUP);
     pinMode(PIN_LIMIT_LOWER, INPUT_PULLUP);
-    pinMode(PIN_MOTOR_SENSE, INPUT);
+
+    // Initialize motor current sensing pin (MT_ROBUST only)
+    if (g_motor_type == MT_ROBUST)
+    {
+        // IBT_2 Driver - Has integrated current sensing via shunt resistor
+        pinMode(PIN_MOTOR_SENSE, INPUT);
+    }
+    // MT_BASIC: PIN_MOTOR_SENSE not used (no current sensing hardware)
 }
 
 static void init_outputs(void)
 {
-    pinMode(PIN_MOTOR_EN1, OUTPUT);
-    pinMode(PIN_MOTOR_EN2, OUTPUT);
-    pinMode(PIN_MOTOR_PWM, OUTPUT);
+    if (g_motor_type == MT_BASIC)
+    {
+        // ========================================================================
+        // L298N INITIALIZATION (3-pin control)
+        // ========================================================================
+        pinMode(PIN_MOTOR_EN1, OUTPUT);
+        pinMode(PIN_MOTOR_EN2, OUTPUT);
+        pinMode(PIN_MOTOR_PWM, OUTPUT);
+        
+        // Safe defaults: Motor stopped
+        digitalWrite(PIN_MOTOR_EN1, LOW);
+        digitalWrite(PIN_MOTOR_EN2, LOW);
+        analogWrite(PIN_MOTOR_PWM, 0);
+    }
+    else if (g_motor_type == MT_ROBUST)
+    {
+        // ========================================================================
+        // IBT_2 INITIALIZATION (2-pin PWM control)
+        // ========================================================================
+        pinMode(PIN_MOTOR_LPWM, OUTPUT);
+        pinMode(PIN_MOTOR_RPWM, OUTPUT);
+        
+        // Optional: Configure diagnostic input
+        pinMode(PIN_MOTOR_CIN, INPUT);
+        
+        // Safe defaults: Motor stopped
+        analogWrite(PIN_MOTOR_LPWM, 0);
+        analogWrite(PIN_MOTOR_RPWM, 0);
+    }
     
-    // Initialize 3 status LEDs
+    // Initialize 3 status LEDs (common to all motor types)
     pinMode(PIN_LED_BT_UP, OUTPUT);
     pinMode(PIN_LED_BT_DOWN, OUTPUT);
     pinMode(PIN_LED_ERROR, OUTPUT);
 
-    // Safe defaults: Motor stopped, all LEDs off
-    digitalWrite(PIN_MOTOR_EN1, LOW);
-    digitalWrite(PIN_MOTOR_EN2, LOW);
-    analogWrite(PIN_MOTOR_PWM, 0);
+    // Safe defaults: all LEDs off
     digitalWrite(PIN_LED_BT_UP, LOW);
     digitalWrite(PIN_LED_BT_DOWN, LOW);
     digitalWrite(PIN_LED_ERROR, LOW);
@@ -87,32 +126,80 @@ bool HAL_readLimitSensor(LimitID_t sensor)
 
 uint16_t HAL_readMotorCurrent(void)
 {
-    const uint16_t adc = static_cast<uint16_t>(analogRead(PIN_MOTOR_SENSE));
-    const uint32_t voltage_mv = (static_cast<uint32_t>(adc) * ADC_REF_MV) / 1023U;
-    const uint32_t current_ma = (voltage_mv * 1000U) / SHUNT_MILLIOHMS;
-    return static_cast<uint16_t>(current_ma);
+    if (g_motor_type == MT_ROBUST)
+    {
+        // IBT_2 Driver - Has integrated current sensing via shunt resistor
+        const uint16_t adc = static_cast<uint16_t>(analogRead(PIN_MOTOR_SENSE));
+        const uint32_t voltage_mv = (static_cast<uint32_t>(adc) * ADC_REF_MV) / 1023U;
+        const uint32_t current_ma = (voltage_mv * 1000U) / SHUNT_MILLIOHMS;
+        return static_cast<uint16_t>(current_ma);
+    }
+    else
+    {
+        // MT_BASIC Driver - No current sensing available
+        // PIN_MOTOR_SENSE not connected to current sensor, return safe default
+        return 0U;
+    }
 }
 
 void HAL_setMotor(MotorDirection_t dir, uint8_t speed)
 {
-    switch (dir)
+    if (g_motor_type == MT_BASIC)
     {
-        case MOTOR_STOP:
-        default:
-            digitalWrite(PIN_MOTOR_EN1, LOW);
-            digitalWrite(PIN_MOTOR_EN2, LOW);
-            analogWrite(PIN_MOTOR_PWM, 0);
-            break;
-        case MOTOR_UP:
-            digitalWrite(PIN_MOTOR_EN1, HIGH);
-            digitalWrite(PIN_MOTOR_EN2, LOW);
-            analogWrite(PIN_MOTOR_PWM, speed);
-            break;
-        case MOTOR_DOWN:
-            digitalWrite(PIN_MOTOR_EN1, LOW);
-            digitalWrite(PIN_MOTOR_EN2, HIGH);
-            analogWrite(PIN_MOTOR_PWM, speed);
-            break;
+        // ========================================================================
+        // L298N MOTOR CONTROL (3-pin: EN1, EN2, PWM)
+        // ========================================================================
+        // Direction via EN1/EN2 (mutually exclusive)
+        // Speed via PWM on PIN_MOTOR_PWM
+        
+        switch (dir)
+        {
+            case MOTOR_STOP:
+            default:
+                digitalWrite(PIN_MOTOR_EN1, LOW);
+                digitalWrite(PIN_MOTOR_EN2, LOW);
+                analogWrite(PIN_MOTOR_PWM, 0);
+                break;
+            case MOTOR_UP:
+                digitalWrite(PIN_MOTOR_EN1, HIGH);
+                digitalWrite(PIN_MOTOR_EN2, LOW);
+                analogWrite(PIN_MOTOR_PWM, speed);
+                break;
+            case MOTOR_DOWN:
+                digitalWrite(PIN_MOTOR_EN1, LOW);
+                digitalWrite(PIN_MOTOR_EN2, HIGH);
+                analogWrite(PIN_MOTOR_PWM, speed);
+                break;
+        }
+    }
+    else if (g_motor_type == MT_ROBUST)
+    {
+        // ========================================================================
+        // IBT_2 MOTOR CONTROL (2-pin PWM: LPWM, RPWM)
+        // ========================================================================
+        // Direction and speed controlled by PWM ratio:
+        // - UP:   LPWM=255 (full), RPWM=0   (ramp down as needed for speed)
+        // - DOWN: LPWM=0,   RPWM=255 (full, ramp down as needed for speed)
+        // - STOP: LPWM=0,   RPWM=0
+        
+        switch (dir)
+        {
+            case MOTOR_STOP:
+            default:
+                analogWrite(PIN_MOTOR_LPWM, 0);
+                analogWrite(PIN_MOTOR_RPWM, 0);
+                break;
+            case MOTOR_UP:
+                // Left PWM high (counterclockwise = up), Right PWM for speed control
+                analogWrite(PIN_MOTOR_LPWM, 255);
+                analogWrite(PIN_MOTOR_RPWM, 255 - speed);
+                break;
+            case MOTOR_DOWN:
+                // Right PWM high (clockwise = down), Left PWM for speed control
+                analogWrite(PIN_MOTOR_LPWM, 255 - speed);
+                analogWrite(PIN_MOTOR_RPWM, 255);
+                break;
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #define DESK_APP_H
 
 #include "desk_types.h"
+#include "motor_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +15,7 @@ typedef struct
     bool limit_upper;
     bool limit_lower;
     bool fault_in;       // external fault input (e.g., motor controller)
+    MotorType_t motor_type; // motor driver type for current sensing
     uint16_t motor_current_ma;
     uint32_t timestamp_ms;
 } AppInput_t;

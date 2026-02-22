@@ -3,8 +3,15 @@
 
 static AppState_t current_state = APP_STATE_IDLE;
 static uint32_t state_entry_time = 0U;
-static bool fault_latched = false;
-static uint32_t motor_fault_start_ms = UINT32_MAX;  // Use UINT32_MAX as sentinel for "timer not running"
+
+// Separate fault flags to prevent recovery race conditions
+static bool button_fault_latched = false;      // Dual button press fault
+static bool external_fault_latched = false;    // External fault input
+static bool current_fault_latched = false;     // Stuck-on or obstruction fault
+
+// Timers for current-based fault detection (UINT32_MAX = not running)
+static uint32_t stuck_on_timer_start_ms = UINT32_MAX;    // Stuck-on detection when motor should be stopped
+static uint32_t obstruction_timer_start_ms = UINT32_MAX; // Obstruction detection during motion
 
 
 static void transition_to(AppState_t next_state, uint32_t now_ms)
@@ -17,8 +24,11 @@ void APP_Init(void)
 {
     current_state = APP_STATE_IDLE;
     state_entry_time = 0U;
-    fault_latched = false;
-    motor_fault_start_ms = UINT32_MAX;  // Timer not started
+    button_fault_latched = false;
+    external_fault_latched = false;
+    current_fault_latched = false;
+    stuck_on_timer_start_ms = UINT32_MAX;
+    obstruction_timer_start_ms = UINT32_MAX;
 }
 
 /**
@@ -47,48 +57,49 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         return;
     }
 
-    // SAFETY-CRITICAL: Check fault recovery conditions first
-    // Allow recovery from fault when command buttons released AND no other faults active
-    if (fault_latched && current_state == APP_STATE_FAULT)
+    // SAFETY-CRITICAL: Fault recovery - only clear faults that can actually be cleared
+    if (current_state == APP_STATE_FAULT)
     {
         const bool both_buttons_released = !inputs->button_up && !inputs->button_down;
         const bool no_external_fault = !inputs->fault_in;
         
-        if (both_buttons_released && no_external_fault)
+        // Clear button fault only if buttons released
+        if (button_fault_latched && both_buttons_released)
         {
-            fault_latched = false;  // Clear latched fault condition
+            button_fault_latched = false;
+        }
+        
+        // Clear external fault only if external source cleared
+        if (external_fault_latched && no_external_fault)
+        {
+            external_fault_latched = false;
+        }
+        
+        // Clear current fault only if buttons released (user acknowledgment)
+        if (current_fault_latched && both_buttons_released)
+        {
+            current_fault_latched = false;
+            stuck_on_timer_start_ms = UINT32_MAX;     // Reset timers
+            obstruction_timer_start_ms = UINT32_MAX;
         }
     }
 
     // SAFETY-CRITICAL: Simultaneous button press is a LATCHED fault condition
-    // Both UP and DOWN pressed together indicates user error - requires release to clear
     if (inputs->button_up && inputs->button_down)
     {
-        fault_latched = true;
+        button_fault_latched = true;
     }
 
     // Propagate external fault to application layer (latched)
     if (inputs->fault_in)
     {
-        fault_latched = true;
+        external_fault_latched = true;
     }
 
     // SAFETY-CRITICAL: Both limit switches active is a TRANSIENT fault condition
-    // Fault active only while both limits are triggered - clears automatically
     const bool dual_limit_fault = inputs->limit_upper && inputs->limit_lower;
-    
-    // Combined fault status: latched faults OR transient faults
-    const bool fault_active = fault_latched || dual_limit_fault;
-    
-    outputs->fault_out = fault_active;
 
-    if (fault_active)
-    {
-        current_state = APP_STATE_FAULT;
-        handle_fault(outputs);
-        return;
-    }
-
+    // Execute state machine logic to determine motor commands
     switch (current_state)
     {
         case APP_STATE_IDLE:
@@ -96,7 +107,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         {
             outputs->motor_cmd = MOTOR_STOP;
             outputs->motor_speed = 0U;
-            outputs->led_bt_up = LED_OFF;      // LEDs off in IDLE - motor not moving
+            outputs->led_bt_up = LED_OFF;
             outputs->led_bt_down = LED_OFF;
             outputs->led_error = LED_OFF;
 
@@ -105,7 +116,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
                 transition_to(APP_STATE_MOVING_UP, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_UP;
                 outputs->motor_speed = 255U;
-                outputs->led_bt_up = LED_ON;    // LED ON only when moving up
+                outputs->led_bt_up = LED_ON;
                 outputs->led_bt_down = LED_OFF;
                 outputs->led_error = LED_OFF;
             }
@@ -115,7 +126,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
                 outputs->motor_cmd = MOTOR_DOWN;
                 outputs->motor_speed = 255U;
                 outputs->led_bt_up = LED_OFF;
-                outputs->led_bt_down = LED_ON;  // LED ON only when moving down
+                outputs->led_bt_down = LED_ON;
                 outputs->led_error = LED_OFF;
             }
             break;
@@ -125,7 +136,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
         {
             outputs->motor_cmd = MOTOR_UP;
             outputs->motor_speed = 255U;
-            outputs->led_bt_up = LED_ON;        // Keep UP indicator active while moving
+            outputs->led_bt_up = LED_ON;
             outputs->led_bt_down = LED_OFF;
             outputs->led_error = LED_OFF;
 
@@ -134,7 +145,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
                 transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
                 outputs->motor_cmd = MOTOR_STOP;
                 outputs->motor_speed = 0U;
-                outputs->led_bt_up = LED_OFF;   // Turn off indicator when stopping
+                outputs->led_bt_up = LED_OFF;
                 outputs->led_bt_down = LED_OFF;
                 outputs->led_error = LED_OFF;
             }
@@ -146,7 +157,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
             outputs->motor_cmd = MOTOR_DOWN;
             outputs->motor_speed = 255U;
             outputs->led_bt_up = LED_OFF;
-            outputs->led_bt_down = LED_ON;      // Keep DOWN indicator active while moving
+            outputs->led_bt_down = LED_ON;
             outputs->led_error = LED_OFF;
 
             if (!inputs->button_down || inputs->limit_lower)
@@ -155,7 +166,7 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
                 outputs->motor_cmd = MOTOR_STOP;
                 outputs->motor_speed = 0U;
                 outputs->led_bt_up = LED_OFF;
-                outputs->led_bt_down = LED_OFF;  // Turn off indicator when stopping
+                outputs->led_bt_down = LED_OFF;
                 outputs->led_error = LED_OFF;
             }
             break;
@@ -163,71 +174,108 @@ void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
 
         case APP_STATE_FAULT:
         {
-            // Check if all fault conditions have cleared (both latched and transient)
-            // Note: dual_limit_fault is already defined in outer scope
-            const bool any_fault_active = fault_latched || dual_limit_fault;
-            
-            if (!any_fault_active)
-            {
-                // All faults cleared - transition back to IDLE
-                transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
-                outputs->motor_cmd = MOTOR_STOP;
-                outputs->motor_speed = 0U;
-                outputs->led_bt_up = LED_OFF;
-                outputs->led_bt_down = LED_OFF;
-                outputs->led_error = LED_OFF;
-            }
-            else
-            {
-                // Faults still active - remain in FAULT state
-                handle_fault(outputs);
-            }
+            // Output safe fault state (will be updated below if any faults remain)
+            handle_fault(outputs);
             break;
         }
     }
 
-    // SAFETY-CRITICAL: Detect stuck-on/runaway when STOP is commanded
-    if (outputs->motor_cmd == MOTOR_STOP)
+    // ========================================================================
+    // FEATURE SEPARATION: Current sensing fault detection (MT_ROBUST only)
+    // Runs in ALL states including FAULT to monitor actual motor behavior
+    // Current sensing only available when motor_type indicates MT_ROBUST driver
+    // MT_BASIC drivers do not support current sensing - behavior determined at runtime
+    // ========================================================================
+
+    // Check if current sensing is available based on motor type
+    const bool has_current_sensing = (inputs->motor_type == MT_ROBUST);
+    
+    if (has_current_sensing)
     {
-        if (inputs->motor_current_ma > MOTOR_SENSE_THRESHOLD_MA)
+        // IBT_2 ROBUST DRIVER - Has integrated current sensing
+        if (outputs->motor_cmd == MOTOR_STOP)
         {
-            // High current while stopped - start timer or latch fault if timeout expired
-            if (motor_fault_start_ms == UINT32_MAX)  // Timer not running
+            // CASE 1: Stuck-on/runaway detection when STOP is commanded
+            // Motor should draw minimal current when stopped
+            obstruction_timer_start_ms = UINT32_MAX;  // Reset obstruction timer (not moving)
+            
+            if (inputs->motor_current_ma > MOTOR_SENSE_THRESHOLD_MA)
             {
-                motor_fault_start_ms = inputs->timestamp_ms;  // Start the timer
+                // High current while stopped - start/continue timer
+                if (stuck_on_timer_start_ms == UINT32_MAX)
+                {
+                    stuck_on_timer_start_ms = inputs->timestamp_ms;
+                }
+                else if ((inputs->timestamp_ms - stuck_on_timer_start_ms) >= MOTOR_SENSE_FAULT_TIME_MS)
+                {
+                    // Timeout expired - motor stuck on, latch fault
+                    current_fault_latched = true;
+                }
             }
-            else if ((inputs->timestamp_ms - motor_fault_start_ms) >= MOTOR_SENSE_FAULT_TIME_MS)
+            else
             {
-                // Timeout expired - current was high for long enough, latch fault
-                fault_latched = true;
+                // Current normal - reset stuck-on timer
+                stuck_on_timer_start_ms = UINT32_MAX;
             }
         }
-        else
+        else  // outputs->motor_cmd == MOTOR_UP or MOTOR_DOWN
         {
-            // Current returned to normal - reset timer
-            motor_fault_start_ms = UINT32_MAX;
+            // CASE 2: Obstruction/jam detection during motion (SysReq-013, FSR-007)
+            // Motor should not draw excessive current during normal movement
+            stuck_on_timer_start_ms = UINT32_MAX;  // Reset stuck-on timer (motor is moving)
+            
+            if (inputs->motor_current_ma > MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA)
+            {
+                // High current during motion - start/continue timer for debouncing
+                if (obstruction_timer_start_ms == UINT32_MAX)
+                {
+                    obstruction_timer_start_ms = inputs->timestamp_ms;
+                }
+                else if ((inputs->timestamp_ms - obstruction_timer_start_ms) >= MOTOR_SENSE_FAULT_TIME_MS)
+                {
+                    // Timeout expired - obstruction detected, latch fault
+                    current_fault_latched = true;
+                }
+            }
+            else
+            {
+                // Current normal - reset obstruction timer
+                obstruction_timer_start_ms = UINT32_MAX;
+            }
         }
     }
     else
     {
-        // Motor not commanded to STOP - reset timer (normal operation or motion)
-        motor_fault_start_ms = UINT32_MAX;
+        // MT_BASIC DRIVER - No current sensing available
+        // Reset timers unconditionally to prevent any stale fault state
+        // Never set current_fault_latched (hardware limitation)
+        stuck_on_timer_start_ms = UINT32_MAX;
+        obstruction_timer_start_ms = UINT32_MAX;
     }
 
-    // SAFETY-CRITICAL: Detect obstruction/jam during motion (Algorithm 3, Case 2 - SysReq-013, FSR-007)
-    // If motor is commanded to move but current exceeds obstruction threshold, flag fault
-    if (outputs->motor_cmd != MOTOR_STOP)
-    {
-        if (inputs->motor_current_ma > MOTOR_SENSE_OBSTRUCTION_THRESHOLD_MA)
-        {
-            fault_latched = true;
-        }
-    }
+    // ========================================================================
+    // SAFETY-CRITICAL: Consolidated fault handling
+    // Combine all fault sources and transition to FAULT state if any active
+    // ========================================================================
+    const bool any_latched_fault = button_fault_latched || external_fault_latched || current_fault_latched;
+    const bool any_fault_active = any_latched_fault || dual_limit_fault;
+    
+    outputs->fault_out = any_fault_active;
 
-    if (fault_latched)
+    if (any_fault_active)
     {
         current_state = APP_STATE_FAULT;
         handle_fault(outputs);
+    }
+    else if (current_state == APP_STATE_FAULT)
+    {
+        // All faults cleared - transition back to IDLE
+        transition_to(APP_STATE_IDLE, inputs->timestamp_ms);
+        outputs->motor_cmd = MOTOR_STOP;
+        outputs->motor_speed = 0U;
+        outputs->led_bt_up = LED_OFF;
+        outputs->led_bt_down = LED_OFF;
+        outputs->led_error = LED_OFF;
     }
 }
 

@@ -27,6 +27,15 @@ cmake --build build --target clean
 cmake -S . -B build
 ```
 
+**With Motor Driver Selection:**
+```bash
+# Build for L298N (default)
+cmake -S . -B build -DMOTOR_TYPE=MT_BASIC
+
+# Build for IBT_2 (high-capacity)
+cmake -S . -B build -DMOTOR_TYPE=MT_ROBUST
+```
+
 #### Build
 ```bash
 cmake --build build --config Release
@@ -57,10 +66,72 @@ The tasks automatically chain dependencies, so running "CMake: Build" will clean
 ### Build Artifacts
 
 After a successful build, you'll find:
-- `build/UnitTests.exe` - Unit test executable (5 tests)
-- `build/ComponentTests.exe` - Component test executable (12 tests)
-- `build/IntegrationTests.exe` - Integration test executable (6 tests)
+- `build/UnitTests.exe` - Unit test executable (6 tests)
+- `build/ComponentTests.exe` - Component test executable (17 tests)
+- `build/IntegrationTests.exe` - Integration test executable (14 tests)
 - Build artifacts in `build/` directory
+
+## Motor Driver Configuration
+
+The system supports two motor driver configurations selected at compile-time:
+
+| Driver | Model | Capacity | Use Case |
+|--------|-------|----------|----------|
+| **MT_BASIC** (default) | L298N Dual H-Bridge | Standard (~50kg) | Cost-optimized office desks |
+| **MT_ROBUST** | IBT_2 Intelligent Driver | High (~100kg+) | Heavy-duty commercial desks |
+
+Both drivers share the same software architecture and provide identical safety functionality through a unified Hardware Abstraction Layer (HAL).
+
+### Selecting a Motor Driver
+
+**Option 1: CMake Configuration (Recommended)**
+
+When configuring the build, specify the motor type:
+
+```bash
+# Build for L298N (default) - cost-optimized
+cmake -S . -B build -DMOTOR_TYPE=MT_BASIC
+cmake --build build --config Release
+
+# Build for IBT_2 - high-capacity
+cmake -S . -B build -DMOTOR_TYPE=MT_ROBUST
+cmake --build build --config Release
+```
+
+**Option 2: Edit motor_config.h**
+
+Edit [motor_config.h](motor_config.h) line 47:
+
+```cpp
+// For L298N:
+#define MOTOR_TYPE MT_BASIC      // Default
+
+// For IBT_2:
+#define MOTOR_TYPE MT_ROBUST
+```
+
+Then clean and rebuild:
+```bash
+Remove-Item -Path build -Recurse -Force
+cmake -S . -B build
+cmake --build build --config Release
+```
+
+### Verifying Motor Driver Type
+
+After building, the active motor driver type is embedded in the binary. Pin assignments are determined by the selection:
+
+**L298N (MT_BASIC):**
+- PIN_MOTOR_EN1 = 6  (Enable UP direction)
+- PIN_MOTOR_EN2 = 7  (Enable DOWN direction)
+- PIN_MOTOR_PWM = 9  (Speed control)
+
+**IBT_2 (MT_ROBUST):**
+- PIN_MOTOR_LPWM = 9   (Left PWM - UP direction)
+- PIN_MOTOR_RPWM = 10  (Right PWM - DOWN direction)
+- PIN_MOTOR_CIN = A1   (Diagnostic input, optional)
+
+See [Motor Driver Configuration Guide](../documentation/07_MotorDriverConfiguration.md) for detailed hardware setup instructions.
 
 ## Configuration
 
@@ -100,9 +171,10 @@ Or use the VS Code task: **CMake: Build**
 
 After building, the test executables are located at:
 ```
-build/UnitTests.exe        - Unit tests (5 tests)
-build/ComponentTests.exe   - Component tests (12 tests)
-build/IntegrationTests.exe - Integration tests (6 tests)
+build/UnitTests.exe        - Unit tests (6 tests)
+build/ComponentTests.exe   - Component tests (17 tests)
+build/IntegrationTests.exe - Integration tests (14 tests)
+Total: 37 tests
 ```
 
 ### Running Tests
