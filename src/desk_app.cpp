@@ -1,5 +1,6 @@
 #include "desk_app.h"
 #include "safety_config.h"
+#include <stddef.h>  // For NULL definition
 
 static AppState_t current_state = APP_STATE_IDLE;
 static uint32_t state_entry_time = 0U;
