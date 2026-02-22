@@ -118,7 +118,7 @@ This index assigns a unique, portable identifier to every rule in this document.
 | RULE-018 | R5.4 | Assertions in release builds | 🤖 | [rule_RULE-018_R5_4_ndebug.py](../toolchain/rules/rule_RULE-018_R5_4_ndebug.py) |
 | RULE-019 | R5.5 | No side effects in assertions | 🤖 | [rule_RULE-019_R5_5_assert_side_effects.py](../toolchain/rules/rule_RULE-019_R5_5_assert_side_effects.py) |
 | RULE-020 | R6.1 | Local scope preferred | 🔍 | Code review - verify variables declared in innermost scope possible |
-| RULE-021 | R6.2 | Minimize global variables | 📝 | 📊 Pattern: `grep -r "^[^/]*\b\w\+\s\+\*\?[a-z_]\+\s*[=;]" src/*.c` (heuristic) |
+| RULE-021 | R6.2 | Minimize global variables | 🤖 | [rule_RULE-021_R6_2_minimize_globals.py](../toolchain/rules/rule_RULE-021_R6_2_minimize_globals.py) |
 | RULE-022 | R6.3 | Static variables documented | 🤖 | [rule_RULE-022_R6_3_static_documented.py](../toolchain/rules/rule_RULE-022_R6_3_static_documented.py) |
 | RULE-023 | R6.4 | Initialize at declaration | 🤖 | [rule_RULE-023_R6_4_init_at_decl.py](../toolchain/rules/rule_RULE-023_R6_4_init_at_decl.py) |
 | RULE-024 | R7.1 | Check all return values | 🤖 | [rule_RULE-024_R7_1_unused_return.py](../toolchain/rules/rule_RULE-024_R7_1_unused_return.py) |
@@ -127,24 +127,24 @@ This index assigns a unique, portable identifier to every rule in this document.
 | RULE-027 | R7.4 | Error propagation | 🔍 | Code review - verify error codes propagate up call chain correctly |
 | RULE-028 | R8.1 | Include guards only | 🤖 | [rule_RULE-028_R8_1_include_guards.py](../toolchain/rules/rule_RULE-028_R8_1_include_guards.py) |
 | RULE-029 | R8.2 | No function-like macros | 🤖 | [rule_RULE-029_R8_2_no_function_macros.py](../toolchain/rules/rule_RULE-029_R8_2_no_function_macros.py) |
-| RULE-030 | R8.3 | Named constants only | 📝 | `grep -r "define.*[0-9]" src/ ` (find numeric defines, manual review) |
+| RULE-030 | R8.3 | Named constants only | 🤖 | [rule_RULE-030_R8_3_named_constants.py](../toolchain/rules/rule_RULE-030_R8_3_named_constants.py) |
 | RULE-031 | R8.4 | Conditional compilation for platform only | 🤖 | [rule_RULE-031_R8_4_conditional_compile.py](../toolchain/rules/rule_RULE-031_R8_4_conditional_compile.py) |
 | RULE-032 | R9.1 | Prefer non-NULL interfaces | 🔍 | Code review - document assumptions about NULL parameters |
 | RULE-033 | R9.2 | No pointer arithmetic | 🤖 | [rule_RULE-033_R9_2_no_pointer_arith.py](../toolchain/rules/rule_RULE-033_R9_2_no_pointer_arith.py) |
 | RULE-034 | R9.3 | No function pointers | 🤖 | [rule_RULE-034_R9_3_no_function_pointers.py](../toolchain/rules/rule_RULE-034_R9_3_no_function_pointers.py) |
-| RULE-035 | R9.4 | No multi-level pointers | 📝 | `grep -r "\*\*" src/ ` (find `**` patterns, verify exceptions like argv[]) |
+| RULE-035 | R9.4 | No multi-level pointers | 🤖 | [rule_RULE-035_R9_4_no_multilevel_pointers.py](../toolchain/rules/rule_RULE-035_R9_4_no_multilevel_pointers.py) |
 | RULE-036 | R9.5 | No opaque ownership transfers | 🔍 | Design review - verify pointer ownership clearly documented in contracts |
 | RULE-037 | R10.1 | Required compiler flags | 🤖 | [rule_RULE-037_R10_1_compiler_flags.py](../toolchain/rules/rule_RULE-037_R10_1_compiler_flags.py) |
 | RULE-038 | R10.2 | Zero warnings policy | 🤖 | [rule_RULE-038_R10_2_zero_warnings.py](../toolchain/rules/rule_RULE-038_R10_2_zero_warnings.py) |
 | RULE-039 | R10.3 | Run static analysis | 🤖 | [rule_RULE-039_R10_3_cppcheck_run.py](../toolchain/rules/rule_RULE-039_R10_3_cppcheck_run.py) |
 | RULE-040 | R10.4 | Zero static analysis errors | 🤖 | [rule_RULE-040_R10_4_cppcheck_clean.py](../toolchain/rules/rule_RULE-040_R10_4_cppcheck_clean.py) |
-| RULE-041 | R10.5 | MISRA C:2012 compliance (optional) | 📊 | Commercial MISRA tools (PC-lint Plus, Cppcheck Premium) |
+| RULE-041 | R10.5 | MISRA C:2012 compliance (optional) | 🤖 | [rule_RULE-041_R10_5_misra_compliance.py](../toolchain/rules/rule_RULE-041_R10_5_misra_compliance.py) |
 | RULE-042 | R11.1 | Function naming | 🤖 | [rule_RULE-042_R11_1_function_naming.py](../toolchain/rules/rule_RULE-042_R11_1_function_naming.py) |
 | RULE-043 | R11.2 | Variable naming | 🤖 | [rule_RULE-043_R11_2_variable_naming.py](../toolchain/rules/rule_RULE-043_R11_2_variable_naming.py) |
 | RULE-044 | R11.3 | Type naming | 🤖 | [rule_RULE-044_R11_3_type_naming.py](../toolchain/rules/rule_RULE-044_R11_3_type_naming.py) |
 | RULE-045 | R12.1 | Safety markers | 🤖 | [rule_RULE-045_R12_1_safety_markers.py](../toolchain/rules/rule_RULE-045_R12_1_safety_markers.py) |
 | RULE-046 | R12.2 | Fail-safe defaults | 🔍 | Code review - verify safe state initialization in all structures |
-| RULE-047 | R13.1 | Unit test coverage | 📊 | gcov/lcov coverage analysis - target 100% statement coverage |
+| RULE-047 | R13.1 | Unit test coverage | 🤖 | [rule_RULE-047_R13_1_test_coverage.py](../toolchain/rules/rule_RULE-047_R13_1_test_coverage.py) |
 | RULE-048 | R13.2 | Test naming | 🤖 | [rule_RULE-048_R13_2_test_naming.py](../toolchain/rules/rule_RULE-048_R13_2_test_naming.py) |
 | RULE-049 | R14.1 | Function length limit (60 lines) | 🤖 | [rule_RULE-049_R14_1_function_length.py](../toolchain/rules/rule_RULE-049_R14_1_function_length.py) |
 | RULE-050 | R14.2 | Function parameters limit (4 max) | 🤖 | [rule_RULE-050_R14_2_parameter_count.py](../toolchain/rules/rule_RULE-050_R14_2_parameter_count.py) |
@@ -163,7 +163,7 @@ This index assigns a unique, portable identifier to every rule in this document.
 | RULE-063 | MISRA-11.3 | No object pointer casting | 🤖 | [rule_RULE-063_MISRA_11_3_pointer_cast.py](../toolchain/rules/rule_RULE-063_MISRA_11_3_pointer_cast.py) |
 | RULE-064 | MISRA-12.1 | Explicit operator precedence | 🤖 | [rule_RULE-064_MISRA_12_1_operator_precedence.py](../toolchain/rules/rule_RULE-064_MISRA_12_1_operator_precedence.py) |
 | RULE-065 | MISRA-13.2 | Single side effect per expression | 🤖 | [rule_RULE-065_MISRA_13_2_side_effects.py](../toolchain/rules/rule_RULE-065_MISRA_13_2_side_effects.py) |
-| RULE-066 | MISRA-14.3 | No invariant control expressions | 📊 | cppcheck detects `if(1)`, `while(true)` patterns |
+| RULE-066 | MISRA-14.3 | No invariant control expressions | 🤖 | [rule_RULE-066_MISRA_14_3_invariant_control.py](../toolchain/rules/rule_RULE-066_MISRA_14_3_invariant_control.py) |
 | RULE-067 | MISRA-16.3 | Switch clauses end with break | 🤖 | [rule_RULE-067_MISRA_16_3_switch_break.py](../toolchain/rules/rule_RULE-067_MISRA_16_3_switch_break.py) |
 | RULE-068 | MISRA-17.7 | Use return values | 🤖 | [rule_RULE-068_MISRA_17_7_return_used.py](../toolchain/rules/rule_RULE-068_MISRA_17_7_return_used.py) |
 | RULE-069 | MISRA-18.1 | Pointer arithmetic within bounds | 🤖 | [rule_RULE-069_MISRA_18_1_pointer_bounds.py](../toolchain/rules/rule_RULE-069_MISRA_18_1_pointer_bounds.py) |
