@@ -387,3 +387,94 @@ def check_assert_density(root_path, min_asserts_per_function):
         if density < min_asserts_per_function:
             findings.append((path, 1, f"Assertion density {density:.2f} < {min_asserts_per_function}"))
     return findings
+
+
+def check_parameter_count(root_path, max_params):
+    """Check function parameter counts (R14.2)"""
+    findings = []
+    param_pattern = re.compile(r"^\s*(?:inline\s+)?(?:static\s+)?(?:const\s+)?(?:\w+(?:::\w+)*(?:\s*\*+)?(?:\s*&)?)\s+(\w+)\s*\((.*?)\s*\)")
+    
+    for path in iter_source_files(root_path):
+        text = read_text(path)
+        for match in param_pattern.finditer(text):
+            params_str = match.group(2).strip()
+            if params_str and params_str != "void":
+                # Count parameters (separated by commas)
+                param_count = len([p.strip() for p in params_str.split(",") if p.strip()])
+                if param_count > max_params:
+                    line_num = text[:match.start()].count('\n') + 1
+                    func_name = match.group(1)
+                    findings.append((path, line_num, f"Function '{func_name}' has {param_count} parameters > {max_params}"))
+    return findings
+
+
+def check_nesting_depth(root_path, max_depth):
+    """Check maximum nesting depth (R14.3)"""
+    findings = []
+    
+    for path in iter_source_files(root_path):
+        text = read_text(path)
+        for start, end, body in extract_functions(text):
+            lines = body.splitlines()
+            max_nesting = 0
+            
+            for line in lines:
+                # Count braces, parentheses for control flow
+                current_depth = 0
+                in_string = False
+                in_char = False
+                for i, char in enumerate(line):
+                    if char == '"' and (i == 0 or line[i-1] != '\\'):
+                        in_string = not in_string
+                    elif char == "'" and (i == 0 or line[i-1] != '\\'):
+                        in_char = not in_char
+                    elif not in_string and not in_char:
+                        if char in '{(':
+                            current_depth += 1
+                        elif char in '}):':
+                            current_depth = max(0, current_depth - 1)
+                
+                # Only count control flow braces
+                if re.search(r'^\s*(if|for|while|switch|case|do|else)\b', line):
+                    # Count leading whitespace as proxy for depth
+                    indent = len(line) - len(line.lstrip())
+                    nesting_level = indent // 4 + 1  # Assume 4-space indent
+                    max_nesting = max(max_nesting, nesting_level)
+            
+            if max_nesting > max_depth:
+                findings.append((path, start, f"Maximum nesting depth {max_nesting} > {max_depth}"))
+    
+    return findings
+
+
+def check_file_length(root_path, max_lines):
+    """Check source file line count (R14.4)"""
+    findings = []
+    
+    for path in iter_source_files(root_path):
+        text = read_text(path)
+        lines = text.splitlines()
+        code_lines = [l for l in lines if l.strip() and not l.strip().startswith("//")]
+        
+        if len(code_lines) > max_lines:
+            findings.append((path, 1, f"File length {len(code_lines)} lines > {max_lines}"))
+    
+    return findings
+
+
+def check_assertion_density_per_function(root_path, min_asserts):
+    """Check minimum assertions per function (R14.5)"""
+    findings = []
+    
+    for path in iter_source_files(root_path):
+        text = read_text(path)
+        for start, end, body in extract_functions(text):
+            # Count assertions in this function
+            assert_count = body.count("assert(")
+            
+            # Skip if assertions < minimum
+            if assert_count < min_asserts:
+                line_count = body.count('\n') + 1
+                findings.append((path, start, f"Function has {assert_count} assertions < {min_asserts} minimum (length: {line_count} lines)"))
+    
+    return findings

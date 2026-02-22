@@ -34,36 +34,39 @@ class AnalysisPipeline:
                 "RULE-029", "RULE-033", "RULE-034", "RULE-037", "RULE-038",
                 "RULE-039", "RULE-040",
             ],
+            "metrics": [
+                "RULE-049", "RULE-050", "RULE-051", "RULE-052", "RULE-053",
+            ],
             "misra": [
-                "RULE-049", "RULE-050", "RULE-051", "RULE-054", "RULE-055",
-                "RULE-056", "RULE-058", "RULE-060", "RULE-062", "RULE-063",
-                "RULE-064", "RULE-065", "RULE-066",
+                "RULE-054", "RULE-055", "RULE-056", "RULE-060", "RULE-063",
+                "RULE-065", "RULE-067",
             ],
             "iso": [
-                "RULE-067", "RULE-068",
+                "RULE-068",
             ],
             "compiler": [
-                "RULE-023", "RULE-024", "RULE-037", "RULE-055",
-                "RULE-056", "RULE-062",
+                "RULE-023", "RULE-024", "RULE-037", "RULE-056",
+                "RULE-060", "RULE-067",
             ],
             "cppcheck": [
-                "RULE-039", "RULE-040", "RULE-049", "RULE-050", "RULE-051",
-                "RULE-054", "RULE-055", "RULE-056", "RULE-058", "RULE-060",
-                "RULE-062", "RULE-064",
+                "RULE-039", "RULE-040", "RULE-054", "RULE-055", "RULE-056",
+                "RULE-060", "RULE-063", "RULE-065",
             ],
             "heuristic": [
                 "RULE-011", "RULE-012", "RULE-014", "RULE-023", "RULE-024",
-                "RULE-026", "RULE-033", "RULE-034", "RULE-063", "RULE-064",
+                "RULE-026", "RULE-033", "RULE-034", "RULE-049", "RULE-050",
+                "RULE-051", "RULE-052", "RULE-053", "RULE-063", "RULE-065",
                 "RULE-067", "RULE-068",
             ],
         }
         self.group_descriptions = {
             "nasa": "**NASA Power of Ten Rules** - Critical safety rules from NASA/JPL for resource-constrained embedded systems. Ensures predictability, reliability, and safety-critical code quality through strict control flow, bounded loops, and defensive assertions.",
+            "metrics": "**Code Quality Metrics** - Quantifiable code statistics to enforce good design practices: function length limits, parameter counts, nesting depth, file sizes, and assertion density. Drives measurable improvements in maintainability and testability.",
             "misra": "**MISRA C:2012** - Motor Industry Software Reliability Association guidelines for safety-critical software. Prevents undefined behavior, improves code safety, portability, and maintainability across automotive and safety-critical domains.",
             "iso": "**ISO 25119** - Functional safety requirements for machinery control systems. Ensures requirement traceability, defensive programming practices, and compliance with automated safety standards.",
             "compiler": "**Compiler Checks** - Compiler flags and build configuration validation. Enforces aggressive warning levels and error detection at compile time to catch potential issues early.",
             "cppcheck": "**Static Analysis (Cppcheck)** - Comprehensive static analysis to detect potential runtime errors, memory issues, undefined behavior, and code quality problems without execution.",
-            "heuristic": "**Custom Heuristics** - Project-specific pattern detection including stack usage analysis, NULL pointer checks, pointer arithmetic validation, and function complexity metrics.",
+            "heuristic": "**Custom Heuristics** - Project-specific pattern detection including stack usage analysis, NULL pointer checks, pointer arithmetic validation, code quality metrics, and function complexity analysis.",
         }
     
     def static_analysis(self) -> bool:

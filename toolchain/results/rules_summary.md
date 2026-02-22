@@ -1,13 +1,13 @@
 # Rule Summary
 
-**Generated:** 2026-02-22 16:10:44
-**Source Path:** `src`
+**Generated:** 2026-02-22 16:42:34
+**Source Path:** `C:\Users\n68a0w5\Downloads\workspace\deskautomation\src`
 
 **Guidelines:** [Coding Guidelines and Automated Checks](../coding_guides_and_checks.md)
 
 ## Status Summary
 
-✅ **Total PASS:** 32
+✅ **Total PASS:** 30
 ❌ **Total FAIL:** 0
 
 
@@ -35,25 +35,31 @@
 | RULE-039 | ✅ PASS | - | [RULE-039.log](./RULE-039.log) |
 | RULE-040 | ✅ PASS | - | [RULE-040.log](./RULE-040.log) |
 
-## Group: Misra
+## Group: Metrics
 
-**MISRA C:2012** - Motor Industry Software Reliability Association guidelines for safety-critical software. Prevents undefined behavior, improves code safety, portability, and maintainability across automotive and safety-critical domains.
+**Code Quality Metrics** - Quantifiable code statistics to enforce good design practices: function length limits, parameter counts, nesting depth, file sizes, and assertion density. Drives measurable improvements in maintainability and testability.
 
 | Rule ID | Status | Instances | Log |
 |---------|--------|-----------|-----|
 | RULE-049 | ✅ PASS | - | [RULE-049.log](./RULE-049.log) |
 | RULE-050 | ✅ PASS | - | [RULE-050.log](./RULE-050.log) |
 | RULE-051 | ✅ PASS | - | [RULE-051.log](./RULE-051.log) |
+| RULE-052 | ✅ PASS | - | [RULE-052.log](./RULE-052.log) |
+| RULE-053 | ✅ PASS | - | [RULE-053.log](./RULE-053.log) |
+
+## Group: Misra
+
+**MISRA C:2012** - Motor Industry Software Reliability Association guidelines for safety-critical software. Prevents undefined behavior, improves code safety, portability, and maintainability across automotive and safety-critical domains.
+
+| Rule ID | Status | Instances | Log |
+|---------|--------|-----------|-----|
 | RULE-054 | ✅ PASS | - | [RULE-054.log](./RULE-054.log) |
 | RULE-055 | ✅ PASS | - | [RULE-055.log](./RULE-055.log) |
 | RULE-056 | ✅ PASS | - | [RULE-056.log](./RULE-056.log) |
-| RULE-058 | ✅ PASS | - | [RULE-058.log](./RULE-058.log) |
 | RULE-060 | ✅ PASS | - | [RULE-060.log](./RULE-060.log) |
-| RULE-062 | ✅ PASS | - | [RULE-062.log](./RULE-062.log) |
 | RULE-063 | ✅ PASS | - | [RULE-063.log](./RULE-063.log) |
-| RULE-064 | ✅ PASS | - | [RULE-064.log](./RULE-064.log) |
 | RULE-065 | ✅ PASS | - | [RULE-065.log](./RULE-065.log) |
-| RULE-066 | ✅ PASS | - | [RULE-066.log](./RULE-066.log) |
+| RULE-067 | ✅ PASS | - | [RULE-067.log](./RULE-067.log) |
 
 ## Group: Iso
 
@@ -61,7 +67,6 @@
 
 | Rule ID | Status | Instances | Log |
 |---------|--------|-----------|-----|
-| RULE-067 | ✅ PASS | - | [RULE-067.log](./RULE-067.log) |
 | RULE-068 | ✅ PASS | - | [RULE-068.log](./RULE-068.log) |
 
 ## Group: Compiler
@@ -73,9 +78,9 @@
 | RULE-023 | ✅ PASS | - | [RULE-023.log](./RULE-023.log) |
 | RULE-024 | ✅ PASS | - | [RULE-024.log](./RULE-024.log) |
 | RULE-037 | ✅ PASS | - | [RULE-037.log](./RULE-037.log) |
-| RULE-055 | ✅ PASS | - | [RULE-055.log](./RULE-055.log) |
 | RULE-056 | ✅ PASS | - | [RULE-056.log](./RULE-056.log) |
-| RULE-062 | ✅ PASS | - | [RULE-062.log](./RULE-062.log) |
+| RULE-060 | ✅ PASS | - | [RULE-060.log](./RULE-060.log) |
+| RULE-067 | ✅ PASS | - | [RULE-067.log](./RULE-067.log) |
 
 ## Group: Cppcheck
 
@@ -85,20 +90,16 @@
 |---------|--------|-----------|-----|
 | RULE-039 | ✅ PASS | - | [RULE-039.log](./RULE-039.log) |
 | RULE-040 | ✅ PASS | - | [RULE-040.log](./RULE-040.log) |
-| RULE-049 | ✅ PASS | - | [RULE-049.log](./RULE-049.log) |
-| RULE-050 | ✅ PASS | - | [RULE-050.log](./RULE-050.log) |
-| RULE-051 | ✅ PASS | - | [RULE-051.log](./RULE-051.log) |
 | RULE-054 | ✅ PASS | - | [RULE-054.log](./RULE-054.log) |
 | RULE-055 | ✅ PASS | - | [RULE-055.log](./RULE-055.log) |
 | RULE-056 | ✅ PASS | - | [RULE-056.log](./RULE-056.log) |
-| RULE-058 | ✅ PASS | - | [RULE-058.log](./RULE-058.log) |
 | RULE-060 | ✅ PASS | - | [RULE-060.log](./RULE-060.log) |
-| RULE-062 | ✅ PASS | - | [RULE-062.log](./RULE-062.log) |
-| RULE-064 | ✅ PASS | - | [RULE-064.log](./RULE-064.log) |
+| RULE-063 | ✅ PASS | - | [RULE-063.log](./RULE-063.log) |
+| RULE-065 | ✅ PASS | - | [RULE-065.log](./RULE-065.log) |
 
 ## Group: Heuristic
 
-**Custom Heuristics** - Project-specific pattern detection including stack usage analysis, NULL pointer checks, pointer arithmetic validation, and function complexity metrics.
+**Custom Heuristics** - Project-specific pattern detection including stack usage analysis, NULL pointer checks, pointer arithmetic validation, code quality metrics, and function complexity analysis.
 
 | Rule ID | Status | Instances | Log |
 |---------|--------|-----------|-----|
@@ -110,7 +111,12 @@
 | RULE-026 | ✅ PASS | - | [RULE-026.log](./RULE-026.log) |
 | RULE-033 | ✅ PASS | - | [RULE-033.log](./RULE-033.log) |
 | RULE-034 | ✅ PASS | - | [RULE-034.log](./RULE-034.log) |
+| RULE-049 | ✅ PASS | - | [RULE-049.log](./RULE-049.log) |
+| RULE-050 | ✅ PASS | - | [RULE-050.log](./RULE-050.log) |
+| RULE-051 | ✅ PASS | - | [RULE-051.log](./RULE-051.log) |
+| RULE-052 | ✅ PASS | - | [RULE-052.log](./RULE-052.log) |
+| RULE-053 | ✅ PASS | - | [RULE-053.log](./RULE-053.log) |
 | RULE-063 | ✅ PASS | - | [RULE-063.log](./RULE-063.log) |
-| RULE-064 | ✅ PASS | - | [RULE-064.log](./RULE-064.log) |
+| RULE-065 | ✅ PASS | - | [RULE-065.log](./RULE-065.log) |
 | RULE-067 | ✅ PASS | - | [RULE-067.log](./RULE-067.log) |
 | RULE-068 | ✅ PASS | - | [RULE-068.log](./RULE-068.log) |

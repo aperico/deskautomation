@@ -1,9 +1,9 @@
 RULE_ID: RULE-034
 SCRIPT: rule_RULE-034_R9_3_no_function_pointers.py
-SRC_PATH: src
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:40
+TIMESTAMP: 2026-02-22 16:42:30
 ================================================================================
 RULE: RULE-034 (R9.3)
 DESC: No function pointers

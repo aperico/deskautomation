@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# AI-GENERATED
 from common import parse_args, check_cmake_flags, check_cppcheck_pattern, report
 
 RULE_ID = "RULE-062"

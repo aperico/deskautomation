@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# AI-GENERATED
 from common import parse_args, check_cppcheck_errors, report
 
 RULE_ID = "RULE-049"

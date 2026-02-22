@@ -1,9 +1,9 @@
 RULE_ID: RULE-002
 SCRIPT: rule_RULE-002_R1_2_no_setjmp_longjmp.py
-SRC_PATH: src
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:37
+TIMESTAMP: 2026-02-22 16:42:27
 ================================================================================
 RULE: RULE-002 (R1.2)
 DESC: No setjmp/longjmp

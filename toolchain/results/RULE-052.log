@@ -1,10 +1,10 @@
-RULE_ID: RULE-039
-SCRIPT: rule_RULE-039_R10_3_cppcheck_run.py
+RULE_ID: RULE-052
+SCRIPT: rule_RULE-052_R14_4_file_length.py
 SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:30
+TIMESTAMP: 2026-02-22 16:42:32
 ================================================================================
-RULE: RULE-039 (R10.3)
-DESC: Cppcheck report exists
+RULE: RULE-052 (R14.4)
+DESC: File length <= 800 lines (Code Quality Metrics)
 STATUS: PASS

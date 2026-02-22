@@ -1,9 +1,9 @@
 RULE_ID: RULE-055
 SCRIPT: rule_RULE-055_MISRA_10_1_types.py
-SRC_PATH: src
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:42
+TIMESTAMP: 2026-02-22 16:42:33
 ================================================================================
 RULE: RULE-055 (MISRA-10.1)
 DESC: Appropriate essential types (cppcheck/misra)

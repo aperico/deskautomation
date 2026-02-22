@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# AI-GENERATED
 from common import parse_args, find_regex_in_files, report
 
 RULE_ID = "RULE-002"

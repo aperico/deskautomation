@@ -1,10 +1,10 @@
 RULE_ID: RULE-050
-SCRIPT: rule_RULE-050_MISRA_2_1_unreachable.py
-SRC_PATH: src
+SCRIPT: rule_RULE-050_R14_2_parameter_count.py
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:41
+TIMESTAMP: 2026-02-22 16:42:31
 ================================================================================
-RULE: RULE-050 (MISRA-2.1)
-DESC: No unreachable code (cppcheck)
+RULE: RULE-050 (R14.2)
+DESC: Function parameters <= 4 (Code Quality Metrics)
 STATUS: PASS

@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-from common import parse_args, check_cppcheck_pattern, report
+#!/usr/bin/env python3# AI-GENERATEDfrom common import parse_args, check_cppcheck_pattern, report
 
 RULE_ID = "RULE-050"
 ORIGINAL_ID = "MISRA-2.1"

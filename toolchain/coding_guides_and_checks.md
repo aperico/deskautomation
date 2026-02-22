@@ -49,6 +49,8 @@
     - [Naming Conventions](#naming-conventions)
     - [Safety-Critical Code](#safety-critical-code)
     - [Testing Requirements](#testing-requirements)
+  - [Rule 14: Code Quality Metrics](#rule-14-code-quality-metrics)
+    - [Requirements](#requirements-10)
   - [MISRA C:2012 Compliance Rules](#misra-c2012-compliance-rules)
     - [Overview](#overview)
     - [Core MISRA C Rules for Safety-Critical Systems](#core-misra-c-rules-for-safety-critical-systems)
@@ -123,34 +125,39 @@ This index assigns a unique, portable identifier to every rule in this document.
 | RULE-046 | R12.2 | Fail-safe defaults | No |
 | RULE-047 | R13.1 | Unit test coverage | No |
 | RULE-048 | R13.2 | Test naming | No |
-| RULE-049 | MISRA-1.3 | No undefined/critical unspecified behavior | rule_RULE-049_MISRA_1_3_cppcheck.py |
-| RULE-050 | MISRA-2.1 | No unreachable code | rule_RULE-050_MISRA_2_1_unreachable.py |
-| RULE-051 | MISRA-2.2 | No dead code | rule_RULE-051_MISRA_2_2_dead_code.py |
-| RULE-052 | MISRA-8.1 | Types explicitly specified | No |
-| RULE-053 | MISRA-8.3 | Consistent function declarations | No |
-| RULE-054 | MISRA-9.1 | Initialize automatic variables | rule_RULE-054_MISRA_9_1_uninit.py |
-| RULE-055 | MISRA-10.1 | Appropriate essential types | rule_RULE-055_MISRA_10_1_types.py |
-| RULE-056 | MISRA-10.3 | No narrowing assignments | rule_RULE-056_MISRA_10_3_narrowing.py |
-| RULE-057 | MISRA-10.4 | Same essential type category | No |
-| RULE-058 | MISRA-11.3 | No object pointer casting | rule_RULE-058_MISRA_11_3_pointer_cast.py |
-| RULE-059 | MISRA-12.1 | Explicit operator precedence | No |
-| RULE-060 | MISRA-13.2 | Single side effect per expression | rule_RULE-060_MISRA_13_2_side_effects.py |
-| RULE-061 | MISRA-14.3 | No invariant control expressions | No |
-| RULE-062 | MISRA-16.3 | Switch clauses end with break | rule_RULE-062_MISRA_16_3_switch_break.py |
-| RULE-063 | MISRA-17.7 | Use return values | rule_RULE-063_MISRA_17_7_return_used.py |
-| RULE-064 | MISRA-18.1 | Pointer arithmetic within bounds | rule_RULE-064_MISRA_18_1_pointer_bounds.py |
-| RULE-065 | MISRA-21.3 | No dynamic allocation | rule_RULE-065_MISRA_21_3_no_malloc.py |
-| RULE-066 | MISRA-21.6 | No standard I/O functions | rule_RULE-066_MISRA_21_6_no_stdio.py |
-| RULE-067 | ISO-001 | Requirement traceability | rule_RULE-067_ISO_001_traceability.py |
-| RULE-068 | ISO-002 | Defensive programming | rule_RULE-068_ISO_002_assert_density.py |
-| RULE-069 | ISO-003 | Software diversity | No |
-| RULE-070 | ISO-004 | Fail-safe behavior | No |
-| RULE-071 | ISO-005 | Watchdog monitoring | No |
-| RULE-072 | ISO-006 | Memory integrity checks | No |
-| RULE-073 | ISO-007 | Plausibility checks | No |
-| RULE-074 | ISO-008 | Range checking | No |
-| RULE-075 | ISO-009 | State transition validity | No |
-| RULE-076 | ISO-010 | Overflow prevention | No |
+| RULE-049 | R14.1 | Function length limit (60 lines) | rule_RULE-049_R14_1_function_length.py |
+| RULE-050 | R14.2 | Function parameters limit (4 max) | rule_RULE-050_R14_2_parameter_count.py |
+| RULE-051 | R14.3 | Nesting depth limit (4 levels) | rule_RULE-051_R14_3_nesting_depth.py |
+| RULE-052 | R14.4 | File length limit (800 lines) | rule_RULE-052_R14_4_file_length.py |
+| RULE-053 | R14.5 | Assertion density minimum (2 per function) | rule_RULE-053_R14_5_assertion_density.py |
+| RULE-054 | MISRA-1.3 | No undefined/critical unspecified behavior | rule_RULE-054_MISRA_1_3_cppcheck.py |
+| RULE-055 | MISRA-2.1 | No unreachable code | rule_RULE-055_MISRA_2_1_unreachable.py |
+| RULE-056 | MISRA-2.2 | No dead code | rule_RULE-056_MISRA_2_2_dead_code.py |
+| RULE-057 | MISRA-8.1 | Types explicitly specified | No |
+| RULE-058 | MISRA-8.3 | Consistent function declarations | No |
+| RULE-059 | MISRA-9.1 | Initialize automatic variables | rule_RULE-059_MISRA_9_1_uninit.py |
+| RULE-060 | MISRA-10.1 | Appropriate essential types | rule_RULE-060_MISRA_10_1_types.py |
+| RULE-061 | MISRA-10.3 | No narrowing assignments | rule_RULE-061_MISRA_10_3_narrowing.py |
+| RULE-062 | MISRA-10.4 | Same essential type category | No |
+| RULE-063 | MISRA-11.3 | No object pointer casting | rule_RULE-063_MISRA_11_3_pointer_cast.py |
+| RULE-064 | MISRA-12.1 | Explicit operator precedence | No |
+| RULE-065 | MISRA-13.2 | Single side effect per expression | rule_RULE-065_MISRA_13_2_side_effects.py |
+| RULE-066 | MISRA-14.3 | No invariant control expressions | No |
+| RULE-067 | MISRA-16.3 | Switch clauses end with break | rule_RULE-067_MISRA_16_3_switch_break.py |
+| RULE-068 | MISRA-17.7 | Use return values | rule_RULE-068_MISRA_17_7_return_used.py |
+| RULE-069 | MISRA-18.1 | Pointer arithmetic within bounds | rule_RULE-069_MISRA_18_1_pointer_bounds.py |
+| RULE-070 | MISRA-21.3 | No dynamic allocation | rule_RULE-070_MISRA_21_3_no_malloc.py |
+| RULE-071 | MISRA-21.6 | No standard I/O functions | rule_RULE-071_MISRA_21_6_no_stdio.py |
+| RULE-072 | ISO-001 | Requirement traceability | rule_RULE-072_ISO_001_traceability.py |
+| RULE-073 | ISO-002 | Defensive programming | rule_RULE-073_ISO_002_assert_density.py |
+| RULE-074 | ISO-003 | Software diversity | No |
+| RULE-075 | ISO-004 | Fail-safe behavior | No |
+| RULE-076 | ISO-005 | Watchdog monitoring | No |
+| RULE-077 | ISO-006 | Memory integrity checks | No |
+| RULE-078 | ISO-007 | Plausibility checks | No |
+| RULE-079 | ISO-008 | Range checking | No |
+| RULE-080 | ISO-009 | State transition validity | No |
+| RULE-081 | ISO-010 | Overflow prevention | No |
 
 ## Introduction
 
@@ -892,19 +899,39 @@ void handle_event(int value) {
 - **Severity:** MANDATORY
 
 ```c
-// ❌ PROHIBITED
+// ❌ PROHIBITED - Multi-level pointer
 void modify_pointer(int** p) {
-    *p = NULL;  // Multi-level pointer usage
+    *p = NULL;  // Multi-level complexity and confusion
 }
 
-// ✅ CORRECT - Use a wrapper struct
+int value = 10;
+int* ptr = &value;
+modify_pointer(&ptr);  // Hard to reason about
+
+// ✅ CORRECT - Use return value
+int* create_pointer(int* initial_value) {
+    if (initial_value == NULL) {
+        return NULL;
+    }
+    return initial_value;
+}
+
+int value = 10;
+int* ptr = create_pointer(&value);  // Clear and simple
+
+// ✅ ALSO CORRECT - Use struct wrapper
 typedef struct {
     int* ptr;
-} PointerWrapper;
+} PointerHandle;
 
-void modify_pointer(PointerWrapper* wrapper, int* value) {
-    wrapper->ptr = value;
+PointerHandle create_handle(int* initial_value) {
+    PointerHandle handle;
+    handle.ptr = initial_value;
+    return handle;
 }
+
+int value = 10;
+PointerHandle handle = create_handle(&value);  // Encapsulated
 ```
 
 **R9.5 - No Opaque Ownership Transfers**
@@ -946,6 +973,62 @@ add_compile_options(
 - **Check Method:** CI/CD pipeline
 - **Severity:** CRITICAL
 
+```c
+// ❌ PROHIBITED - Unused variable warning
+void process_value(int value) {
+    int result = calculate(value);  // Assigned but never used
+}
+
+// ✅ CORRECT - Use the value or explicitly discard
+void process_value(int value) {
+    int result = calculate(value);
+    apply_result(result);
+}
+
+// ✅ ALSO CORRECT - Explicitly discard if unused by design
+void process_value(int value) {
+    (void)value;  // Intentionally unused
+}
+
+// ❌ PROHIBITED - Uninitialized variable
+void calculate() {
+    int total;
+    total = total + 5;  // Used before initialization
+}
+
+// ✅ CORRECT - Initialize all variables
+void calculate() {
+    int total = 0;
+    total = total + 5;  // Safe
+}
+
+// ❌ PROHIBITED - Implicit narrowing conversion
+void set_speed(float percent) {
+    uint8_t pwm = percent * 255;  // Implicit double to int conversion
+}
+
+// ✅ CORRECT - Explicit cast documents intent
+void set_speed(float percent) {
+    uint8_t pwm = (uint8_t)(percent * 255);  // Explicit cast
+}
+
+// ❌ PROHIBITED - Shadowing
+void outer() {
+    int counter = 0;
+    {
+        int counter = 1;  // Shadows outer counter - confusing!
+    }
+}
+
+// ✅ CORRECT - Use different names
+void outer() {
+    int total_counter = 0;
+    {
+        int loop_counter = 1;  // Clear and distinct name
+    }
+}
+```
+
 **R10.3 - Static Analysis**
 - **Rule:** Run cppcheck on every commit
 - **Rationale:** Catches errors beyond compiler capabilities
@@ -960,6 +1043,66 @@ cppcheck --enable=all \
          --suppress=missingIncludeSystem \
          --std=c11 \
          src/
+```
+
+```c
+// ❌ CAUGHT BY STATIC ANALYSIS - Memory leak
+void load_config(void) {
+    char* buffer = (char*)malloc(1024);
+    if (buffer == NULL) {
+        return;  // Leak! Allocated memory never freed
+    }
+    // ...
+    process_buffer(buffer);
+    // Returns without free()
+}
+
+// ✅ CORRECT - Proper resource cleanup
+void load_config(void) {
+    char* buffer = (char*)malloc(1024);
+    if (buffer == NULL) {
+        return ERR_NO_MEMORY;
+    }
+    
+    ErrorCode result = process_buffer(buffer);
+    free(buffer);  // Always cleanup
+    return result;
+}
+
+// ❌ CAUGHT BY STATIC ANALYSIS - Dead code
+int validate_range(int value) {
+    if (value < 0) {
+        return ERR_NEGATIVE;
+    }
+    return ERR_OK;
+    printf("Validation complete\n");  // Unreachable code
+}
+
+// ✅ CORRECT - No code after return
+int validate_range(int value) {
+    if (value < 0) {
+        return ERR_NEGATIVE;
+    }
+    // All reachable code before final return
+    return ERR_OK;
+}
+
+// ❌ CAUGHT BY STATIC ANALYSIS - Unchecked function result
+void read_sensor(void) {
+    int value;
+    HAL_read_adc(&value);  // Non-zero return means error!
+    process_value(value);  // Processing with possibly invalid value
+}
+
+// ✅ CORRECT - Always check return values
+void read_sensor(void) {
+    int value;
+    ErrorCode err = HAL_read_adc(&value);
+    if (err != ERR_OK) {
+        return err;  // Handle error
+    }
+    process_value(value);  // Safe to process
+}
 ```
 
 **R10.4 - Static Analysis Results**
@@ -998,15 +1141,56 @@ void example() {
 - **Rationale:** Consistent with project codebase
 - **Severity:** MANDATORY
 
+```c
+// ❌ PROHIBITED - Inconsistent naming
+void setMotorPwm() { }           // No module prefix
+void motor_controller_update() { } // Module not PascalCase
+void MC_SetPWM() { }             // Function not camelCase
+
+// ✅ CORRECT - Consistent naming
+void MotorController_set_pwm() { }
+void HAL_read_sensor() { }
+void DeskApp_update_state() { }
+```
+
 **R11.2 - Variable Names**
 - **Rule:** `snake_case` for local variables, `SCREAMING_SNAKE_CASE` for constants
 - **Example:** `button_state`, `MAX_PWM_VALUE`
 - **Severity:** MANDATORY
 
+```c
+// ❌ PROHIBITED - Inconsistent naming
+int ButtonState;          // PascalCase for local variable
+const int max_pwm = 255; // lowercase for constant
+
+// ✅ CORRECT - Consistent naming
+int button_state;           // snake_case for variables
+const int MAX_PWM = 255;    // SCREAMING_SNAKE_CASE for constants
+static int motor_pwm = 0;   // snake_case for static
+```
+
 **R11.3 - Type Names**
 - **Rule:** `CamelCase` for classes/structs, `snake_case_t` for typedefs
 - **Example:** `MotorController`, `error_code_t`
 - **Severity:** MANDATORY
+
+```c
+// ❌ PROHIBITED - Inconsistent type naming
+struct motor_controller { };  // Should be CamelCase
+typedef int ErrorCode;        // Should have _t suffix
+
+// ✅ CORRECT - Consistent type naming
+struct MotorController {
+    uint8_t pwm;
+    MotorDirection direction;
+};
+
+typedef enum {
+    ERR_OK = 0,
+    ERR_INVALID_PARAM,
+    ERR_TIMEOUT
+} error_code_t;
+```
 
 ### Safety-Critical Code
 
@@ -1050,6 +1234,340 @@ static MotorState MotorState_init(void) {
 - **Rule:** Tests named `TC_<Module>_<Requirement>_<Description>`
 - **Example:** `TC_SWReq001_001_MotorStopsOnButtonRelease`
 - **Severity:** MANDATORY
+
+---
+
+## Rule 14: Code Quality Metrics
+
+**Principle:** Enforce measurable code quality thresholds to prevent complexity creep and technical debt.
+
+### Requirements
+
+**R14.1 - Limited Function Length**
+- **Rule:** Functions must not exceed 60 lines of executable code (excluding comments/whitespace)
+- **Threshold:** ⚠️ Yellow flag 40+ lines, 🔴 Red flag 60+ lines
+- **Rationale:** 
+  - Functions >60 lines often violate single responsibility principle
+  - NASA Power of Ten baseline; proven for safety-critical systems
+  - Fits on single screen → easier code review and testing
+  - Correlates with cyclomatic complexity ~10
+- **Check Method:** Automated line count analysis per function
+- **Severity:** MANDATORY
+- **Automation:** `rule_RULE-069_R14_1_function_length.py`
+
+```c
+// ❌ PROHIBITED - Function too long (>60 lines)
+void process_sensor_data_complex(uint16_t* data, uint16_t size) {
+    // Line 1: Validation
+    if (data == NULL) return;
+    if (size == 0) return;
+    
+    // Lines 5-25: Complex processing block
+    for (int i = 0; i < size; i++) {
+        if (data[i] > 1000) {
+            // ... 15+ lines of nested logic ...
+        }
+    }
+    
+    // Lines 26-60: More processing
+    for (int i = 0; i < size; i++) {
+        if (data[i] < 100) {
+            // ... 15+ lines more ...
+        }
+    }
+    // Total: 60+ lines! This should be split.
+}
+
+// ✅ CORRECT - Refactored into smaller functions
+void process_sensor_data(uint16_t* data, uint16_t size) {
+    if (!validate_sensor_data(data, size)) {
+        return;
+    }
+    
+    filter_high_values(data, size);
+    filter_low_values(data, size);
+}
+
+void filter_high_values(uint16_t* data, uint16_t size) {
+    // Single responsibility: handle values > 1000
+    for (int i = 0; i < size; i++) {
+        if (data[i] > 1000) {
+            data[i] = 1000;
+        }
+    }
+}
+
+void filter_low_values(uint16_t* data, uint16_t size) {
+    // Single responsibility: handle values < 100
+    for (int i = 0; i < size; i++) {
+        if (data[i] < 100) {
+            data[i] = 0;
+        }
+    }
+}
+```
+
+**Benefits:**
+- ✅ Forces single responsibility principle adherence
+- ✅ Easier unit testing (fewer code paths to cover)
+- ✅ Reduces bug density (proven linear correlation)
+- ✅ Improves code review effectiveness
+- ✅ Better maintainability (context stays in memory)
+
+**Industry Precedent:** NASA JPL Power of Ten (Rule 4), Google C++ Style Guide, Linux kernel standards
+
+---
+
+**R14.2 - Limited Function Parameters**
+- **Rule:** Functions must not exceed 4 parameters
+- **Threshold:** ⚠️ Yellow at 4 params, 🔴 Red at 5+ params
+- **Rationale:**
+  - 4 parameters is cognitive limit for most developers
+  - More parameters = harder to test and understand
+  - Forces better data encapsulation
+  - Improves API clarity
+- **Check Method:** Parameter count analysis per function
+- **Severity:** MANDATORY
+- **Automation:** `rule_RULE-070_R14_2_parameter_count.py`
+
+```c
+// ❌ PROHIBITED - Too many parameters
+void set_motor_config(uint8_t pwm, enum Direction dir, bool enabled, 
+                      uint16_t timeout, int acceleration, float curve) {
+    // 6 parameters! Unclear caller intent, hard to test
+    // ...
+}
+
+// ✅ CORRECT - Encapsulate in struct
+typedef struct {
+    uint8_t pwm;
+    enum Direction direction;
+    bool enabled;
+    uint16_t timeout;
+    int acceleration;
+    float curve;
+} MotorConfig;
+
+void set_motor_config(const MotorConfig* config) {
+    // Single parameter! Clear intent, testable
+    assert(config != NULL);
+    // ...
+}
+
+// Caller side is CLEARER now:
+MotorConfig cfg = {
+    .pwm = 128,
+    .direction = DIR_UP,
+    .enabled = true,
+    .timeout = 1000,
+    .acceleration = 50,
+    .curve = 1.5f
+};
+set_motor_config(&cfg);  // Much clearer than 6 args!
+```
+
+**Benefits:**
+- ✅ Simpler unit test setup (fewer mock parameters)
+- ✅ Clearer function contracts
+- ✅ Easier to extend without breaking API
+- ✅ Forces better data structure design
+
+---
+
+**R14.3 - Limited Nesting Depth**
+- **Rule:** Block nesting must not exceed 4 levels
+- **Threshold:** ⚠️ Yellow at 4 levels, 🔴 Red at 5+ levels
+- **Rationale:**
+  - Each nesting level increases cognitive load exponentially
+  - Most developers reliably understand only 3-4 levels
+  - Correlates strongly with error-prone code
+  - Improves readability dramatically
+- **Check Method:** Nesting depth analysis per function
+- **Severity:** MANDATORY
+- **Automation:** `rule_RULE-071_R14_3_nesting_depth.py`
+
+```c
+// ❌ PROHIBITED - 5+ levels of nesting
+void process_depth_problem(uint8_t* data, uint16_t size) {
+    if (data != NULL) {                       // Level 1
+        for (int i = 0; i < size; i++) {    // Level 2
+            if (data[i] > THRESHOLD) {      // Level 3
+                while (data[i] < MAX) {     // Level 4
+                    if (check_valid()) {    // Level 5 ❌ TOO DEEP!
+                        process();
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ✅ CORRECT - Refactored for clarity (4 levels max)
+void process_depth_correct(uint8_t* data, uint16_t size) {
+    if (data == NULL) {
+        return;  // Guard clause - early exit
+    }
+    
+    for (int i = 0; i < size; i++) {        // Level 1
+        if (data[i] > THRESHOLD) {          // Level 2
+            process_high_value(&data[i]);   // Extracted function
+        }
+    }
+}
+
+// Helper function keeps nesting low
+static void process_high_value(uint8_t* value) {
+    if (value == NULL) return;
+    
+    while (*value < MAX) {                  // Level 1 (in this context)
+        if (check_valid()) {                // Level 2
+            process();
+        }
+    }
+}
+
+// Better yet: use guard clauses to eliminate nesting
+static void process_high_value_simple(uint8_t* value) {
+    if (value == NULL) return;
+    if (*value >= MAX) return;
+    if (!check_valid()) return;
+    
+    process();  // No nesting! Crystal clear.
+}
+```
+
+**Benefits:**
+- ✅ Dramatically improves code readability
+- ✅ Reduces cognitive load on reviewers
+- ✅ Decreases error probability
+- ✅ Encourages extraction of helper functions
+
+---
+
+**R14.4 - Limited File Length**
+- **Rule:** Source files must not exceed 800 lines of code
+- **Threshold:** ⚠️ Yellow at 600 lines, 🔴 Red at 800+ lines
+- **Rationale:**
+  - Large files often contain multiple responsibilities
+  - 800+ lines indicates need for module splitting
+  - Mirrors function length rule but at module level
+  - Improves compilation time and coupling
+- **Check Method:** Line count analysis per file
+- **Severity:** MANDATORY
+- **Automation:** `rule_RULE-072_R14_4_file_length.py`
+
+```c
+// ❌ PROHIBITED - Motor controller file too long (800+ lines)
+// file: motor_controller.cpp
+// Contains: initialization, control, monitoring, diagnostics, testing
+// Total: 950 lines - should be split
+
+// ✅ CORRECT - Split by responsibility
+// File 1: motor_controller.cpp (280 lines)
+// - Core motor control API only
+// - set_speed(), get_status(), stop()
+
+// File 2: motor_diagnostics.cpp (320 lines)
+// - Fault detection and reporting
+// - check_current_limit(), get_temperature()
+
+// File 3: motor_calibration.cpp (240 lines)
+// - Startup calibration and safety checks
+// - calibrate_min(), calibrate_max(), verify_safety()
+```
+
+**Benefits:**
+- ✅ Enforces single responsibility at module level
+- ✅ Easier to navigate large codebases
+- ✅ Reduces recompilation impact
+- ✅ Increases code reusability and modularity
+- ✅ Improves test isolation
+
+---
+
+**R14.5 - Minimum Assertion Density**
+- **Rule:** Functions must contain minimum 2 assertions on average
+- **Threshold:** 🟡 Warning if < 2 assertions per function (average across module)
+- **Rationale:**
+  - Defensive programming requires invariant checking
+  - Critical for ISO 25119 safety requirements
+  - Catches assumptions that may be invalid
+  - Low assertion density = low defensive rigor
+- **Check Method:** Assertion count per function analysis
+- **Severity:** MANDATORY (for safety functions), RECOMMENDED (general)
+- **Automation:** `rule_RULE-073_R14_5_assertion_density.py`
+
+```c
+// ❌ PROHIBITED - Insufficient assertions (only 1 per 10-line function)
+uint8_t calculate_duty_cycle_unsafe(uint16_t target_rpm) {
+    assert(target_rpm <= MAX_RPM);  // Only 1 assertion!
+    
+    // What if MAX_RPM is 0? What if multiplication overflows?
+    // What if final value >255?
+    uint16_t scaled = (target_rpm * 255) / MAX_RPM;
+    return (uint8_t)scaled;  // Could truncate or overflow!
+}
+
+// ✅ CORRECT - Comprehensive assertions document assumptions
+uint8_t calculate_duty_cycle_safe(uint16_t target_rpm) {
+    // Input validation
+    assert(target_rpm <= MAX_RPM);
+    assert(MAX_RPM > 0);
+    
+    // Calculation with sanity checks
+    uint16_t scaled = (target_rpm * 255) / MAX_RPM;
+    
+    // Output validation
+    assert(scaled <= 255);
+    
+    return (uint8_t)scaled;
+}
+
+// Safety-critical function example
+bool is_desk_position_safe(int16_t position_mm) {
+    // Preconditions
+    assert(position_mm >= MIN_DESK_HEIGHT_MM);
+    assert(position_mm <= MAX_DESK_HEIGHT_MM);
+    assert(motor_initialized);
+    
+    // Check limit switches (independent verification)
+    bool limit_safe = !limit_switch_pressed();
+    assert(!limit_safe || limit_switch_pressed());  // Assumption check
+    
+    // Plausibility check
+    bool position_plausible = (position_mm < MAX_LIMIT_POSITION);
+    assert(position_plausible);
+    
+    // Postcondition
+    assert(limit_safe == !limit_switch_pressed());
+    
+    return limit_safe && position_plausible;
+}
+```
+
+**Assertion Best Practices:**
+- ✅ Place assertions at function entry (preconditions)
+- ✅ Place assertions before critical operations (invariants)
+- ✅ Place assertions at function exit (postconditions)
+- ✅ Use `assert()` for invariants that MUST be true
+- ✅ Use runtime `if` checks for potentially invalid user input
+- ✅ Document why each assertion matters
+
+**Benefits:**
+- ✅ Documents implicit assumptions explicitly
+- ✅ Catches edge cases during testing and in field
+- ✅ Improves debugging (assertion identifies exact failure)
+- ✅ Critical for ISO 25119 compliance
+- ✅ Aligns with NASA R5 (defensive assertions)
+
+**Formula:** Ideal Density = 2-3 assertions per function
+
+Example:
+```
+10-line function → 2+ assertions ideal
+30-line function → 5-7 assertions ideal  
+60-line function → 8-10 assertions (but should be shorter!)
+```
 
 ---
 
@@ -1232,13 +1750,25 @@ if (raw <= 255) {
 - **Automation:** `cppcheck --enable=all`
 
 ```c
-// ❌ PROHIBITED - Mixed essential categories
+// ❌ PROHIBITED - Mixed essential categories (implicit promotion)
 uint16_t u16 = 100U;
 int16_t s16 = -2;
-int32_t sum = u16 + s16;
+int32_t sum = u16 + s16;  // Implicit conversion - ambiguous!
 
-// ✅ CORRECT - Convert to common category explicitly
-int32_t sum = (int32_t)u16 + (int32_t)s16;
+// ❌ ALSO PROHIBITED - Comparison with mixed types
+uint8_t byte = 255U;
+int16_t value = -1;
+if (byte > value) { }  // Are we comparing unsigned or signed?
+
+// ✅ CORRECT - Explicit conversion to common type
+uint16_t u16 = 100U;
+int16_t s16 = -2;
+int32_t sum = (int32_t)u16 + (int32_t)s16;  // Explicit and clear
+
+// ✅ CORRECT - Ensure both operands are same category
+int8_t signed_val = -1;
+int8_t unsigned_val = 255;
+int16_t result = (int16_t)signed_val + (int16_t)unsigned_val;  // Cast both to same type
 ```
 
 **MISRA C Rule 11.3: No Casting Between Different Object Pointer Types (Required)**
@@ -1506,22 +2036,39 @@ bool is_safe_to_move_up() {
 - **Automation:** Verify range checks on all sensor inputs
 
 ```c
-// ✅ CORRECT - Plausibility checking
-int16_t read_motor_current_checked() {
+// ❌ PROHIBITED - No plausibility checks
+int16_t read_motor_current_unchecked() {
+    return HAL_read_motor_current_ma();  // Assumes sensor is good
+}
+
+// ✅ CORRECT - Comprehensive plausibility checking
+int16_t read_motor_current_checked(void) {
     int16_t current_ma = HAL_read_motor_current_ma();
     
-    // Plausibility: motor current cannot exceed physical maximum
-    const int16_t MAX_PLAUSIBLE_CURRENT = 5000;  // 5A max
+    // Plausibility: motor current has physical limits
+    const int16_t MAX_PLAUSIBLE_CURRENT = 5000;  // 5A max for this motor
     if (current_ma > MAX_PLAUSIBLE_CURRENT) {
-        // Sensor failure or short circuit
+        // Sensor failure or short circuit detected!
+        trigger_safety_shutdown();
         return -1;  // Invalid reading
     }
     
-    // Plausibility: negative current not possible in our circuit
+    // Plausibility: negative current impossible (unidirectional)
     if (current_ma < 0) {
+        // Sensor inversion or failure
+        trigger_safety_shutdown();
         return -1;  // Invalid reading
     }
     
+    // Plausibility: rate of change check
+    static int16_t last_current = 0;
+    const int16_t MAX_RATE_CHANGE = 500;  // Max 500mA/sample change
+    if (abs(current_ma - last_current) > MAX_RATE_CHANGE) {
+        // Unrealistic jump indicates sensor glitch
+        return last_current;  // Return last known good value
+    }
+    
+    last_current = current_ma;
     return current_ma;
 }
 ```
@@ -1534,6 +2081,42 @@ int16_t read_motor_current_checked() {
 - **Severity:** MANDATORY
 - **Automation:** Check for validation code in all public functions
 
+```c
+// ❌ PROHIBITED - No range checking
+void set_motor_speed(uint8_t speed_percent) {
+    motor_pwm = (speed_percent * 255) / 100;  // Assumes 0-100
+}
+
+// ✅ CORRECT - Comprehensive range checking
+ErrorCode set_motor_speed(uint8_t speed_percent) {
+    // Validate input range
+    if (speed_percent > 100) {
+        return ERR_OUT_OF_RANGE;
+    }
+    
+    // Ensure motor is in safe state
+    if (!motor_initialized) {
+        return ERR_NOT_INITIALIZED;
+    }
+    
+    // Convert and apply
+    motor_pwm = (speed_percent * 255) / 100;
+    return ERR_OK;
+}
+
+// ✅ ALSO GOOD - With assertions for documentation
+void set_position_absolute(int16_t position_mm) {
+    // Precondition: position must be within valid range for desk
+    assert(position_mm >= MIN_DESK_HEIGHT_MM && 
+           position_mm <= MAX_DESK_HEIGHT_MM);
+    
+    assert(motor_initialized);  // Safety check
+    
+    // Perform movement
+    move_to_position(position_mm);
+}
+```
+
 **ISO-009: State Machine Validity**
 - **Rule:** State machines must validate state transitions
 - **Check:** State transition matrix verification
@@ -1541,6 +2124,24 @@ int16_t read_motor_current_checked() {
 - **Automation:** Verify default case in state switches
 
 ```c
+// ❌ PROHIBITED - No transition validation
+void change_state_unsafe(State new_state) {
+    current_state = new_state;  // Any transition allowed!
+}
+
+// ❌ ALSO PROHIBITED - Default case missing
+void handle_state(State s) {
+    switch(s) {
+        case STATE_IDLE:
+            idle_handler();
+            break;
+        case STATE_MOVING:
+            moving_handler();
+            break;
+        // What about unexpected states? No default!
+    }
+}
+
 // ✅ CORRECT - Valid state transition checking
 ErrorCode change_state(State new_state) {
     // Validate new state is in valid range
@@ -1548,13 +2149,33 @@ ErrorCode change_state(State new_state) {
         return ERR_INVALID_STATE;
     }
     
-    // Check transition is legal
+    // Check transition is legal per state machine diagram
     if (!is_valid_transition(current_state, new_state)) {
         return ERR_ILLEGAL_TRANSITION;
     }
     
     current_state = new_state;
     return ERR_OK;
+}
+
+// ✅ CORRECT - Default case always present
+void handle_state(State s) {
+    switch(s) {
+        case STATE_IDLE:
+            idle_handler();
+            break;
+        case STATE_MOVING:
+            moving_handler();
+            break;
+        case STATE_ERROR:
+            error_handler();
+            break;
+        default:
+            // Unexpected state - safety shutdown!
+            SAFETY_ASSERT(false);  // This should never happen
+            trigger_fault();
+            break;
+    }
 }
 ```
 
@@ -1565,18 +2186,47 @@ ErrorCode change_state(State new_state) {
 - **Automation:** Compiler warnings, static analysis
 
 ```c
-// ❌ PROHIBITED - No overflow check
-uint16_t sum = a + b;  // Could overflow
+// ❌ PROHIBITED - No overflow detection
+void accumulate_unsafe(uint16_t new_value) {
+    total_sum += new_value;  // Could overflow without detection!
+}
 
-// ✅ CORRECT - Overflow detection
+// ❌ ALSO PROHIBITED - Silent wrap-around
+uint8_t counter = 255;
+counter++;  // Now 0 - silent overflow!
+
+// ✅ CORRECT - Overflow with saturating arithmetic
+ErrorCode accumulate_safe(uint16_t new_value) {
+    // Check if addition would overflow
+    if (total_sum > (UINT16_MAX - new_value)) {
+        total_sum = UINT16_MAX;  // Saturate at maximum
+        return ERR_OVERFLOW;  // Notify caller
+    }
+    
+    total_sum += new_value;
+    return ERR_OK;
+}
+
+// ✅ CORRECT - Overflow detection with wider type
 uint16_t safe_add_u16(uint16_t a, uint16_t b, bool* overflow) {
-    uint32_t result = static_cast<uint32_t>(a) + static_cast<uint32_t>(b);
+    // Use wider type to detect overflow
+    uint32_t result = (uint32_t)a + (uint32_t)b;
+    
     if (result > UINT16_MAX) {
         *overflow = true;
         return UINT16_MAX;  // Saturate
     }
+    
     *overflow = false;
-    return static_cast<uint16_t>(result);
+    return (uint16_t)result;
+}
+
+// ✅ ALSO CORRECT - Check before operation
+uint8_t safe_increment(uint8_t value) {
+    if (value == UINT8_MAX) {
+        return UINT8_MAX;  // Already at max
+    }
+    return value + 1;  // Safe to increment
 }
 ```
 

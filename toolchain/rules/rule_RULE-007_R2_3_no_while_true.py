@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# AI-GENERATED
 from common import parse_args, iter_source_files, read_text, extract_functions, report
 import re
 

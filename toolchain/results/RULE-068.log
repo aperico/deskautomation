@@ -1,9 +1,9 @@
 RULE_ID: RULE-068
 SCRIPT: rule_RULE-068_ISO_002_assert_density.py
-SRC_PATH: src
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:44
+TIMESTAMP: 2026-02-22 16:42:34
 ================================================================================
 RULE: RULE-068 (ISO-002)
 DESC: Defensive programming via assertions (density)

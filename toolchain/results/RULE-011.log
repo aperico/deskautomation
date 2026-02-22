@@ -1,9 +1,9 @@
 RULE_ID: RULE-011
 SCRIPT: rule_RULE-011_R3_4_stack_limits.py
-SRC_PATH: src
+SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:10:37
+TIMESTAMP: 2026-02-22 16:42:28
 ================================================================================
 RULE: RULE-011 (R3.4)
 DESC: Stack usage per function <= 512 bytes (heuristic)
