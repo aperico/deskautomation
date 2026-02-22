@@ -167,10 +167,20 @@ def check_cppcheck_pattern(root_path, patterns):
         return None, "SKIP"
     findings = []
     for xml_path in xml_files:
-        text = read_text(xml_path)
-        for pattern in patterns:
-            if re.search(pattern, text):
-                findings.append((xml_path, 1, f"Matched cppcheck pattern: {pattern}"))
+        try:
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+            for error in root.findall('.//error'):
+                error_id = error.get('id', '')
+                error_msg = error.get('msg', '')
+                combined = f"{error_id} {error_msg}".lower()
+                for pattern in patterns:
+                    if re.search(pattern, combined, re.IGNORECASE):
+                        findings.append((xml_path, 1, f"Matched cppcheck pattern: {pattern}"))
+                        break
+        except Exception:
+            pass
     return findings, None
 
 

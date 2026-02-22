@@ -3,6 +3,6 @@ SCRIPT: rule_RULE-030_R8_3_named_constants.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:33
+TIMESTAMP: 2026-02-22 17:44:21
 ================================================================================
 [PASS] RULE-030: All constants properly defined (using const/enum, not #define)

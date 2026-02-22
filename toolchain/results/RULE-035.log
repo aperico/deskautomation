@@ -1,20 +1,64 @@
 RULE_ID: RULE-035
 SCRIPT: rule_RULE-035_R9_4_no_multilevel_pointers.py
 SRC_PATH: src
-STATUS: FAIL
-EXIT_CODE: 1
-TIMESTAMP: 2026-02-22 17:23:34
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 17:44:22
 ================================================================================
 [WARN] motor_controller.cpp:11 Multi-level pointer (**) detected
-       Code: * 1. **Linear PWM Ramping**: pwm(t) = min(target � t / T_ramp, target)
+       Code: * 1. **Linear PWM Ramping**: pwm(t) = min(target ? t / T_ramp, target)
        Note: Review for safety-critical implications
 [WARN] motor_controller.cpp:12 Multi-level pointer (**) detected
-Traceback (most recent call last):
-  File "C:\Users\n68a0w5\Downloads\workspace\deskautomation\toolchain\rules\rule_RULE-035_R9_4_no_multilevel_pointers.py", line 99, in <module>
-    main()
-  File "C:\Users\n68a0w5\Downloads\workspace\deskautomation\toolchain\rules\rule_RULE-035_R9_4_no_multilevel_pointers.py", line 86, in main
-    print(f"       Code: {code}")
-  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UnicodeEncodeError: 'charmap' codec can't encode character '\u2260' in position 81: character maps to <undefined>
+       Code: * 2. **Direction Change Detection**: Reset ramp timers when cmd_dir ? last_dir
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:13 Multi-level pointer (**) detected
+       Code: * 3. **Stall Detection**: Fault if (pwm ? MIN_ACTIVE_PWM) for > STALL_TIMEOUT_MS
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:228 Multi-level pointer (**) detected
+       Code: * **Step 1: Initialize Output Structure**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:232 Multi-level pointer (**) detected
+       Code: * **Step 2: Direction Change Detection**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:237 Multi-level pointer (**) detected
+       Code: * **Step 3: Stop Command Handling**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:242 Multi-level pointer (**) detected
+       Code: * **Step 4: Active Motion Processing**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:247 Multi-level pointer (**) detected
+       Code: * **Step 5: Stall Detection Logic**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:254 Multi-level pointer (**) detected
+       Code: * **Step 6: Update State & Return**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:24 Multi-level pointer (**) detected
+       Code: * **Why Soft-Start (PWM Ramping)?**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:30 Multi-level pointer (**) detected
+       Code: * **Why 500 ms Ramp Time?**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:35 Multi-level pointer (**) detected
+       Code: * **Why Direction Change Resets Ramp?**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:40 Multi-level pointer (**) detected
+       Code: * **Why Stall Detection (Low PWM Timeout)?**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:46 Multi-level pointer (**) detected
+       Code: * This module is **APPLICATION LAYER** (signal processing logic):
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:153 Multi-level pointer (**) detected
+       Code: * 1. **Direction Change Detection:**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:157 Multi-level pointer (**) detected
+       Code: * 2. **Stop Command Handling:**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:161 Multi-level pointer (**) detected
+       Code: * 3. **Active Motion Ramping:**
+       Note: Review for safety-critical implications
+[WARN] motor_controller.h:166 Multi-level pointer (**) detected
+       Code: * 4. **Fault Detection (Stall Timeout):**
+       Note: Review for safety-critical implications
+
+[WARN] RULE-035 ADVISORY: Found 18 multi-level pointer uses
+       (May be acceptable for argv or internal use; verify with code review)

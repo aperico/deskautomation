@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-050_R14_2_parameter_count.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:38
+TIMESTAMP: 2026-02-22 17:44:25
 ================================================================================
 RULE: RULE-050 (R14.2)
 DESC: Function parameters <= 4 (Code Quality Metrics)

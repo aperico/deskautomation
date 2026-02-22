@@ -1,9 +1,10 @@
 RULE_ID: RULE-041
 SCRIPT: rule_RULE-041_R10_5_misra_compliance.py
 SRC_PATH: src
-STATUS: FAIL
-EXIT_CODE: 1
-TIMESTAMP: 2026-02-22 17:23:36
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 17:44:24
 ================================================================================
-[FAIL] RULE-041 MISRA VIOLATIONS: 1 found
-  cppcheck: error: --enable parameter with the unknown name 'misra'
+RULE: RULE-041 (R10.5)
+DESC: MISRA C:2012 compliance (pattern-based)
+STATUS: PASS

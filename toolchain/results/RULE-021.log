@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-021_R6_2_minimize_globals.py
 SRC_PATH: src
 STATUS: FAIL
 EXIT_CODE: 1
-TIMESTAMP: 2026-02-22 17:23:30
+TIMESTAMP: 2026-02-22 17:44:20
 ================================================================================
 [FAIL] desk_app.cpp:5 Global variable 'current_state' should be minimized
        static AppState_t current_state = APP_STATE_IDLE;

@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-047_R13_1_test_coverage.py
 SRC_PATH: src
 STATUS: FAIL
 EXIT_CODE: 1
-TIMESTAMP: 2026-02-22 17:23:37
+TIMESTAMP: 2026-02-22 17:36:00
 ================================================================================
 [INFO] Test Coverage Analysis:
        Test files found: 0

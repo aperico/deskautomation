@@ -1,0 +1,10 @@
+RULE_ID: RULE-058
+SCRIPT: rule_RULE-058_MISRA_8_3_function_consistency.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 17:44:27
+================================================================================
+RULE: RULE-058 (MISRA-8.3)
+DESC: Consistent function declarations (cppcheck/misra)
+STATUS: PASS

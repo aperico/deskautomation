@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-011_R3_4_stack_limits.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:29
+TIMESTAMP: 2026-02-22 17:44:19
 ================================================================================
 RULE: RULE-011 (R3.4)
 DESC: Stack usage per function <= 512 bytes (heuristic)

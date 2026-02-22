@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-026_R7_3_null_checks.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:32
+TIMESTAMP: 2026-02-22 17:44:21
 ================================================================================
 RULE: RULE-026 (R7.3)
 DESC: Pointer parameters must be NULL-checked (heuristic)

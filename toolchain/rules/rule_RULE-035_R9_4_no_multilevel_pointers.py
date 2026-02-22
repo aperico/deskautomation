@@ -82,8 +82,10 @@ def main():
                 total_violations += 1
                 rel_path = os.path.relpath(file_path, source_dir)
                 stars = '*' * level
+                # Sanitize code for ASCII-safe output (Windows cp1252 compatibility)
+                code_safe = code.encode('ascii', 'replace').decode('ascii')
                 print(f"[WARN] {rel_path}:{line_num} Multi-level pointer ({stars}) detected")
-                print(f"       Code: {code}")
+                print(f"       Code: {code_safe}")
                 print(f"       Note: Review for safety-critical implications")
     
     if violations_found:

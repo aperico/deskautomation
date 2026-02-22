@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-024_R7_1_unused_return.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:31
+TIMESTAMP: 2026-02-22 17:44:21
 ================================================================================
 RULE: RULE-024 (R7.1)
 DESC: Check all return values (heuristic)

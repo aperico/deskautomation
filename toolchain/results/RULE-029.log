@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-029_R8_2_no_function_macros.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:32
+TIMESTAMP: 2026-02-22 17:44:21
 ================================================================================
 RULE: RULE-029 (R8.2)
 DESC: No function-like macros

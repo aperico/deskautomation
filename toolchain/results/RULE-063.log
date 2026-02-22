@@ -1,0 +1,10 @@
+RULE_ID: RULE-063
+SCRIPT: rule_RULE-063_MISRA_17_7_return_used.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 17:44:28
+================================================================================
+RULE: RULE-063 (MISRA-17.7)
+DESC: Use return values (heuristic)
+STATUS: PASS

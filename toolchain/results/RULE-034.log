@@ -3,7 +3,7 @@ SCRIPT: rule_RULE-034_R9_3_no_function_pointers.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 17:23:33
+TIMESTAMP: 2026-02-22 17:44:22
 ================================================================================
 RULE: RULE-034 (R9.3)
 DESC: No function pointers
