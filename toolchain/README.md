@@ -208,23 +208,271 @@ This ensures the application logic is truly motor-type-agnostic.
 
 **Commands:**
 - `static-analysis` - Run comprehensive cppcheck analysis
+- `rules-all` - Run all 32 compliance rules
+- `rules-group` - Run a specific rule group
+- `rule` - Run a single rule
+- `rules-list` - List all available rules
 
 **Standalone Usage:**
 ```bash
+# Comprehensive cppcheck analysis
 python toolchain/pipeline_analysis.py static-analysis
+
+# Run all compliance rules and generate summary
+python toolchain/pipeline_analysis.py rules-all --src-path src
+
+# Run a specific rule group
+python toolchain/pipeline_analysis.py rules-group --group nasa --src-path src
+
+# Run a single rule
+python toolchain/pipeline_analysis.py rule --rule-id RULE-001 --src-path src
+
+# List all available rules
+python toolchain/pipeline_analysis.py rules-list
 ```
 
 **What It Does:**
 1. Runs cppcheck with all checks enabled:
-   - Errors
-   - Warnings
-   - Style issues
-   - Performance problems
-   - Portability concerns
-2. Generates text report with issue details
-3. Generates XML report for CI integration
-4. Categorizes issues by severity
-5. Saves results to `toolchain/results/`
+   - Errors, warnings, style issues, performance, portability
+   - Generates text and XML reports
+2. Executes 32 automated compliance rules across 6 categories:
+   - NASA Power of Ten (17 rules)
+   - MISRA C:2012 (13 rules)
+   - ISO 25119 (2 rules)
+   - Compiler checks (6 rules)
+   - Static analysis (12 rules)
+   - Custom heuristics (12 rules)
+3. Generates per-rule logs and grouped summary
+4. Saves results to `toolchain/results/`
+
+---
+
+## Automated Rules and Compliance Checks
+
+The toolchain includes 32 automated compliance rules covering safety-critical coding standards.
+
+### Rule Groups Overview
+
+#### 🛸 **NASA Power of Ten Rules** (17 rules)
+**What:** Critical safety rules from NASA/JPL for resource-constrained embedded systems.
+
+**Focus Areas:**
+- Simple control flow (no goto, no infinite loops except main)
+- Fixed loop bounds and limited recursion
+- No dynamic memory allocation
+- Short functions and low complexity
+- Defensive assertions and NULL checks
+- Minimal variable scope
+- Return value validation
+
+**Why Important:** Ensures predictability, reliability, and safety-critical code quality through strict control flow discipline and defensive assertions.
+
+**Example Checks:**
+- RULE-001: No goto statements
+- RULE-007: No while(true) except main
+- RULE-009: No malloc/calloc/realloc/free
+- RULE-012: Function length ≤ 60 lines
+- RULE-026: NULL pointer checks
+
+#### 🏎️ **MISRA C:2012** (13 rules)
+**What:** Motor Industry Software Reliability Association guidelines. Used in automotive and safety-critical domains.
+
+**Focus Areas:**
+- Prevent undefined behavior and misuse of language features
+- Type safety and arithmetic integrity
+- Code quality and maintainability
+- Control flow safety
+
+**Why Important:** Prevents undefined behavior, improves code safety, portability, and maintainability across automotive and safety-critical systems.
+
+**Example Checks:**
+- RULE-051: No dead code (unreachable statements)
+- RULE-054: No uninitialized auto variables
+- RULE-058: No object pointer casting
+- RULE-062: Switch clauses end with break
+- RULE-065: No dynamic allocation functions
+
+#### 🔧 **ISO 25119** (2 rules)
+**What:** Functional safety requirements for machinery control systems. Specific to safety-critical machinery.
+
+**Focus Areas:**
+- Requirement traceability with SWReq and SysReq tags
+- Defensive programming practices
+- Assert density for safety verification
+
+**Why Important:** Ensures requirement traceability, defensive programming practices, and compliance with functional safety standards for machinery.
+
+**Example Checks:**
+- RULE-067: Requirement traceability (SWReq-/SysReq- tags)
+- RULE-068: Assert density (minimum 1 per function for safety)
+
+#### ⚙️ **Compiler Checks** (6 rules)
+**What:** Compiler flags and build configuration validation.
+
+**Focus Areas:**
+- Required compiler warning flags present
+- Zero compiler warnings in build
+- Aggressive warning levels enabled
+
+**Why Important:** Enforces aggressive warning levels and error detection at compile time to catch potential issues early, before they reach code review or testing.
+
+**Example Checks:**
+- RULE-037: Required compiler flags present (-Wall, -Wextra, -Werror, etc.)
+- RULE-038: Zero compiler warnings in build log
+
+#### 🔍 **Static Analysis (Cppcheck)** (12 rules)
+**What:** Comprehensive static analysis to detect potential runtime errors without execution.
+
+**Focus Areas:**
+- Memory management issues
+- Undefined behavior detection
+- Code quality problems
+- Type safety
+
+**Why Important:** Catches potential runtime errors, memory issues, undefined behavior, and code quality problems statically before execution.
+
+**Example Checks:**
+- RULE-040: Zero cppcheck errors in analysis
+- RULE-049: No undefined behavior
+- RULE-051: No dead code
+- RULE-054: No uninitialized variables
+
+#### 🧮 **Custom Heuristics** (12 rules)
+**What:** Project-specific pattern detection and analysis.
+
+**Focus Areas:**
+- Stack usage per function (≤512 bytes heuristic)
+- Function complexity metrics
+- TRUE NULL pointer and pointer arithmetic detection
+- Initialization at declaration
+
+**Why Important:** Provides project-specific safety checks tailored to the embedded system's resource constraints and architectural requirements.
+
+**Example Checks:**
+- RULE-011: Stack usage per function ≤ 512 bytes
+- RULE-014: Cyclomatic complexity ≤ 10
+- RULE-023: Variables initialized at declaration
+- RULE-033: No pointer arithmetic
+
+### Running Rules - Tutorial
+
+#### Run All Rules with Summary Report
+
+```bash
+# Generate complete compliance report
+python toolchain/run-pipeline.py all
+
+# Or run rules-all directly
+python toolchain/pipeline_analysis.py rules-all --src-path src
+```
+
+**Output:**
+- Individual rule logs: `toolchain/results/RULE-*.log`
+- Summary report: `toolchain/results/rules_summary.md` (see below)
+
+#### Run Specific Rule Group
+
+```bash
+# Run all NASA rules
+python toolchain/pipeline_analysis.py rules-group --group nasa --src-path src
+
+# Run all MISRA rules
+python toolchain/pipeline_analysis.py rules-group --group misra --src-path src
+
+# Run all ISO rules
+python toolchain/pipeline_analysis.py rules-group --group iso --src-path src
+```
+
+**Available Groups:**
+- `nasa` - NASA Power of Ten rules
+- `misra` - MISRA C:2012 rules
+- `iso` - ISO 25119 rules
+- `compiler` - Compiler checks
+- `cppcheck` - Static analysis rules
+- `heuristic` - Custom heuristics
+
+#### Run Single Rule
+
+```bash
+# Check for no goto statements
+python toolchain/pipeline_analysis.py rule --rule-id RULE-001 --src-path src
+
+# Check function length limits
+python toolchain/pipeline_analysis.py rule --rule-id RULE-012 --src-path src
+
+# Check requirement traceability
+python toolchain/pipeline_analysis.py rule --rule-id RULE-067 --src-path src
+```
+
+#### List All Available Rules
+
+```bash
+# Show all rules with descriptions
+python toolchain/pipeline_analysis.py rules-list
+```
+
+### Rule Summary Report
+
+After running `rules-all`, a summary report is generated at `toolchain/results/rules_summary.md`:
+
+**Example Output:**
+```markdown
+# Rule Summary
+
+**Generated:** 2026-02-22 16:06:18
+**Source Path:** `src`
+
+**Guidelines:** [Coding Guidelines and Automated Checks](../coding_guides_and_checks.md)
+
+## Status Summary
+
+✅ **Total PASS:** 32
+❌ **Total FAIL:** 0
+
+## Group: NASA
+**NASA Power of Ten Rules** - Critical safety rules from NASA/JPL...
+
+| Rule ID | Status | Instances | Log |
+|---------|--------|-----------|-----|
+| RULE-001 | ✅ PASS | - | [RULE-001.log](./RULE-001.log) |
+| RULE-007 | ✅ PASS | - | [RULE-007.log](./RULE-007.log) |
+| RULE-012 | ✅ PASS | - | [RULE-012.log](./RULE-012.log) |
+...
+```
+
+**Report Sections:**
+1. **Header** - Timestamp and source path being analyzed
+2. **Guidelines Link** - Direct link to comprehensive coding standards
+3. **Status Summary** - Total PASS ✅ and FAIL ❌ counts
+4. **Group Sections** - For each group:
+   - Group name and description
+   - Table with:
+     - Rule ID
+     - Status (✅ PASS or ❌ FAIL with icon)
+     - Instances (count of violations, only for FAIL)
+     - Log file (clickable link to detailed results)
+
+**Interpreting Results:**
+- ✅ PASS + Instances "-" = Rule passed, no violations
+- ❌ FAIL + Instances "N" = N violations of this rule found
+- Click log file link to see detailed violation information
+
+### Integration with CI/CD
+
+Run rules-all in CI/CD pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Run Compliance Rules
+  run: python toolchain/pipeline_analysis.py rules-all --src-path src
+
+# Check results
+- name: Verify No Failures
+  run: |
+    grep "❌ **Total FAIL:** 0" toolchain/results/rules_summary.md || exit 1
+```
+
+
 
 ---
 
@@ -272,9 +520,37 @@ All pipeline operations save detailed logs to `toolchain/results/`:
   - Automated parsing
   - Tool chain integration
 
+### Compliance Rules Results
+- **`rules_summary.md`** - Comprehensive compliance summary report
+  - Status overview (✅ PASS / ❌ FAIL counts)
+  - Groups: NASA, MISRA, ISO, Compiler, Cppcheck, Heuristic
+  - Each group includes description of checks and why they're important
+  - Timestamp of report generation
+  - Source path analyzed
+  - Link to detailed coding guidelines
+  - Per-rule tables with:
+    - Rule ID (e.g., RULE-001)
+    - Status icon (✅ or ❌)
+    - Violation count (for failed rules)
+    - Links to detailed rule logs
+
+- **`RULE-*.log`** - Individual rule execution logs (one per rule)
+  - Rule ID and description
+  - Status (PASS, FAIL, SKIP)
+  - Detailed findings with file locations
+  - Context on violations found
+
 ### Viewing Results
+
 ```bash
-# View latest build log
+# View compliance summary
+cat toolchain/results/rules_summary.md
+
+# View specific rule details
+cat toolchain/results/RULE-001.log
+cat toolchain/results/RULE-067.log
+
+# View build log
 cat toolchain/results/build_log.txt
 
 # View test results
@@ -284,8 +560,17 @@ cat toolchain/results/test_results_MT_ROBUST.txt
 # View static analysis
 cat toolchain/results/static_analysis.txt
 
-# Open in editor
+# Open all results in editor
 code toolchain/results/
+```
+
+**Quick Status Check:**
+```bash
+# Check if all rules passed
+grep "Total PASS: 32" toolchain/results/rules_summary.md && echo "✅ All rules passed!"
+
+# Find failures
+grep "❌ FAIL" toolchain/results/rules_summary.md
 ```
 
 ---
@@ -444,20 +729,29 @@ toolchain/                 # Located at workspace root (parallel to src/, tests/
 
 ```bash
 # Most Common Commands
-python toolchain/run-pipeline.py all          # Full pipeline
+python toolchain/run-pipeline.py all          # Full pipeline (build + test + rules)
 python toolchain/run-pipeline.py clean-build  # Fresh build
 python toolchain/run-pipeline.py test         # Dual motor test
 python toolchain/run-pipeline.py unit         # Quick unit test
 
+# Compliance Rules - Complete Validation
+python toolchain/pipeline_analysis.py rules-all --src-path src      # All 32 rules + summary
+python toolchain/pipeline_analysis.py rules-group --group nasa --src-path src    # NASA rules only
+python toolchain/pipeline_analysis.py rule --rule-id RULE-001 --src-path src     # Single rule
+python toolchain/pipeline_analysis.py rules-list                     # List all rules
+
 # Check Results
 ls toolchain/results/                                   # List all results
+cat toolchain/results/rules_summary.md                  # Compliance summary
 cat toolchain/results/build_log.txt                     # Build output
 cat toolchain/results/test_results_MT_BASIC.txt         # Test results
+grep "❌ FAIL" toolchain/results/rules_summary.md       # Show failures
 
 # Get Help
 python toolchain/run-pipeline.py help         # Show all commands
 python toolchain/pipeline_build.py --help     # Build subscript help
 python toolchain/pipeline_test.py --help      # Test subscript help
+python toolchain/pipeline_analysis.py rules-list       # List all rules
 ```
 
 ---
