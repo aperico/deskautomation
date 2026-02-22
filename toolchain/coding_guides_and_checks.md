@@ -1,5 +1,20 @@
 # Coding Guidelines and Automated Checks for Safety-Critical Embedded Software
 
+
+**Document Revision History:**
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-02-22 | A. Perico + A.I. | Initial version based on NASA Power of Ten |
+| 1.1 | 2026-02-22 | A. Perico + A.I. | Added MISRA C:2012 and ISO 25119 rules with automation guidance |
+
+**Approval:**
+
+- [ ] Software Lead
+- [ ] Safety Engineer  
+- [ ] Quality Manager
+--
+
 **Project:** Automated Mechanical Desk Lift System  
 **Compliance Standards:**
 - ISO 25119 (Functional Safety for Agricultural and Forestry Machinery)
@@ -75,89 +90,95 @@
 
 This index assigns a unique, portable identifier to every rule in this document.
 
-| Unified ID | Original ID | Rule Title | Automated Script |
-|------------|-------------|------------|------------------|
-| RULE-001 | R1.1 | No goto statements | rule_RULE-001_R1_1_no_goto.py |
-| RULE-002 | R1.2 | No setjmp/longjmp | rule_RULE-002_R1_2_no_setjmp_longjmp.py |
-| RULE-003 | R1.3 | No recursion | No |
-| RULE-004 | R1.4 | Single entry/exit | No |
-| RULE-005 | R2.1 | Bounded loops | No |
-| RULE-006 | R2.2 | Loop counter limits | No |
-| RULE-007 | R2.3 | No while(true) except main | rule_RULE-007_R2_3_no_while_true.py |
-| RULE-008 | R2.4 | Loop invariants documented | No |
-| RULE-009 | R3.1 | No malloc/calloc/realloc/free | rule_RULE-009_R3_1_no_malloc_free.py |
-| RULE-010 | R3.2 | Avoid hidden dynamic allocation | No |
-| RULE-011 | R3.4 | Stack size limits | rule_RULE-011_R3_4_stack_limits.py |
-| RULE-012 | R4.1 | Function length limit | rule_RULE-012_R4_1_function_length.py |
-| RULE-013 | R4.2 | Single responsibility | No |
-| RULE-014 | R4.3 | Cyclomatic complexity <= 10 | rule_RULE-014_R4_3_complexity.py |
-| RULE-015 | R5.1 | Assertion density | No |
-| RULE-016 | R5.2 | Precondition checks | No |
-| RULE-017 | R5.3 | Invariant checks | No |
-| RULE-018 | R5.4 | Assertions in release builds | No |
-| RULE-019 | R5.5 | No side effects in assertions | No |
-| RULE-020 | R6.1 | Local scope preferred | No |
-| RULE-021 | R6.2 | Minimize global variables | No |
-| RULE-022 | R6.3 | Static variables documented | No |
-| RULE-023 | R6.4 | Initialize at declaration | rule_RULE-023_R6_4_init_at_decl.py |
-| RULE-024 | R7.1 | Check all return values | rule_RULE-024_R7_1_unused_return.py |
-| RULE-025 | R7.2 | Parameter validation | No |
-| RULE-026 | R7.3 | Pointer parameter checks | rule_RULE-026_R7_3_null_checks.py |
-| RULE-027 | R7.4 | Error propagation | No |
-| RULE-028 | R8.1 | Include guards only | No |
-| RULE-029 | R8.2 | No function-like macros | rule_RULE-029_R8_2_no_function_macros.py |
-| RULE-030 | R8.3 | Named constants only | No |
-| RULE-031 | R8.4 | Conditional compilation for platform only | No |
-| RULE-032 | R9.1 | Prefer non-NULL interfaces | No |
-| RULE-033 | R9.2 | No pointer arithmetic | rule_RULE-033_R9_2_no_pointer_arith.py |
-| RULE-034 | R9.3 | No function pointers | rule_RULE-034_R9_3_no_function_pointers.py |
-| RULE-035 | R9.4 | No multi-level pointers | No |
-| RULE-036 | R9.5 | No opaque ownership transfers | No |
-| RULE-037 | R10.1 | Required compiler flags | rule_RULE-037_R10_1_compiler_flags.py |
-| RULE-038 | R10.2 | Zero warnings policy | rule_RULE-038_R10_2_zero_warnings.py |
-| RULE-039 | R10.3 | Run static analysis | rule_RULE-039_R10_3_cppcheck_run.py |
-| RULE-040 | R10.4 | Zero static analysis errors | rule_RULE-040_R10_4_cppcheck_clean.py |
-| RULE-041 | R10.5 | MISRA C:2012 compliance (optional) | No |
-| RULE-042 | R11.1 | Function naming | No |
-| RULE-043 | R11.2 | Variable naming | No |
-| RULE-044 | R11.3 | Type naming | No |
-| RULE-045 | R12.1 | Safety markers | No |
-| RULE-046 | R12.2 | Fail-safe defaults | No |
-| RULE-047 | R13.1 | Unit test coverage | No |
-| RULE-048 | R13.2 | Test naming | No |
-| RULE-049 | R14.1 | Function length limit (60 lines) | rule_RULE-049_R14_1_function_length.py |
-| RULE-050 | R14.2 | Function parameters limit (4 max) | rule_RULE-050_R14_2_parameter_count.py |
-| RULE-051 | R14.3 | Nesting depth limit (4 levels) | rule_RULE-051_R14_3_nesting_depth.py |
-| RULE-052 | R14.4 | File length limit (800 lines) | rule_RULE-052_R14_4_file_length.py |
-| RULE-053 | R14.5 | Assertion density minimum (2 per function) | rule_RULE-053_R14_5_assertion_density.py |
-| RULE-054 | MISRA-1.3 | No undefined/critical unspecified behavior | rule_RULE-054_MISRA_1_3_cppcheck.py |
-| RULE-055 | MISRA-2.1 | No unreachable code | rule_RULE-055_MISRA_2_1_unreachable.py |
-| RULE-056 | MISRA-2.2 | No dead code | rule_RULE-056_MISRA_2_2_dead_code.py |
-| RULE-057 | MISRA-8.1 | Types explicitly specified | No |
-| RULE-058 | MISRA-8.3 | Consistent function declarations | No |
-| RULE-059 | MISRA-9.1 | Initialize automatic variables | rule_RULE-059_MISRA_9_1_uninit.py |
-| RULE-060 | MISRA-10.1 | Appropriate essential types | rule_RULE-060_MISRA_10_1_types.py |
-| RULE-061 | MISRA-10.3 | No narrowing assignments | rule_RULE-061_MISRA_10_3_narrowing.py |
-| RULE-062 | MISRA-10.4 | Same essential type category | No |
-| RULE-063 | MISRA-11.3 | No object pointer casting | rule_RULE-063_MISRA_11_3_pointer_cast.py |
-| RULE-064 | MISRA-12.1 | Explicit operator precedence | No |
-| RULE-065 | MISRA-13.2 | Single side effect per expression | rule_RULE-065_MISRA_13_2_side_effects.py |
-| RULE-066 | MISRA-14.3 | No invariant control expressions | No |
-| RULE-067 | MISRA-16.3 | Switch clauses end with break | rule_RULE-067_MISRA_16_3_switch_break.py |
-| RULE-068 | MISRA-17.7 | Use return values | rule_RULE-068_MISRA_17_7_return_used.py |
-| RULE-069 | MISRA-18.1 | Pointer arithmetic within bounds | rule_RULE-069_MISRA_18_1_pointer_bounds.py |
-| RULE-070 | MISRA-21.3 | No dynamic allocation | rule_RULE-070_MISRA_21_3_no_malloc.py |
-| RULE-071 | MISRA-21.6 | No standard I/O functions | rule_RULE-071_MISRA_21_6_no_stdio.py |
-| RULE-072 | ISO-001 | Requirement traceability | rule_RULE-072_ISO_001_traceability.py |
-| RULE-073 | ISO-002 | Defensive programming | rule_RULE-073_ISO_002_assert_density.py |
-| RULE-074 | ISO-003 | Software diversity | No |
-| RULE-075 | ISO-004 | Fail-safe behavior | No |
-| RULE-076 | ISO-005 | Watchdog monitoring | No |
-| RULE-077 | ISO-006 | Memory integrity checks | No |
-| RULE-078 | ISO-007 | Plausibility checks | No |
-| RULE-079 | ISO-008 | Range checking | No |
-| RULE-080 | ISO-009 | State transition validity | No |
-| RULE-081 | ISO-010 | Overflow prevention | No |
+**Legend:**
+- 🤖 **Automated Script:** Full automation available
+- 🔍 **Code Review:** Manual review required  
+- 📊 **Tool-Based:** Use external tools (compiler, cppcheck, gcov, etc.)
+- 📝 **Pattern Match:** Simple grep/regex pattern matching available
+
+| Unified ID | Original ID | Rule Title | Automation | Method |
+|------------|-------------|------------|-----------|--------|
+| RULE-001 | R1.1 | No goto statements | 🤖 | [rule_RULE-001_R1_1_no_goto.py](../toolchain/rules/rule_RULE-001_R1_1_no_goto.py) |
+| RULE-002 | R1.2 | No setjmp/longjmp | 🤖 | [rule_RULE-002_R1_2_no_setjmp_longjmp.py](../toolchain/rules/rule_RULE-002_R1_2_no_setjmp_longjmp.py) |
+| RULE-003 | R1.3 | No recursion | 🤖 | [rule_RULE-003_R1_3_no_recursion.py](../toolchain/rules/rule_RULE-003_R1_3_no_recursion.py) |
+| RULE-004 | R1.4 | Single entry/exit | 🔍 | Code review - verify each function has one entry point and exit sequence |
+| RULE-005 | R2.1 | Bounded loops | 🔍 | Loop termination proof needed; examine loop counters and bounds |
+| RULE-006 | R2.2 | Loop counter limits | 🔍 | Code review - verify loop variables have explicit bounds |
+| RULE-007 | R2.3 | No while(true) except main | 🤖 | [rule_RULE-007_R2_3_no_while_true.py](../toolchain/rules/rule_RULE-007_R2_3_no_while_true.py) |
+| RULE-008 | R2.4 | Loop invariants documented | 🔍 | Code review - check comments document loop invariants for complex loops |
+| RULE-009 | R3.1 | No malloc/calloc/realloc/free | 🤖 | [rule_RULE-009_R3_1_no_malloc_free.py](../toolchain/rules/rule_RULE-009_R3_1_no_malloc_free.py) |
+| RULE-010 | R3.2 | Avoid hidden dynamic allocation | 🔍 | Library audit + code review; check for implicit allocation in dependencies |
+| RULE-011 | R3.4 | Stack size limits | 🤖 | [rule_RULE-011_R3_4_stack_limits.py](../toolchain/rules/rule_RULE-011_R3_4_stack_limits.py) |
+| RULE-012 | R4.1 | Function length limit | 🤖 | [rule_RULE-012_R4_1_function_length.py](../toolchain/rules/rule_RULE-012_R4_1_function_length.py) |
+| RULE-013 | R4.2 | Single responsibility | 🔍 | Design review - verify each function has one clear purpose |
+| RULE-014 | R4.3 | Cyclomatic complexity <= 10 | 🤖 | [rule_RULE-014_R4_3_complexity.py](../toolchain/rules/rule_RULE-014_R4_3_complexity.py) |
+| RULE-015 | R5.1 | Assertion density | 🤖 | [rule_RULE-053_R14_5_assertion_density.py](../toolchain/rules/rule_RULE-053_R14_5_assertion_density.py) (see R14.5) |
+| RULE-016 | R5.2 | Precondition checks | 🔍 | Code review - verify functions validate input parameters at entry |
+| RULE-017 | R5.3 | Invariant checks | 🔍 | Code review - verify critical invariants guarded by assertions |
+| RULE-018 | R5.4 | Assertions in release builds | 🤖 | [rule_RULE-018_R5_4_ndebug.py](../toolchain/rules/rule_RULE-018_R5_4_ndebug.py) |
+| RULE-019 | R5.5 | No side effects in assertions | 🤖 | [rule_RULE-019_R5_5_assert_side_effects.py](../toolchain/rules/rule_RULE-019_R5_5_assert_side_effects.py) |
+| RULE-020 | R6.1 | Local scope preferred | 🔍 | Code review - verify variables declared in innermost scope possible |
+| RULE-021 | R6.2 | Minimize global variables | 📝 | 📊 Pattern: `grep -r "^[^/]*\b\w\+\s\+\*\?[a-z_]\+\s*[=;]" src/*.c` (heuristic) |
+| RULE-022 | R6.3 | Static variables documented | 🤖 | [rule_RULE-022_R6_3_static_documented.py](../toolchain/rules/rule_RULE-022_R6_3_static_documented.py) |
+| RULE-023 | R6.4 | Initialize at declaration | 🤖 | [rule_RULE-023_R6_4_init_at_decl.py](../toolchain/rules/rule_RULE-023_R6_4_init_at_decl.py) |
+| RULE-024 | R7.1 | Check all return values | 🤖 | [rule_RULE-024_R7_1_unused_return.py](../toolchain/rules/rule_RULE-024_R7_1_unused_return.py) |
+| RULE-025 | R7.2 | Parameter validation | 🔍 | Code review - verify public functions check parameters at entry |
+| RULE-026 | R7.3 | Pointer parameter checks | 🤖 | [rule_RULE-026_R7_3_null_checks.py](../toolchain/rules/rule_RULE-026_R7_3_null_checks.py) |
+| RULE-027 | R7.4 | Error propagation | 🔍 | Code review - verify error codes propagate up call chain correctly |
+| RULE-028 | R8.1 | Include guards only | 🤖 | [rule_RULE-028_R8_1_include_guards.py](../toolchain/rules/rule_RULE-028_R8_1_include_guards.py) |
+| RULE-029 | R8.2 | No function-like macros | 🤖 | [rule_RULE-029_R8_2_no_function_macros.py](../toolchain/rules/rule_RULE-029_R8_2_no_function_macros.py) |
+| RULE-030 | R8.3 | Named constants only | 📝 | `grep -r "define.*[0-9]" src/ ` (find numeric defines, manual review) |
+| RULE-031 | R8.4 | Conditional compilation for platform only | 🤖 | [rule_RULE-031_R8_4_conditional_compile.py](../toolchain/rules/rule_RULE-031_R8_4_conditional_compile.py) |
+| RULE-032 | R9.1 | Prefer non-NULL interfaces | 🔍 | Code review - document assumptions about NULL parameters |
+| RULE-033 | R9.2 | No pointer arithmetic | 🤖 | [rule_RULE-033_R9_2_no_pointer_arith.py](../toolchain/rules/rule_RULE-033_R9_2_no_pointer_arith.py) |
+| RULE-034 | R9.3 | No function pointers | 🤖 | [rule_RULE-034_R9_3_no_function_pointers.py](../toolchain/rules/rule_RULE-034_R9_3_no_function_pointers.py) |
+| RULE-035 | R9.4 | No multi-level pointers | 📝 | `grep -r "\*\*" src/ ` (find `**` patterns, verify exceptions like argv[]) |
+| RULE-036 | R9.5 | No opaque ownership transfers | 🔍 | Design review - verify pointer ownership clearly documented in contracts |
+| RULE-037 | R10.1 | Required compiler flags | 🤖 | [rule_RULE-037_R10_1_compiler_flags.py](../toolchain/rules/rule_RULE-037_R10_1_compiler_flags.py) |
+| RULE-038 | R10.2 | Zero warnings policy | 🤖 | [rule_RULE-038_R10_2_zero_warnings.py](../toolchain/rules/rule_RULE-038_R10_2_zero_warnings.py) |
+| RULE-039 | R10.3 | Run static analysis | 🤖 | [rule_RULE-039_R10_3_cppcheck_run.py](../toolchain/rules/rule_RULE-039_R10_3_cppcheck_run.py) |
+| RULE-040 | R10.4 | Zero static analysis errors | 🤖 | [rule_RULE-040_R10_4_cppcheck_clean.py](../toolchain/rules/rule_RULE-040_R10_4_cppcheck_clean.py) |
+| RULE-041 | R10.5 | MISRA C:2012 compliance (optional) | 📊 | Commercial MISRA tools (PC-lint Plus, Cppcheck Premium) |
+| RULE-042 | R11.1 | Function naming | 🤖 | [rule_RULE-042_R11_1_function_naming.py](../toolchain/rules/rule_RULE-042_R11_1_function_naming.py) |
+| RULE-043 | R11.2 | Variable naming | 🤖 | [rule_RULE-043_R11_2_variable_naming.py](../toolchain/rules/rule_RULE-043_R11_2_variable_naming.py) |
+| RULE-044 | R11.3 | Type naming | 🤖 | [rule_RULE-044_R11_3_type_naming.py](../toolchain/rules/rule_RULE-044_R11_3_type_naming.py) |
+| RULE-045 | R12.1 | Safety markers | 🤖 | [rule_RULE-045_R12_1_safety_markers.py](../toolchain/rules/rule_RULE-045_R12_1_safety_markers.py) |
+| RULE-046 | R12.2 | Fail-safe defaults | 🔍 | Code review - verify safe state initialization in all structures |
+| RULE-047 | R13.1 | Unit test coverage | 📊 | gcov/lcov coverage analysis - target 100% statement coverage |
+| RULE-048 | R13.2 | Test naming | 🤖 | [rule_RULE-048_R13_2_test_naming.py](../toolchain/rules/rule_RULE-048_R13_2_test_naming.py) |
+| RULE-049 | R14.1 | Function length limit (60 lines) | 🤖 | [rule_RULE-049_R14_1_function_length.py](../toolchain/rules/rule_RULE-049_R14_1_function_length.py) |
+| RULE-050 | R14.2 | Function parameters limit (4 max) | 🤖 | [rule_RULE-050_R14_2_parameter_count.py](../toolchain/rules/rule_RULE-050_R14_2_parameter_count.py) |
+| RULE-051 | R14.3 | Nesting depth limit (4 levels) | 🤖 | [rule_RULE-051_R14_3_nesting_depth.py](../toolchain/rules/rule_RULE-051_R14_3_nesting_depth.py) |
+| RULE-052 | R14.4 | File length limit (800 lines) | 🤖 | [rule_RULE-052_R14_4_file_length.py](../toolchain/rules/rule_RULE-052_R14_4_file_length.py) |
+| RULE-053 | R14.5 | Assertion density minimum (2 per function) | 🤖 | [rule_RULE-053_R14_5_assertion_density.py](../toolchain/rules/rule_RULE-053_R14_5_assertion_density.py) |
+| RULE-054 | MISRA-1.3 | No undefined/critical unspecified behavior | 🤖 | [rule_RULE-054_MISRA_1_3_cppcheck.py](../toolchain/rules/rule_RULE-054_MISRA_1_3_cppcheck.py) |
+| RULE-055 | MISRA-2.1 | No unreachable code | 🤖 | [rule_RULE-055_MISRA_2_1_unreachable.py](../toolchain/rules/rule_RULE-055_MISRA_2_1_unreachable.py) |
+| RULE-056 | MISRA-2.2 | No dead code | 🤖 | [rule_RULE-056_MISRA_2_2_dead_code.py](../toolchain/rules/rule_RULE-056_MISRA_2_2_dead_code.py) |
+| RULE-057 | MISRA-8.1 | Types explicitly specified | 🤖 | [rule_RULE-057_MISRA_8_1_compiler_flags.py](../toolchain/rules/rule_RULE-057_MISRA_8_1_compiler_flags.py) |
+| RULE-058 | MISRA-8.3 | Consistent function declarations | 🤖 | [rule_RULE-058_MISRA_8_3_function_consistency.py](../toolchain/rules/rule_RULE-058_MISRA_8_3_function_consistency.py) |
+| RULE-059 | MISRA-9.1 | Initialize automatic variables | 🤖 | [rule_RULE-059_MISRA_9_1_uninit.py](../toolchain/rules/rule_RULE-059_MISRA_9_1_uninit.py) |
+| RULE-060 | MISRA-10.1 | Appropriate essential types | 🤖 | [rule_RULE-060_MISRA_10_1_types.py](../toolchain/rules/rule_RULE-060_MISRA_10_1_types.py) |
+| RULE-061 | MISRA-10.3 | No narrowing assignments | 🤖 | [rule_RULE-061_MISRA_10_3_narrowing.py](../toolchain/rules/rule_RULE-061_MISRA_10_3_narrowing.py) |
+| RULE-062 | MISRA-10.4 | Same essential type category | 🤖 | [rule_RULE-062_MISRA_10_4_conversion_warnings.py](../toolchain/rules/rule_RULE-062_MISRA_10_4_conversion_warnings.py) |
+| RULE-063 | MISRA-11.3 | No object pointer casting | 🤖 | [rule_RULE-063_MISRA_11_3_pointer_cast.py](../toolchain/rules/rule_RULE-063_MISRA_11_3_pointer_cast.py) |
+| RULE-064 | MISRA-12.1 | Explicit operator precedence | 🤖 | [rule_RULE-064_MISRA_12_1_operator_precedence.py](../toolchain/rules/rule_RULE-064_MISRA_12_1_operator_precedence.py) |
+| RULE-065 | MISRA-13.2 | Single side effect per expression | 🤖 | [rule_RULE-065_MISRA_13_2_side_effects.py](../toolchain/rules/rule_RULE-065_MISRA_13_2_side_effects.py) |
+| RULE-066 | MISRA-14.3 | No invariant control expressions | 📊 | cppcheck detects `if(1)`, `while(true)` patterns |
+| RULE-067 | MISRA-16.3 | Switch clauses end with break | 🤖 | [rule_RULE-067_MISRA_16_3_switch_break.py](../toolchain/rules/rule_RULE-067_MISRA_16_3_switch_break.py) |
+| RULE-068 | MISRA-17.7 | Use return values | 🤖 | [rule_RULE-068_MISRA_17_7_return_used.py](../toolchain/rules/rule_RULE-068_MISRA_17_7_return_used.py) |
+| RULE-069 | MISRA-18.1 | Pointer arithmetic within bounds | 🤖 | [rule_RULE-069_MISRA_18_1_pointer_bounds.py](../toolchain/rules/rule_RULE-069_MISRA_18_1_pointer_bounds.py) |
+| RULE-070 | MISRA-21.3 | No dynamic allocation | 🤖 | [rule_RULE-070_MISRA_21_3_no_malloc.py](../toolchain/rules/rule_RULE-070_MISRA_21_3_no_malloc.py) |
+| RULE-071 | MISRA-21.6 | No standard I/O functions | 🤖 | [rule_RULE-071_MISRA_21_6_no_stdio.py](../toolchain/rules/rule_RULE-071_MISRA_21_6_no_stdio.py) |
+| RULE-072 | ISO-001 | Requirement traceability | 🤖 | [rule_RULE-072_ISO_001_traceability.py](../toolchain/rules/rule_RULE-072_ISO_001_traceability.py) |
+| RULE-073 | ISO-002 | Defensive programming | 🤖 | [rule_RULE-073_ISO_002_assert_density.py](../toolchain/rules/rule_RULE-073_ISO_002_assert_density.py) |
+| RULE-074 | ISO-003 | Software diversity | 🔍 | Architectural review - verify independent safety checks in critical functions |
+| RULE-075 | ISO-004 | Fail-safe behavior | 🔍 | Error handling review - verify all errors lead to safe state |
+| RULE-076 | ISO-005 | Watchdog monitoring | 🔍 | Code review - verify watchdog refresh calls in task loop |
+| RULE-077 | ISO-006 | Memory integrity checks | 🔍 | Code review - verify CRC/parity on safety-critical data structures |
+| RULE-078 | ISO-007 | Plausibility checks | 🔍 | Code review - verify sensor outputs have range/rate validation |
+| RULE-079 | ISO-008 | Range checking | 🔍 | Code review - verify function parameters validated at entry |
+| RULE-080 | ISO-009 | State transition validity | 🔍 | State machine review - verify only legal transitions allowed |
+| RULE-081 | ISO-010 | Overflow prevention | 🔍 | Code review + compiler: `-Wconversion` helps identify overflow risks
 
 ## Introduction
 
@@ -2567,21 +2588,4 @@ These guidelines ensure our code is:
 - [GCC Compiler](https://gcc.gnu.org/) - Warning flags documentation
 - [Clang Static Analyzer](https://clang-analyzer.llvm.org/) - Advanced static analysis
 
----
 
-**Document Revision History:**
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-02-22 | Team | Initial version based on NASA Power of Ten |
-| 1.1 | 2026-02-22 | Team | Added MISRA C:2012 and ISO 25119 rules with automation guidance |
-
-**Approval:**
-
-- [ ] Software Lead
-- [ ] Safety Engineer  
-- [ ] Quality Manager
-
----
-
-**END OF DOCUMENT**
