@@ -1,0 +1,10 @@
+RULE_ID: RULE-023
+SCRIPT: rule_RULE-023_R6_4_init_at_decl.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:38
+================================================================================
+RULE: RULE-023 (R6.4)
+DESC: Initialize variables at declaration (heuristic)
+STATUS: PASS

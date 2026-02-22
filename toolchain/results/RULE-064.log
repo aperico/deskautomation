@@ -1,0 +1,10 @@
+RULE_ID: RULE-064
+SCRIPT: rule_RULE-064_MISRA_18_1_pointer_bounds.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:43
+================================================================================
+RULE: RULE-064 (MISRA-18.1)
+DESC: Pointer arithmetic within bounds (heuristic)
+STATUS: PASS

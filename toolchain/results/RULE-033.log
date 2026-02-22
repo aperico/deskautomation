@@ -1,0 +1,10 @@
+RULE_ID: RULE-033
+SCRIPT: rule_RULE-033_R9_2_no_pointer_arith.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:39
+================================================================================
+RULE: RULE-033 (R9.2)
+DESC: No pointer arithmetic (heuristic)
+STATUS: PASS

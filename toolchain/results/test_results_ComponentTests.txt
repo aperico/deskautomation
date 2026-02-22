@@ -1,0 +1,14 @@
+================================================================================
+TEST RESULTS
+================================================================================
+Command: ctest --test-dir build -C Release --output-on-failure -R ComponentTests
+Filter: ComponentTests
+Timestamp: 2026-02-22 14:30:56
+Workspace: C:\Users\n68a0w5\Downloads\workspace\deskautomation
+Configuration: Release
+
+This log contains the results of test execution.
+================================================================================
+
+Test project C:/Users/n68a0w5/Downloads/workspace/deskautomation/build
+No tests were found!!!

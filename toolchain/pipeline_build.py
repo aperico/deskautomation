@@ -120,7 +120,9 @@ compiler detection, dependency resolution, and build system generation.
         write_header("BUILDING PROJECT")
         
         write_info("Building project (Release configuration)...")
-        build_result_file = self.config.results_dir / "build_log.txt"
+        build_result_file = self.config.results_dir / "build.log"
+        legacy_build_result_file = self.config.results_dir / "build_log.txt"
+        build_warnings_file = self.config.results_dir / "build_warnings.log"
         
         exit_code, output = run_command(
             ["cmake", "--build", "build", "--config", "Release"],
@@ -144,6 +146,10 @@ source files, linking, and any compiler warnings or errors encountered.
         with open(build_result_file, 'w', encoding='utf-8') as f:
             f.write(header)
             f.write(output)
+        if legacy_build_result_file != build_result_file:
+            with open(legacy_build_result_file, 'w', encoding='utf-8') as f:
+                f.write(header)
+                f.write(output)
         
         # Extract and display compiler diagnostics
         diagnostic_patterns = [
@@ -153,9 +159,31 @@ source files, linking, and any compiler warnings or errors encountered.
             r'unused', r'format'
         ]
         diagnostics = []
+        warning_lines = []
         for line in output.split('\n'):
             if any(re.search(pattern, line, re.IGNORECASE) for pattern in diagnostic_patterns):
                 diagnostics.append(line)
+            if re.search(r'warning', line, re.IGNORECASE):
+                warning_lines.append(line)
+
+        warnings_header = f"""{'=' * 80}
+BUILD WARNINGS LOG
+{'=' * 80}
+Command: cmake --build build --config Release
+Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Workspace: {self.config.workspace_root}
+Configuration: Release
+
+This log contains only compiler warnings extracted from the full build output.
+{'=' * 80}
+
+"""
+        with open(build_warnings_file, 'w', encoding='utf-8') as f:
+            f.write(warnings_header)
+            if warning_lines:
+                f.write("\n".join(warning_lines))
+            else:
+                f.write("No warnings detected.\n")
         
         if diagnostics:
             print(colorize("\nCompiler Diagnostics:", Colors.YELLOW))

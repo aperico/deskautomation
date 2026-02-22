@@ -1,0 +1,10 @@
+RULE_ID: RULE-014
+SCRIPT: rule_RULE-014_R4_3_complexity.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:38
+================================================================================
+RULE: RULE-014 (R4.3)
+DESC: Cyclomatic complexity <= 10 (heuristic)
+STATUS: PASS

@@ -1,0 +1,10 @@
+RULE_ID: RULE-037
+SCRIPT: rule_RULE-037_R10_1_compiler_flags.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:40
+================================================================================
+RULE: RULE-037 (R10.1)
+DESC: Required compiler flags present
+STATUS: PASS

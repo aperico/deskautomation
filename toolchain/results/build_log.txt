@@ -1,0 +1,52 @@
+================================================================================
+BUILD LOG
+================================================================================
+Command: cmake --build build --config Release
+Timestamp: 2026-02-22 15:44:50
+Workspace: C:\Users\n68a0w5\Downloads\workspace\deskautomation
+Configuration: Release
+
+This log contains the complete build output including compilation of all
+source files, linking, and any compiler warnings or errors encountered.
+================================================================================
+
+Microsoft (R) Build Engine version 16.11.0+0538acc04 for .NET Framework
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/CMakeLists.txt
+  motor_config.cpp
+  hal.cpp
+  desk_app.cpp
+  motor_controller.cpp
+  HALMock.cpp
+  SerialMock.cpp
+  Generating Code...
+  DeskAutomation.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\Release\DeskAutomation.lib
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/build/_deps/googletest-src/googletest/CMakeLists.txt
+  gtest-all.cc
+  gtest.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\lib\Release\gtest.lib
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/build/_deps/googletest-src/googletest/CMakeLists.txt
+  gtest_main.cc
+  gtest_main.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\lib\Release\gtest_main.lib
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/CMakeLists.txt
+  ComponentTests.cpp
+  ComponentTests.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\Release\ComponentTests.exe
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/CMakeLists.txt
+  IntegrationTests.cpp
+  IntegrationTests.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\Release\IntegrationTests.exe
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/CMakeLists.txt
+  UnitTests.cpp
+  UnitTests.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\Release\UnitTests.exe
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/build/_deps/googletest-src/googlemock/CMakeLists.txt
+  gtest-all.cc
+  gmock-all.cc
+  Generating Code...
+  gmock.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\lib\Release\gmock.lib
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/build/_deps/googletest-src/googlemock/CMakeLists.txt
+  gtest-all.cc
+  gmock-all.cc
+  gmock_main.cc
+  Generating Code...
+  gmock_main.vcxproj -> C:\Users\n68a0w5\Downloads\workspace\deskautomation\build\lib\Release\gmock_main.lib
+  Building Custom Rule C:/Users/n68a0w5/Downloads/workspace/deskautomation/CMakeLists.txt

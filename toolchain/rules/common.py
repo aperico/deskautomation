@@ -94,14 +94,34 @@ def check_build_warnings(root_path):
     repo_root = find_repo_root(root_path)
     log_paths = [
         repo_root / "toolchain" / "results" / "build.log",
+        repo_root / "toolchain" / "results" / "build_log.txt",
         repo_root / "toolchain" / "results" / "build_warnings.log",
     ]
-    for log_path in log_paths:
-        if log_path.exists():
-            text = read_text(log_path)
-            if "warning" in text.lower():
+    header_prefixes = (
+        "build log",
+        "build warnings log",
+        "command:",
+        "timestamp:",
+        "workspace:",
+        "configuration:",
+        "this log contains",
+    )
+    existing = [path for path in log_paths if path.exists()]
+    if existing:
+        log_path = max(existing, key=lambda path: path.stat().st_mtime)
+        text = read_text(log_path)
+        if log_path.name == "build_warnings.log":
+            if "no warnings detected" in text.lower():
+                return [], None
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("="):
+                continue
+            if stripped.lower().startswith(header_prefixes):
+                continue
+            if re.search(r"\bwarning\b", stripped, re.IGNORECASE):
                 return [(log_path, 1, "Warnings found in build log")], None
-            return [], None
+        return [], None
     return None, "SKIP"
 
 
@@ -204,13 +224,37 @@ def check_complexity(root_path, max_complexity):
 
 def check_stack_usage(root_path, max_bytes):
     findings = []
+    type_sizes = {
+        "char": 1,
+        "int8_t": 1,
+        "uint8_t": 1,
+        "bool": 1,
+        "int16_t": 2,
+        "uint16_t": 2,
+        "int32_t": 4,
+        "uint32_t": 4,
+        "float": 4,
+        "double": 8,
+    }
+    array_decl = re.compile(r"^\s*(?:const\s+)?([A-Za-z_][\w:]*)\s+\w+\s*\[\s*(\d+)\s*\]\s*(?:=\s*\{)?\s*;\s*$")
     for path in iter_source_files(root_path):
         text = read_text(path)
-        for match in re.finditer(r"\b\w+\s+\w+\s*\[\s*(\d+)\s*\]", text):
-            size = int(match.group(1))
-            if size >= max_bytes:
-                line_no = text.count("\n", 0, match.start()) + 1
-                findings.append((path, line_no, f"Array size {size} >= {max_bytes}"))
+        lines = text.splitlines()
+        for start, end, body in extract_functions(text):
+            total_bytes = 0
+            body_lines = body.splitlines()
+            for idx, line in enumerate(body_lines, start=start):
+                match = array_decl.match(line)
+                if not match:
+                    continue
+                type_name = match.group(1)
+                count = int(match.group(2))
+                elem_size = type_sizes.get(type_name)
+                if elem_size is None:
+                    continue
+                total_bytes += elem_size * count
+            if total_bytes > max_bytes:
+                findings.append((path, start, f"Estimated stack arrays {total_bytes} bytes > {max_bytes}"))
     return findings
 
 
@@ -222,6 +266,11 @@ def check_uninitialized_heuristic(root_path):
             continue
         lines = read_text(path).splitlines()
         for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("return "):
+                continue
             if "(" in line or ")" in line:
                 continue
             if pattern.match(line):
@@ -253,20 +302,59 @@ def check_unused_result_heuristic(root_path, allowlist=None):
 
 def check_null_deref_heuristic(root_path):
     findings = []
+    null_check_template = r"\b{var}\b\s*(==|!=)\s*(NULL|nullptr)"
+    null_check_reverse = r"\b(NULL|nullptr)\s*(==|!=)\s*\b{var}\b"
+    negated_check = r"!\s*\b{var}\b"
     for path in iter_source_files(root_path):
         text = read_text(path)
-        for match in re.finditer(r"\b(\w+)\s*->", text):
-            var = match.group(1)
-            if f"{var} == NULL" not in text and f"{var} != NULL" not in text:
-                line_no = text.count("\n", 0, match.start()) + 1
-                findings.append((path, line_no, f"Pointer '{var}' used without NULL check"))
+        for start, end, body in extract_functions(text):
+            body_lines = body.splitlines()
+            for offset, line in enumerate(body_lines, start=0):
+                match = re.search(r"\b(\w+)\s*->", line)
+                if not match:
+                    continue
+                var = match.group(1)
+                prior = "\n".join(body_lines[:offset + 1])
+                has_check = re.search(null_check_template.format(var=re.escape(var)), prior)
+                if not has_check:
+                    has_check = re.search(null_check_reverse.format(var=re.escape(var)), prior)
+                if not has_check:
+                    has_check = re.search(negated_check.format(var=re.escape(var)), prior)
+                if not has_check:
+                    line_no = start + offset
+                    findings.append((path, line_no, f"Pointer '{var}' used without NULL check"))
     return findings
 
 
 def check_pointer_arithmetic(root_path):
     findings = []
-    patterns = [r"\b\w+\s*[\+\-]=\s*\w+", r"\*\s*\(\s*\w+\s*[\+\-]"]
-    return find_regex_in_files(root_path, patterns)
+    decl_ptr = re.compile(r"\b\w[\w\s]*\*\s*(\w+)\b")
+    extra_ptr = re.compile(r",\s*\*\s*(\w+)\b")
+    for path in iter_source_files(root_path):
+        text = read_text(path)
+        pointer_vars = set()
+        for line in text.splitlines():
+            if "*" not in line:
+                continue
+            match = decl_ptr.search(line)
+            if match:
+                pointer_vars.add(match.group(1))
+                for extra in extra_ptr.findall(line):
+                    pointer_vars.add(extra)
+        if not pointer_vars:
+            continue
+        for idx, line in enumerate(text.splitlines(), start=1):
+            for var in pointer_vars:
+                if re.search(rf"\b{re.escape(var)}\b\s*[\+\-]=", line):
+                    findings.append((path, idx, f"Pointer arithmetic on '{var}'"))
+                    break
+                if re.search(rf"\b{re.escape(var)}\b\s*[\+\-]\s*\d+", line):
+                    findings.append((path, idx, f"Pointer arithmetic on '{var}'"))
+                    break
+                if re.search(rf"\*\s*\(\s*{re.escape(var)}\s*[\+\-]", line):
+                    findings.append((path, idx, f"Pointer arithmetic on '{var}'"))
+                    break
+    return findings
 
 
 def check_function_pointers(root_path):
@@ -278,8 +366,12 @@ def check_traceability(root_path):
     findings = []
     for path in iter_source_files(root_path, extensions=[".c", ".cpp"]):
         text = read_text(path)
-        if "SWReq-" not in text and "SysReq-" not in text:
-            findings.append((path, 1, "Missing SWReq-/SysReq- traceability tag"))
+        lines = text.splitlines()
+        for start, end, body in extract_functions(text):
+            context_start = max(0, start - 4)
+            context = "\n".join(lines[context_start:start] + body.splitlines())
+            if "SWReq-" not in context and "SysReq-" not in context:
+                findings.append((path, start, "Missing SWReq-/SysReq- traceability tag"))
     return findings
 
 

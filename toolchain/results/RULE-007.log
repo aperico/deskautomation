@@ -1,0 +1,10 @@
+RULE_ID: RULE-007
+SCRIPT: rule_RULE-007_R2_3_no_while_true.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:37
+================================================================================
+RULE: RULE-007 (R2.3)
+DESC: No while(true)/for(;;) except main
+STATUS: PASS

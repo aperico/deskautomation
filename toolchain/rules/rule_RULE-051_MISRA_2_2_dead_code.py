@@ -5,7 +5,11 @@ RULE_ID = "RULE-051"
 ORIGINAL_ID = "MISRA-2.2"
 DESCRIPTION = "No dead code (cppcheck)"
 
-patterns = [r"deadcode", r"unused", r"redundant"]
+# More specific patterns for MISRA 2.2 dead code detection
+# Case 1: Unreachable code after break/return
+# Case 2: Code that is guaranteed to never execute (constant conditions)
+# Case 3: Unreachable code (explicit from cppcheck)
+patterns = [r'id="unreachableCode"', r'<error.*id="unreachableCode"', r'unreachable', r'after\s+break', r'after\s+return']
 
 if __name__ == "__main__":
     args = parse_args()

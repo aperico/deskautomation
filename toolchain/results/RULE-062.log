@@ -1,0 +1,10 @@
+RULE_ID: RULE-062
+SCRIPT: rule_RULE-062_MISRA_16_3_switch_break.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:43
+================================================================================
+RULE: RULE-062 (MISRA-16.3)
+DESC: Switch clauses end with break (cppcheck/misra)
+STATUS: PASS

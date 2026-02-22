@@ -1,0 +1,10 @@
+RULE_ID: RULE-009
+SCRIPT: rule_RULE-009_R3_1_no_malloc_free.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:37
+================================================================================
+RULE: RULE-009 (R3.1)
+DESC: No malloc/calloc/realloc/free
+STATUS: PASS

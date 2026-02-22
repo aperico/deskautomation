@@ -57,7 +57,8 @@ Available Commands:
     integration       Run integration tests only
     clean-test        Clean, build, and run all test cases with dual motor validation
     static-analysis   Run static analysis (cppcheck)
-    all               Run everything (rebuild + dual motor test + static analysis)
+    rules-all         Run all automated rule checks and generate grouped summary
+    all               Run everything (rebuild + dual motor test + static analysis + rules)
     help              Show this help message
 
 Examples:
@@ -65,6 +66,7 @@ Examples:
     python toolchain/run-pipeline.py test
     python toolchain/run-pipeline.py unit
     python toolchain/run-pipeline.py clean-test
+    python toolchain/run-pipeline.py rules-all
     python toolchain/run-pipeline.py all
 
 Dual Motor Type Testing
@@ -115,7 +117,7 @@ def main():
         choices=[
             'clean-build', 'rebuild',
             'test', 'unit', 'component', 'integration', 'clean-test',
-            'static-analysis', 'all', 'help'
+            'static-analysis', 'rules-all', 'all', 'help'
         ],
         help='Command to execute'
     )
@@ -184,6 +186,9 @@ def main():
         
         elif args.command == 'static-analysis':
             success = analysis_pipeline.static_analysis()
+
+        elif args.command == 'rules-all':
+            success = analysis_pipeline.run_all_groups(str(config.source_dir))
         
         elif args.command == 'all':
             # Run complete pipeline
@@ -196,6 +201,8 @@ def main():
                 success = test_pipeline.test_dual_motor()
             if success:
                 success = analysis_pipeline.static_analysis()
+            if success:
+                success = analysis_pipeline.run_all_groups(str(config.source_dir))
         
         if not success:
             write_error("Pipeline failed")

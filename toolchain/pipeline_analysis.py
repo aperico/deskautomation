@@ -57,6 +57,14 @@ class AnalysisPipeline:
                 "RULE-067", "RULE-068",
             ],
         }
+        self.group_descriptions = {
+            "nasa": "**NASA Power of Ten Rules** - Critical safety rules from NASA/JPL for resource-constrained embedded systems. Ensures predictability, reliability, and safety-critical code quality through strict control flow, bounded loops, and defensive assertions.",
+            "misra": "**MISRA C:2012** - Motor Industry Software Reliability Association guidelines for safety-critical software. Prevents undefined behavior, improves code safety, portability, and maintainability across automotive and safety-critical domains.",
+            "iso": "**ISO 25119** - Functional safety requirements for machinery control systems. Ensures requirement traceability, defensive programming practices, and compliance with automated safety standards.",
+            "compiler": "**Compiler Checks** - Compiler flags and build configuration validation. Enforces aggressive warning levels and error detection at compile time to catch potential issues early.",
+            "cppcheck": "**Static Analysis (Cppcheck)** - Comprehensive static analysis to detect potential runtime errors, memory issues, undefined behavior, and code quality problems without execution.",
+            "heuristic": "**Custom Heuristics** - Project-specific pattern detection including stack usage analysis, NULL pointer checks, pointer arithmetic validation, and function complexity metrics.",
+        }
     
     def static_analysis(self) -> bool:
         """Run static analysis with cppcheck."""
@@ -233,11 +241,14 @@ Results are saved in both text and XML formats for review and CI integration.
         if not script_path:
             write_error(f"Unknown rule ID: {rule_id}")
             return False
+        self._clear_rule_logs([rule_id])
         if rule_id in set(self.rule_groups.get("cppcheck", [])):
             if not self._ensure_cppcheck_report():
                 return False
         write_header(f"RUNNING RULE {rule_id}")
-        return self._run_rule_script(rule_id, script_path, src_path)
+        success = self._run_rule_script(rule_id, script_path, src_path)
+        self._write_grouped_summary([rule_id], src_path, datetime.now())
+        return success
 
     def run_rule_group(self, group_name: str, src_path: str) -> bool:
         """Run a group of rules by group name."""
@@ -245,6 +256,7 @@ Results are saved in both text and XML formats for review and CI integration.
         if not rule_ids:
             write_error(f"Unknown rule group: {group_name}")
             return False
+        self._clear_rule_logs(rule_ids)
         if any(rule_id in set(self.rule_groups.get("cppcheck", [])) for rule_id in rule_ids):
             if not self._ensure_cppcheck_report():
                 return False
@@ -259,6 +271,31 @@ Results are saved in both text and XML formats for review and CI integration.
                 continue
             if not self._run_rule_script(rule_id, script_path, src_path):
                 all_ok = False
+        self._write_grouped_summary(rule_ids, src_path, datetime.now())
+        return all_ok
+
+    def run_all_groups(self, src_path: str) -> bool:
+        """Run all rule groups and write a single grouped summary."""
+        rule_ids = self._get_all_rule_ids()
+        if not rule_ids:
+            write_error("No rules configured")
+            return False
+        self._clear_rule_logs(rule_ids)
+        if any(rule_id in set(self.rule_groups.get("cppcheck", [])) for rule_id in rule_ids):
+            if not self._ensure_cppcheck_report():
+                return False
+        rules = self._load_rule_scripts()
+        write_header("RUNNING ALL RULE GROUPS")
+        all_ok = True
+        for rule_id in rule_ids:
+            script_path = rules.get(rule_id)
+            if not script_path:
+                write_error(f"Rule script not found for {rule_id}")
+                all_ok = False
+                continue
+            if not self._run_rule_script(rule_id, script_path, src_path):
+                all_ok = False
+        self._write_grouped_summary(rule_ids, src_path, datetime.now())
         return all_ok
 
     def _run_rule_script(self, rule_id: str, script_path: Path, src_path: str) -> bool:
@@ -311,6 +348,131 @@ Results are saved in both text and XML formats for review and CI integration.
             rules[rule_id] = path
         return rules
 
+    def _get_all_rule_ids(self):
+        seen = set()
+        ordered = []
+        for group_rule_ids in self.rule_groups.values():
+            for rule_id in group_rule_ids:
+                if rule_id not in seen:
+                    seen.add(rule_id)
+                    ordered.append(rule_id)
+        return ordered
+
+    def _clear_rule_logs(self, rule_ids) -> None:
+        self.config.results_dir.mkdir(parents=True, exist_ok=True)
+        for rule_id in rule_ids:
+            log_path = self.config.results_dir / f"{rule_id}.log"
+            if log_path.exists():
+                log_path.unlink()
+
+    def _read_rule_status(self, log_path: Path) -> str:
+        if not log_path.exists():
+            return "NOT_RUN"
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as log_file:
+            for line in log_file:
+                if line.startswith("STATUS:"):
+                    return line.split(":", 1)[1].strip()
+        return "UNKNOWN"
+
+    def _count_rule_instances(self, log_path: Path) -> int:
+        """Count the number of violations/findings in a rule log file."""
+        if not log_path.exists():
+            return 0
+        count = 0
+        in_findings = False
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as log_file:
+            for line in log_file:
+                if line.startswith("FINDINGS:"):
+                    in_findings = True
+                    continue
+                if in_findings and line.startswith("-"):
+                    count += 1
+        return count
+
+    def _write_grouped_summary(self, rule_ids, src_path: str = None, timestamp = None) -> None:
+        summary_path = self.config.results_dir / "rules_summary.md"
+        if not rule_ids:
+            return
+        if timestamp is None:
+            timestamp = datetime.now()
+        
+        rule_id_set = set(rule_ids)
+        included_groups = []
+        for group_name, group_rule_ids in self.rule_groups.items():
+            if any(rule_id in rule_id_set for rule_id in group_rule_ids):
+                included_groups.append((group_name, group_rule_ids))
+
+        # First pass: collect all statuses for summary
+        all_statuses = {}
+        for group_name, group_rule_ids in included_groups:
+            for rule_id in group_rule_ids:
+                log_path = self.config.results_dir / f"{rule_id}.log"
+                status = self._read_rule_status(log_path)
+                all_statuses[rule_id] = status
+        
+        # Count totals
+        total_pass = sum(1 for s in all_statuses.values() if s == "PASS")
+        total_fail = sum(1 for s in all_statuses.values() if s == "FAIL")
+        
+        lines = []
+        lines.append("# Rule Summary")
+        lines.append("")
+        # Add header with metadata
+        lines.append(f"**Generated:** {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        if src_path:
+            lines.append(f"**Source Path:** `{src_path}`")
+        lines.append("")
+        lines.append(f"**Guidelines:** [Coding Guidelines and Automated Checks](../coding_guides_and_checks.md)")
+        lines.append("")
+        
+        # Add summary statistics
+        lines.append("## Status Summary")
+        lines.append("")
+        lines.append(f"✅ **Total PASS:** {total_pass}")
+        lines.append(f"❌ **Total FAIL:** {total_fail}")
+        lines.append("")
+        
+        for group_name, group_rule_ids in included_groups:
+            lines.append("")
+            lines.append(f"## Group: {group_name.capitalize()}")
+            lines.append("")
+            group_desc = self.group_descriptions.get(group_name, "")
+            if group_desc:
+                lines.append(group_desc)
+                lines.append("")
+            lines.append("| Rule ID | Status | Instances | Log |")
+            lines.append("|---------|--------|-----------|-----|")
+            for rule_id in group_rule_ids:
+                log_name = f"{rule_id}.log"
+                log_path = self.config.results_dir / log_name
+                status = self._read_rule_status(log_path)
+                instances = self._count_rule_instances(log_path) if status != "NOT_RUN" else 0
+                
+                if status == "NOT_RUN":
+                    log_link = "-"
+                    status_icon = "-"
+                elif status == "PASS":
+                    log_link = f"[{log_name}](./{log_name})"
+                    status_icon = "✅ PASS"
+                elif status == "FAIL":
+                    log_link = f"[{log_name}](./{log_name})"
+                    status_icon = "❌ FAIL"
+                else:
+                    log_link = f"[{log_name}](./{log_name})"
+                    status_icon = status
+                
+                # Display instance count only if status is FAIL (violations found)
+                if status == "FAIL":
+                    lines.append(f"| {rule_id} | {status_icon} | {instances} | {log_link} |")
+                else:
+                    lines.append(f"| {rule_id} | {status_icon} | - | {log_link} |")
+
+        summary = "\n".join(lines) + "\n"
+        with open(summary_path, "w", encoding="utf-8") as summary_file:
+            summary_file.write(summary)
+        print(summary)
+        write_info(f"Summary written to: {summary_path}")
+
     def _ensure_cppcheck_report(self) -> bool:
         """Ensure cppcheck XML report exists before rule execution."""
         xml_files = list(self.config.results_dir.glob("cppcheck*.xml"))
@@ -330,7 +492,7 @@ def main():
     parser = argparse.ArgumentParser(description='Static analysis pipeline subscript')
     parser.add_argument(
         'command',
-        choices=['static-analysis', 'rule', 'rules-group', 'rules-list'],
+        choices=['static-analysis', 'rule', 'rules-group', 'rules-list', 'rules-all'],
         help='Analysis command to execute'
     )
     parser.add_argument('--rule-id', help='Unified rule ID (e.g., RULE-001)')
@@ -362,6 +524,11 @@ def main():
                 write_error("--group and --src-path are required for rules-group")
                 return 1
             success = pipeline.run_rule_group(args.group, args.src_path)
+        elif args.command == 'rules-all':
+            if not args.src_path:
+                write_error("--src-path is required for rules-all")
+                return 1
+            success = pipeline.run_all_groups(args.src_path)
         
         if not success:
             write_error("Analysis pipeline failed")

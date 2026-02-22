@@ -1,0 +1,10 @@
+RULE_ID: RULE-038
+SCRIPT: rule_RULE-038_R10_2_zero_warnings.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:40
+================================================================================
+RULE: RULE-038 (R10.2)
+DESC: Zero compiler warnings (requires build log)
+STATUS: PASS

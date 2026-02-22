@@ -1,0 +1,10 @@
+RULE_ID: RULE-001
+SCRIPT: rule_RULE-001_R1_1_no_goto.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:36
+================================================================================
+RULE: RULE-001 (R1.1)
+DESC: No goto statements
+STATUS: PASS

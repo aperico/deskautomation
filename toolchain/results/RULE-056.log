@@ -1,0 +1,10 @@
+RULE_ID: RULE-056
+SCRIPT: rule_RULE-056_MISRA_10_3_narrowing.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:42
+================================================================================
+RULE: RULE-056 (MISRA-10.3)
+DESC: No narrowing assignments (cppcheck/misra)
+STATUS: PASS

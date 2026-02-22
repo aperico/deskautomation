@@ -1,0 +1,10 @@
+RULE_ID: RULE-067
+SCRIPT: rule_RULE-067_ISO_001_traceability.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:44
+================================================================================
+RULE: RULE-067 (ISO-001)
+DESC: Requirement traceability (SWReq- tags)
+STATUS: PASS

@@ -9,7 +9,6 @@ tests/__pycache__/
 tests/*.pyc
 
 # Toolchain outputs and cache
-toolchain/results/
 toolchain/__pycache__/
 toolchain/*.pyc
 toolchain/rules/__pycache__/

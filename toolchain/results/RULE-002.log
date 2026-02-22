@@ -1,0 +1,10 @@
+RULE_ID: RULE-002
+SCRIPT: rule_RULE-002_R1_2_no_setjmp_longjmp.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:37
+================================================================================
+RULE: RULE-002 (R1.2)
+DESC: No setjmp/longjmp
+STATUS: PASS

@@ -1,0 +1,10 @@
+RULE_ID: RULE-029
+SCRIPT: rule_RULE-029_R8_2_no_function_macros.py
+SRC_PATH: src
+STATUS: PASS
+EXIT_CODE: 0
+TIMESTAMP: 2026-02-22 16:10:39
+================================================================================
+RULE: RULE-029 (R8.2)
+DESC: No function-like macros
+STATUS: PASS
