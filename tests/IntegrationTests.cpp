@@ -3,6 +3,7 @@
 #include "motor_controller.h"
 #include "desk_app.h"
 #include "desk_types.h"
+#include "motor_config.h"
 #include "hal_mock/HALMock.h"
 
 // ============================================================================
@@ -21,6 +22,7 @@ protected:
     void SetUp() override
     {
         HAL_init();
+        HAL_setMotorType(MotorConfig_getMotorType());
     }
 };
 
@@ -48,7 +50,7 @@ TEST_F(HALIntegrationTest, LimitSensorReadReturnsValidValue)
 // NOTE: Tests validate both MT_ROBUST (current sensing) and MT_BASIC (no sensing)
 TEST_F(HALIntegrationTest, MotorCurrentReadReturnsMilliamps)
 {
-    if (MOTOR_TYPE == MT_ROBUST) {
+    if (MotorConfig_getMotorType() == MT_ROBUST) {
         const int adc_value = 512;
         pin_states[PIN_MOTOR_SENSE] = adc_value;
 
@@ -65,7 +67,7 @@ TEST_F(HALIntegrationTest, MotorCurrentReadReturnsMilliamps)
 
 TEST_F(HALIntegrationTest, MotorCurrentReadZeroAtAdcZero)
 {
-    if (MOTOR_TYPE == MT_ROBUST) {
+    if (MotorConfig_getMotorType() == MT_ROBUST) {
         pin_states[PIN_MOTOR_SENSE] = 0;
     }
     EXPECT_EQ(HAL_readMotorCurrent(), 0U);
@@ -73,7 +75,7 @@ TEST_F(HALIntegrationTest, MotorCurrentReadZeroAtAdcZero)
 
 TEST_F(HALIntegrationTest, MotorCurrentReadMaxAtAdcMax)
 {
-    if (MOTOR_TYPE == MT_ROBUST) {
+    if (MotorConfig_getMotorType() == MT_ROBUST) {
         pin_states[PIN_MOTOR_SENSE] = 1023;
         EXPECT_EQ(HAL_readMotorCurrent(), 10000U);
     } else {
@@ -101,6 +103,7 @@ protected:
     void SetUp() override
     {
         HAL_init();
+        HAL_setMotorType(MotorConfig_getMotorType());
         MotorController_init();
         APP_Init();
     }
@@ -113,6 +116,7 @@ TEST_F(SystemIntegrationTest, AppOutputDrivesMotorControllerCorrectly)
     
     // Setup app inputs
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_up = true;
     app_inputs.timestamp_ms = now;
     
@@ -148,6 +152,7 @@ TEST_F(SystemIntegrationTest, LimitSensorPreventsDangerousMovement)
     
     // Simulate upper limit triggered
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_up = true;
     app_inputs.limit_upper = true;  // Limit sensor triggered
     app_inputs.timestamp_ms = now;
@@ -197,6 +202,7 @@ TEST_F(SystemIntegrationTest, SWReq012_MotorStopWithoutValidCommand)
     
     // No buttons pressed, no fault input
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_up = false;
     app_inputs.button_down = false;
     app_inputs.limit_upper = false;
@@ -253,6 +259,7 @@ TEST_F(SystemIntegrationTest, SWReq013_SafeInitializationAfterReset)
     
     // Immediately call APP_Task with no inputs
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.timestamp_ms = now;
     
     AppOutput_t app_outputs;
@@ -277,6 +284,7 @@ TEST_F(SystemIntegrationTest, SWReq014_002_ObstructionDetectionDuringMovingUp)
     
     // Step 1: Transition to MOVING_UP with normal current
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_up = true;
     app_inputs.motor_current_ma = 50U;  // Normal current during motion
     app_inputs.timestamp_ms = now;
@@ -294,8 +302,17 @@ TEST_F(SystemIntegrationTest, SWReq014_002_ObstructionDetectionDuringMovingUp)
     
     APP_Task(&app_inputs, &app_outputs);
     
-    // Step 3-4: Verify obstruction detection based on motor type
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    // First sample at high current - timer starts, but not yet expired
+    EXPECT_EQ(app_outputs.motor_cmd, MOTOR_UP) 
+        << "Step 2: Still moving after first high current (timer not yet expired)";
+    
+    // Step 3: Wait for obstruction timeout (>100ms from first high-current sample)
+    app_inputs.timestamp_ms = now + 120U;  // 120 - 10 = 110ms elapsed
+    
+    APP_Task(&app_inputs, &app_outputs);
+    
+    // Step 4: Verify obstruction detection based on motor type
+    if (MotorConfig_getMotorType() == MT_ROBUST)  // Current sensing check
     {
         EXPECT_EQ(app_outputs.motor_cmd, MOTOR_STOP) 
             << "MT_ROBUST: Motor must stop immediately on jam";
@@ -322,6 +339,7 @@ TEST_F(SystemIntegrationTest, SWReq014_003_ObstructionDetectionDuringMovingDown)
     
     // Step 1: Transition to MOVING_DOWN with normal current
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_down = true;
     app_inputs.motor_current_ma = 60U;  // Normal current during downward motion
     app_inputs.timestamp_ms = now;
@@ -339,8 +357,17 @@ TEST_F(SystemIntegrationTest, SWReq014_003_ObstructionDetectionDuringMovingDown)
     
     APP_Task(&app_inputs, &app_outputs);
     
-    // Step 3-4: Verify obstruction detection based on motor type
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    // First sample at high current - timer starts, but not yet expired
+    EXPECT_EQ(app_outputs.motor_cmd, MOTOR_DOWN) 
+        << "Step 2: Still moving after first high current (timer not yet expired)";
+    
+    // Step 3: Wait for obstruction timeout (>100ms from first high-current sample)
+    app_inputs.timestamp_ms = now + 120U;  // 120 - 10 = 110ms elapsed
+    
+    APP_Task(&app_inputs, &app_outputs);
+    
+    // Step 4: Verify obstruction detection based on motor type
+    if (MotorConfig_getMotorType() == MT_ROBUST)
     {
         EXPECT_EQ(app_outputs.motor_cmd, MOTOR_STOP) 
             << "MT_ROBUST: Motor must stop immediately on jam";
@@ -367,6 +394,7 @@ TEST_F(SystemIntegrationTest, SWReq014_001_StuckOnDetectionDuringStop)
     
     // Step 1: Command motor STOP with no motion
     AppInput_t app_inputs = {0};
+    app_inputs.motor_type = MotorConfig_getMotorType();
     app_inputs.button_up = false;
     app_inputs.button_down = false;
     app_inputs.limit_upper = false;
@@ -400,7 +428,7 @@ TEST_F(SystemIntegrationTest, SWReq014_001_StuckOnDetectionDuringStop)
     APP_Task(&app_inputs, &app_outputs);
     
     // Step 5: Verify fault behavior based on motor type
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    if (MotorConfig_getMotorType() == MT_ROBUST)  // Current sensing check
     {
         EXPECT_TRUE(app_outputs.fault_out)
             << "MT_ROBUST: Stuck-on fault must latch after 100ms";

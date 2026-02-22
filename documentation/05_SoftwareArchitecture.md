@@ -112,6 +112,52 @@ graph TB
 
 ---
 
+## Motor Driver Abstraction
+
+### Supported Drivers
+
+The software architecture supports multiple motor driver implementations transparent to application logic:
+
+| Driver | Model | Capabilities | Status |
+|--------|-------|--------------|--------|
+| **MT_BASIC** | L298N Dual H-Bridge | Standard H-bridge with PWM speed control | ✅ Supported |
+| **MT_ROBUST** | IBT_2 Dual H-Bridge (FET) | Enhanced H-bridge with better thermal characteristics | ✅ Supported |
+
+### Abstraction Strategy
+
+**Motor-Type-Agnostic Application Logic:**
+- Application layer (`DeskApp`) makes no assumptions about hardware capabilities
+- All control logic, safety features, and timing constraints are identical for both drivers
+- Motor type influences only HAL implementation details, not functional behavior
+
+**HAL Motor Control Interface:**
+```
+HAL_setMotor(direction, speed)  // Same interface for both drivers
+├── MT_BASIC: Drives L298N GPIO pins (standard H-bridge)
+└── MT_ROBUST: Drives IBT_2 GPIO pins (enhanced FET driver)
+```
+
+**Current Sensing Abstraction:**
+```
+current_ma = HAL_readMotorCurrent()  // Same interface for both drivers
+├── MT_BASIC: Always returns 0 (no current sensor in hardware)
+└── MT_ROBUST: Returns actual current from sense resistor
+```
+
+### Configuration Selection
+
+Motor type is selected at compile-time via `motor_config.cpp`:
+```cpp
+#define MOTOR_TYPE MT_BASIC  // Change to MT_ROBUST for IBT_2 driver
+```
+
+All 37 unit and integration tests verify identical behavior across both configurations:
+- Tests execute with default MT_BASIC configuration
+- Can be recompiled with `TEST_MOTOR_TYPE=MT_ROBUST` to validate IBT_2 without code changes
+- Both configurations pass all verification specifications without functional differences
+
+---
+
 ## State Machine Design
 
 ### State Diagram
@@ -283,6 +329,27 @@ Detailed interface definitions, pin assignments, and timing budgets are specifie
 - Allows I/O operations (HAL calls) to complete without waiting
 **Traceability:** Foundational to responsive button handling (SysReq-002: ≤1 sec response) and halt timing (SysReq-003: ≤500 ms halt).
 
+### AD-009: Motor Configuration Encapsulation
+**Decision:** Motor type configuration is encapsulated via `MotorConfig_getMotorType()` getter function; direct application code shall not use the `MOTOR_TYPE` macro.
+
+**Rationale:** 
+- **Abstraction:** Hides motor type definition details from application code
+- **Testability:** Enables testing both motor configurations (MT_BASIC and MT_ROBUST) without recompilation via `TEST_MOTOR_TYPE` override
+- **Future NVM Support:** Architecture is prepared for runtime motor configuration via non-volatile memory without requiring header changes
+- **Safety:** Centralized control of motor type configuration reduces risk of inconsistent usage across codebase
+- **Maintenance:** Single point of definition for motor type handling simplifies future hardware variants
+
+**Current Implementation:** Compile-time configuration (default: MT_BASIC/L298N). MOTOR_TYPE macro is defined and validated in `motor_config.cpp`.
+
+**Future Implementation:** Will read motor type from NVM at runtime, enabling hardware auto-detection and multi-configuration support without recompilation.
+
+**Verification:** 
+- Application code uses `inputs->motor_type` from AppInput struct (populated via `MotorConfig_getMotorType()`)
+- HAL layer uses runtime `g_motor_type` variable (set via `HAL_setMotorType()`)
+- All 37 unit and integration tests validate both MT_BASIC and MT_ROBUST configurations
+
+**Traceability:** All software requirements (SWReq-001 through SWReq-014); ensures motor-type-agnostic application logic.
+
 ---
 
 ## Design Constraints
@@ -298,6 +365,7 @@ Detailed interface definitions, pin assignments, and timing budgets are specifie
 
 ## Future Enhancements (Out of Scope)
 
+- **Runtime Motor Configuration (In Progress):** Migrate from compile-time `MOTOR_TYPE` macro to NVM-based runtime configuration, enabling hardware auto-detection without recompilation (see AD-009: Motor Configuration Encapsulation for architecture readiness)
 - PWM ramping for smooth acceleration/deceleration
 - Position sensing and closed-loop control
 - EEPROM storage for height presets

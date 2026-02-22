@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "desk_app.h"
 #include "desk_types.h"
+#include "motor_config.h"
 
 // ============================================================================
 // TEST CASE SPECIFICATION: Application Layer Component Tests
@@ -63,6 +64,7 @@ protected:
 TEST_F(DeskAppComponentTest, TC_SWReq007_001_InitialStateIsIdle)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.timestamp_ms = 0U;
     
     AppOutput_t outputs;
@@ -118,6 +120,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq007_001_InitialStateIsIdle)
 TEST_F(DeskAppComponentTest, TC_SWReq001_001_UpButtonCommandsMotorUp)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;
     inputs.button_down = false;
     inputs.limit_upper = false;
@@ -177,6 +180,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq001_001_UpButtonCommandsMotorUp)
 TEST_F(DeskAppComponentTest, TC_SWReq002_001_DownButtonCommandsMotorDown)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = false;
     inputs.button_down = true;
     inputs.limit_upper = false;
@@ -227,6 +231,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq002_001_DownButtonCommandsMotorDown)
 TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.motor_current_ma = 200U;
     inputs.timestamp_ms = 0U;
 
@@ -239,7 +244,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
     APP_Task(&inputs, &outputs);
 
 #if TESTENVIRONMENT
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    if (MotorConfig_getMotorType() == MT_ROBUST)  // Current sensing check
     {
         EXPECT_TRUE(outputs.fault_out)
             << "MT_ROBUST: Fault must latch after current exceeds threshold for >100ms";
@@ -289,6 +294,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_001_CurrentSenseFaultLatches)
 TEST_F(DeskAppComponentTest, TC_SWReq005_001_UpperLimitStopsUpwardMovement)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;
     inputs.limit_upper = true;   // SAFETY-CRITICAL: Limit is active
     inputs.limit_lower = false;
@@ -340,6 +346,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq005_001_UpperLimitStopsUpwardMovement)
 TEST_F(DeskAppComponentTest, TC_SWReq006_001_LowerLimitStopsDownwardMovement)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_down = true;
     inputs.limit_upper = false;
     inputs.limit_lower = true;   // SAFETY-CRITICAL: Limit is active
@@ -391,6 +398,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq006_001_LowerLimitStopsDownwardMovement)
 TEST_F(DeskAppComponentTest, TC_SWReq004_001_ConflictingButtonsForceStop)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;      // CONFLICTING
     inputs.button_down = true;    // CONFLICTING
     inputs.limit_upper = false;
@@ -442,6 +450,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq004_002_ConflictingButtonsDuringMotion)
 {
     // Step 1: Transition to MOVING_UP
     AppInput_t inputs = {0};
+    inputs.motor_type = MOTOR_TYPE;
     inputs.button_up = true;
     inputs.limit_upper = false;
     inputs.limit_lower = false;
@@ -570,6 +579,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq003_001_ButtonReleaseStopsMotor)
 TEST_F(DeskAppComponentTest, TC_SWReq010_001_FaultInputTriggersErrorState)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;       // Button pressed, but...
     inputs.fault_in = true;        // ...external fault detected
     inputs.timestamp_ms = 0U;
@@ -621,6 +631,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq010_002_DualLimitSwitchFault)
 {
     // Step 1: Trigger dual limit fault
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;          // User presses UP
     inputs.button_down = false;
     inputs.limit_upper = true;        // BOTH limits active simultaneously
@@ -700,6 +711,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq010_003_FaultRecoveryWhenButtonsReleased)
 {
     // Step 1: Trigger fault with both buttons pressed
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;
     inputs.button_down = true;    // Simultaneous press = fault
     inputs.limit_upper = false;
@@ -834,6 +846,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq011_001_PeriodicControlLoopExecution)
 TEST_F(DeskAppComponentTest, TC_SWReq012_001_MotorStopWhenNoValidCommand)
 {
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = false;    // No UP command
     inputs.button_down = false;  // No DOWN command
     inputs.limit_upper = false;
@@ -944,6 +957,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_002_ObstructionDetectionDuringMovingUp)
 {
     // Step 1: Transition to MOVING_UP with normal current
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_up = true;
     inputs.motor_current_ma = 50U;  // Normal current during motion
     inputs.timestamp_ms = 0U;
@@ -963,9 +977,18 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_002_ObstructionDetectionDuringMovingUp)
     
     APP_Task(&inputs, &outputs);
     
-    // Step 3: Verify behavior based on motor type
+    // First sample at high current - timer starts
+    EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_UP)
+        << "Step 2: Still moving after first high current sample (timer not yet expired)";
+    
+    // Step 3: Wait for obstruction timeout (total time >= 100ms from first high-current sample)
+    inputs.timestamp_ms = 120U;  // 120 - 10 = 110ms elapsed since obstruction started
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 4: Verify behavior based on motor type
 #if TESTENVIRONMENT
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    if (MotorConfig_getMotorType() == MT_ROBUST)  // Current sensing check
     {
         EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
             << "MT_ROBUST: Motor must stop immediately on obstruction";
@@ -1024,6 +1047,7 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_003_ObstructionDetectionDuringMovingDow
 {
     // Step 1: Transition to MOVING_DOWN with normal current
     AppInput_t inputs = {0};
+    inputs.motor_type = MotorConfig_getMotorType();
     inputs.button_down = true;
     inputs.motor_current_ma = 60U;  // Normal current during downward motion
     inputs.timestamp_ms = 0U;
@@ -1043,9 +1067,18 @@ TEST_F(DeskAppComponentTest, TC_SWReq014_003_ObstructionDetectionDuringMovingDow
     
     APP_Task(&inputs, &outputs);
     
-    // Step 3: Verify behavior based on motor type
+    // First sample at high current - timer starts
+    EXPECT_EQ(APP_GetState(), APP_STATE_MOVING_DOWN)
+        << "Step 2: Still moving after first high current sample (timer not yet expired)";
+    
+    // Step 3: Wait for obstruction timeout (total time >= 100ms from first high-current sample)
+    inputs.timestamp_ms = 120U;  // 120 - 10 = 110ms elapsed since obstruction started
+    
+    APP_Task(&inputs, &outputs);
+    
+    // Step 4: Verify behavior based on motor type
 #if TESTENVIRONMENT
-    if (MOTOR_TYPE == 1)  // MT_ROBUST
+    if (MotorConfig_getMotorType() == MT_ROBUST)  // Current sensing check
     {
         EXPECT_EQ(outputs.motor_cmd, MOTOR_STOP) 
             << "MT_ROBUST: Motor must stop immediately on obstruction";

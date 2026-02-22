@@ -106,6 +106,66 @@ See [06_01_InteractionDiagrams.md](06_01_InteractionDiagrams.md) for complete de
 
 ---
 
+## Motor Configuration Module
+
+### Module Purpose
+
+The Motor Configuration module (`motor_config.h`/`.cpp`) encapsulates motor driver type selection and provides a unified interface for the rest of the software to remain motor-type-agnostic. This ensures both MT_BASIC (L298N) and MT_ROBUST (IBT_2) can be supported identically without code duplication.
+
+### Module Interface
+
+```cpp
+/// Get the current motor driver type
+/// @return MotorType_t - MT_BASIC (0u) or MT_ROBUST (1u)
+MotorType_t MotorConfig_getMotorType(void);
+```
+
+### Configuration Selection
+
+Motor type is selected via compile-time definition in `src/motor_config.cpp`:
+
+```cpp
+#define MOTOR_TYPE MT_BASIC  // Change to MT_ROBUST to use IBT_2 driver
+```
+
+When changed, rebuild required: `cmake --build build`
+
+### Implementation Details
+
+- **Header File** (`motor_config.h`): Contains only public interface and type definitions
+  - `MotorType_t` enum (MT_BASIC=0u, MT_ROBUST=1u)
+  - `MotorConfig_getMotorType()` function declaration
+  - Feature comparison documentation for both drivers
+
+- **Implementation File** (`motor_config.cpp`): Contains configuration details
+  - `MOTOR_TYPE` macro definition (compile-time value)
+  - Compile-time validation checks (#error on invalid values)
+  - `MotorConfig_getMotorType()` implementation
+  - `TEST_MOTOR_TYPE` support for test-time overrides
+
+### Test Compatibility
+
+The module supports dual-configuration testing:
+1. **Default Build**: Compiles with MT_BASIC, all 37 tests pass on MT_BASIC
+2. **Alternative Build**: Can be recompiled with `-DTEST_MOTOR_TYPE=MT_ROBUST` to validate MT_ROBUST config without code changes
+
+All application-level tests verify identical behavior across both motor types, ensuring the motor abstraction is transparent to the rest of the system.
+
+### Traceability
+
+- **System Requirement**: SysReq-014 (Motor driver support)
+- **Software Requirement**: SWReq-015 (Motor type configuration abstraction)
+- **Architecture Decision**: AD-009 (Motor Configuration Encapsulation)
+
+### Future Enhancement: Runtime NVM Support
+
+The current module is designed for easy migration to runtime motor configuration:
+- To enable NVM-based motor type detection, only the `motor_config.cpp` implementation needs to change
+- No header changes required when adding NVM support
+- All application code remains unchanged
+
+---
+
 ## Data Structure Definitions
 
 ### 1. Enumerated Types
@@ -566,7 +626,7 @@ uint16_t HAL_readMotorCurrent(void);
 void HAL_setMotor(MotorDirection dir, uint8_t speed);
 ```
 
-**Purpose:** Command motor driver with direction and speed.
+**Purpose:** Command motor driver with direction and speed. Implementation is transparent to motor driver type (MT_BASIC or MT_ROBUST).
 
 **Parameters:**
 - `dir` (MotorDirection): MOTOR_STOP, MOTOR_UP, or MOTOR_DOWN
@@ -576,6 +636,15 @@ void HAL_setMotor(MotorDirection dir, uint8_t speed);
 
 **Preconditions:** HAL_init() called
 
+**Motor Driver Abstraction:**
+
+This function implements identical interface for both supported motor drivers. The actual hardware interaction differs per driver type but behavioral output is identical:
+
+| Motor Type | Driver | EN1/EN2 Pins | PWM Pin | Control Scheme |
+|-----------|--------|-------------|---------|----------------|
+| **MT_BASIC** | L298N | 6, 7 (Digital) | 9 (PWM) | Single-PWM: Direction via EN1/EN2, Speed via PWM |
+| **MT_ROBUST** | IBT_2 | 6, 7 (Digital) | 9 (PWM) | Single-PWM: Direction via EN1/EN2, Speed via PWM |
+
 **Algorithm:** See Algorithm 4 (Motor Control) above
 
 **Execution Time:** < 2 ms
@@ -584,7 +653,7 @@ void HAL_setMotor(MotorDirection dir, uint8_t speed);
 
 **Safety:** Always sets enable pins before PWM to prevent glitches
 
-**SWReq Traceability:** SWReq-001, SWReq-002, SWReq-003
+**SWReq Traceability:** SWReq-001, SWReq-002, SWReq-003, SWReq-015
 
 ---
 
@@ -1111,7 +1180,17 @@ void APP_Task(...) {
 #endif // PIN_CONFIG_H
 ```
 
-### L298N Motor Driver Wiring
+### L298N Motor Driver Wiring (MT_BASIC Configuration)
+
+**Motor Driver Selection:**
+
+This design supports two motor driver configurations. To change from MT_BASIC (L298N) to MT_ROBUST (IBT_2), edit `src/motor_config.cpp`:
+```cpp
+#define MOTOR_TYPE MT_BASIC  // Change to: #define MOTOR_TYPE MT_ROBUST
+```
+Then rebuild. Pin assignments remain identical; only HAL control logic changes internally.
+
+**L298N Configuration (MT_BASIC):**
 
 **Note:** This design uses a **single-PWM control scheme** where:
 - EN1/EN2 pins select the motor direction (UP or DOWN)
@@ -1131,4 +1210,18 @@ void APP_Task(...) {
 - Single-PWM approach implements SysReq-002 (response ≤ 1 sec) via immediate direction + speed activation
 - Supports SysReq-003 (halt ≤ 500 ms) via immediate PWM deactivation to 0
 - Supports SysReq-004 (full 90 cm stroke in ≤ 30 sec) via constant maximum PWM speed (255)
+- Identical pin assignments for MT_ROBUST ensure motor abstraction (SWReq-015)
+
+---
+
+### L298N Motor Driver Wiring
+
+**Note:** This design uses a **single-PWM control scheme** where:
+- EN1/EN2 pins select the motor direction (UP or DOWN)
+- PIN_MOTOR_PWM (pin 9) controls speed for whichever direction is active
+- Only one EN pin is HIGH at any time (cannot be simultaneous)
+
+Both L298N (MT_BASIC) and IBT_2 (MT_ROBUST) drivers use identical pin assignments and control scheme for software transparency. The motor type can be changed in `src/motor_config.cpp` without modifying this configuration.
+
+For IBT_2 specific electrical specifications and advantages, see [07_MotorDriverConfiguration.md](07_MotorDriverConfiguration.md).
 

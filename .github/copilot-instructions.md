@@ -20,20 +20,20 @@
   - Build: `cmake --build build --config Release`
   - Or use VS Code tasks: `CMake: Clean`, `CMake: Configure`, `CMake: Build`
 - **Local Development Pipeline:**
-  - Use `tests/run-pipeline.ps1` for local development workflow
+  - Use `toolchain/run-pipeline.py` for local development workflow
   - Commands: `clean-build`, `rebuild`, `test`, `clean-test`, `static-analysis`, `all`, `help`
-  - Example: `.\tests\run-pipeline.ps1 -Command all`
+  - Example: `python toolchain/run-pipeline.py all`
   - Results stored in `tests/results/` directory
 - **Run All Tests:**
   - `ctest --test-dir build -C Release --output-on-failure`
-  - Or: `.\tests\run-pipeline.ps1 -Command test`
+  - Or: `python toolchain/run-pipeline.py test`
   - Test executables: `build\UnitTests.exe`, `build\ComponentTests.exe`, `build\IntegrationTests.exe`
 - **Run Specific Tests:**
   - Unit tests: `build\UnitTests.exe --gtest_filter=MotorController.*`
   - Component tests: `build\ComponentTests.exe --gtest_filter=TC_SWReq001`
   - Integration tests: `build\IntegrationTests.exe --gtest_filter=HAL.*`
 - **Static Analysis:**
-  - Run: `.\tests\run-pipeline.ps1 -Command static-analysis`
+  - Run: `python toolchain/run-pipeline.py static-analysis`
   - Tool: cppcheck with comprehensive checks (errors, warnings, style, performance, portability)
 - **CI/CD:**
   - GitHub Actions: `.github/workflows/cmake-single-platform.yml`
@@ -68,12 +68,11 @@
 
 ## Key References
 - [README.md](../README.md)
-- [documentation/codingguidelines.md](../documentation/codingguidelines.md)
-- [documentation/TESTING_README.md](../documentation/TESTING_README.md)
 - [documentation/05_SoftwareArchitecture.md](../documentation/05_SoftwareArchitecture.md)
-- [documentation/06_DetailedDesign.md](../documentation/06_DetailedDesign.md)
-- [documentation/TraceabilityMatrix.md](../documentation/TraceabilityMatrix.md)
-- [tests/run-pipeline.ps1](../tests/run-pipeline.ps1)
+- [documentation/06_00_DetailedDesign.md](../documentation/06_00_DetailedDesign.md)
+- [documentation/04_01_SoftwareVerificationSpecification.md](../documentation/04_01_SoftwareVerificationSpecification.md)
+- [documentation/03_02_RequirementsTraceabilityMatrix.md](../documentation/03_02_RequirementsTraceabilityMatrix.md)
+- [toolchain/run-pipeline.py](../toolchain/run-pipeline.py)
 
 ---
 **When in doubt, prefer existing patterns and update documentation and tests for all changes.**

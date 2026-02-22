@@ -2,7 +2,42 @@
 
 This directory contains the source code for the Automated Mechanical Desk Lift System. For high-level project documentation and overview, see the [main README](../README.md).
 
-## Building
+## 🚀 Recommended: Automated Pipeline
+
+**Use the automated development pipeline for the fastest and most reliable builds:**
+
+```bash
+# Complete pipeline: build + dual motor validation + static analysis
+python toolchain/run-pipeline.py all
+
+# Build only (clean + configure + build)
+python toolchain/run-pipeline.py clean-build
+
+# Run all tests (validates both MT_BASIC and MT_ROBUST motor types)
+python toolchain/run-pipeline.py test
+
+# Quick development workflow
+python toolchain/run-pipeline.py unit        # Unit tests only
+python toolchain/run-pipeline.py component   # Component tests only
+
+# Get help
+python toolchain/run-pipeline.py help
+```
+
+**Why use the pipeline?**
+- ✅ Automated dual motor type validation (MT_BASIC + MT_ROBUST)
+- ✅ Consistent build environment
+- ✅ Comprehensive test coverage (37 tests)
+- ✅ Static analysis integration
+- ✅ Detailed results saved to `toolchain/results/`
+
+**📖 Complete Pipeline Documentation:** [toolchain/README.md](../toolchain/README.md)
+
+---
+
+## Manual Build Instructions
+
+For manual control or understanding the build process, use these commands:
 
 ### Prerequisites
 - Windows with MSYS2 installed
@@ -266,19 +301,19 @@ Examples:
 
 ### Local Development Pipeline
 
-The `tests/run-pipeline.ps1` script provides a convenient way for developers to execute common development tasks locally, including building, testing, and static analysis.
+The `tests/toolchain/run-pipeline.py` script provides a convenient way for developers to execute common development tasks locally, including building, testing, and static analysis.
 
 #### Prerequisites
 
-- Windows with MSYS2 installed
-- MinGW-w64 toolchain (via MSYS2)
+- Python 3.7+
+- MSYS2 with MinGW-w64 toolchain
 - CMake
 - cppcheck (for static analysis): `pacman -S mingw-w64-x86_64-cppcheck`
 
 #### Usage
 
-```powershell
-.\tests\run-pipeline.ps1 -Command <command>
+```bash
+python tests/toolchain/run-pipeline.py <command>
 ```
 
 #### Available Pipeline Commands
@@ -296,33 +331,33 @@ The `tests/run-pipeline.ps1` script provides a convenient way for developers to 
 #### Pipeline Examples
 
 **Clean and Build:**
-```powershell
-.\tests\run-pipeline.ps1 -Command clean-build
+```bash
+python tests/toolchain/run-pipeline.py clean-build
 ```
 
 **Rebuild Everything:**
-```powershell
-.\tests\run-pipeline.ps1 -Command rebuild
+```bash
+python tests/toolchain/run-pipeline.py rebuild
 ```
 
 **Run All Tests:**
-```powershell
-.\tests\run-pipeline.ps1 -Command test
+```bash
+python tests/toolchain/run-pipeline.py test
 ```
 
 **Clean and Run All Tests:**
-```powershell
-.\tests\run-pipeline.ps1 -Command clean-test
+```bash
+python tests/toolchain/run-pipeline.py clean-test
 ```
 
 **Run Static Analysis:**
-```powershell
-.\tests\run-pipeline.ps1 -Command static-analysis
+```bash
+python tests/toolchain/run-pipeline.py static-analysis
 ```
 
 **Run Complete Pipeline:**
-```powershell
-.\tests\run-pipeline.ps1 -Command all
+```bash
+python tests/toolchain/run-pipeline.py all
 ```
 
 This will:

@@ -4,4 +4,14 @@ schematics/schmatics_desk_automation/~schmatics_desk_automation.kicad_pcb.lck
 
 tests/cppcheck-addons/cppcheck-main/
 tests/cppcheck-addons/cppcheck-addons.zip
-tests/results/
+
+tests/__pycache__/
+tests/*.pyc
+
+# Toolchain outputs and cache
+toolchain/results/
+toolchain/__pycache__/
+toolchain/*.pyc
+toolchain/rules/__pycache__/
+toolchain/rules/*.pyc
+toolchain/rules/__pycache__/common.cpython-312.pyc

@@ -2,6 +2,7 @@
 #include "hal.h"
 #include "desk_app.h"
 #include "motor_controller.h"
+#include "motor_config.h"
 
 // Non-blocking scheduler: run APP logic every 250 ms (SWReq-011: 250 ± 10 ms)
 static const uint32_t APP_PERIOD_MS = 250U;
@@ -12,7 +13,7 @@ static bool motor_fault_latched = false;  // Latch motor controller faults (prev
 void setup()
 {
     // Configure HAL for the motor driver type before initializing hardware
-    HAL_setMotorType(MOTOR_TYPE);
+    HAL_setMotorType(MotorConfig_getMotorType());
     HAL_init();
     MotorController_init();
     APP_Init();
@@ -57,7 +58,7 @@ void DeskControl_Task(uint32_t now_ms){
     inputs.limit_upper = HAL_readLimitSensor(LIMIT_UPPER);
     inputs.limit_lower = HAL_readLimitSensor(LIMIT_LOWER);
     inputs.fault_in = false;
-    inputs.motor_type = MOTOR_TYPE;  // Pass motor type to app layer for runtime decisions
+    inputs.motor_type = MotorConfig_getMotorType();  // Pass motor type to app layer for runtime decisions
     inputs.timestamp_ms = now_ms;
     
     // Always read motor current - HAL handles motor type transparency

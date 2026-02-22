@@ -1,19 +1,29 @@
 /**
  * @file motor_config.h
- * @brief Motor Driver Configuration - Selectable Motor Driver Type
+ * @brief Motor Driver Configuration - Public Interface and Type Definitions
  * 
- * This configuration enables the system to support multiple motor driver implementations:
+ * This header provides type definitions and declares the accessor function for
+ * controlled access to motor type configuration. The MOTOR_TYPE macro itself is
+ * encapsulated in motor_config.cpp to support future NVM-based configuration.
+ * 
+ * Motor Type Options:
  * - MT_BASIC: L298N dual H-bridge motor driver (lower cost, fully featured)
  * - MT_ROBUST: IBT_2 intelligent motor driver (advanced diagnostics, integrated features)
  * 
- * Selection is made via MOTOR_TYPE macro, which determines:
- * - Pin assignments
- * - Control signal scheme
- * - Current sensing method
- * - Diagnostic capabilities
+ * Access Flow:
+ * 1. Applications call MotorConfig_getMotorType() to get the motor type
+ * 2. Function is implemented in motor_config.cpp 
+ * 3. Returns compile-time MOTOR_TYPE value (or test override via TEST_MOTOR_TYPE)
+ * 4. Future: Will read from NVM instead of compile-time macro
+ * 
+ * Encapsulation Benefits:
+ * - Single point of control for motor type determination
+ * - Enables test environment overrides without modifying headers
+ * - Prepares for future runtime NVM configuration
+ * - Clean separation: header declares interface, cpp implements it
  * 
  * @version 1.0
- * @date 2026-02-21
+ * @date 2026-02-22
  */
 
 #ifndef MOTOR_CONFIG_H
@@ -35,17 +45,6 @@ typedef enum
     MT_BASIC = 0u,      ///< L298N Dual H-Bridge Motor Driver
     MT_ROBUST = 1u      ///< IBT_2 Intelligent Motor Driver
 } MotorType_t;
-
-/**
- * @brief Active motor driver type
- * 
- * Set this to select which motor driver hardware is in use.
- * Affects: pin assignments, control signals, diagnostic capabilities
- * 
- * Default: MT_BASIC (L298N)
- * Use MT_ROBUST for IBT_2 driver
- */
-#define MOTOR_TYPE MT_BASIC
 
 // ============================================================================
 // MOTOR DRIVER FEATURE MATRIX
@@ -107,16 +106,39 @@ typedef enum
  * - PIN_MOTOR_CIN (A1):  Diagnostic current input (optional)
  */
 
+
+
 // ============================================================================
-// VALIDATION
+// ACCESSOR FUNCTION (encapsulates MOTOR_TYPE macro)
 // ============================================================================
 
-#if !defined(MOTOR_TYPE)
-    #error "MOTOR_TYPE must be defined as MT_BASIC or MT_ROBUST"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#if (MOTOR_TYPE != MT_BASIC) && (MOTOR_TYPE != MT_ROBUST)
-    #error "MOTOR_TYPE must be MT_BASIC (0u) or MT_ROBUST (1u)"
+/**
+ * @brief Get the current motor driver type
+ * 
+ * Provides encapsulated access to the motor type configuration.
+ * 
+ * Current Implementation (Compile-time):
+ *   - Returns the MOTOR_TYPE value defined in motor_config.cpp
+ *   - Single motor type per build
+ *   - Can be overridden for testing via TEST_MOTOR_TYPE preprocessor define
+ * 
+ * Future Implementation (Runtime NVM):
+ *   - Will read motor type from non-volatile memory
+ *   - Enables runtime motor configuration without recompilation
+ *   - Supports automatic hardware detection on startup
+ * 
+ * @return MotorType_t - MT_BASIC (L298N) or MT_ROBUST (IBT_2)
+ * 
+ * @see motor_config.cpp for implementation details
+ */
+MotorType_t MotorConfig_getMotorType(void);
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // MOTOR_CONFIG_H

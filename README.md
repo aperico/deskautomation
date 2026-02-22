@@ -1,6 +1,34 @@
 # Automated Mechanical Desk Lift System
 
-For build, test, and development instructions, see [src/README.md](src/README.md).
+## Quick Start
+
+### Automated Development Pipeline (Recommended)
+
+The fastest way to build and test the project:
+
+```bash
+# Complete pipeline: build + dual motor validation + static analysis
+python toolchain/run-pipeline.py all
+
+# Build only
+python toolchain/run-pipeline.py clean-build
+
+# Run tests (validates both MT_BASIC and MT_ROBUST motor types)
+python toolchain/run-pipeline.py test
+
+# Quick unit test during development
+python toolchain/run-pipeline.py unit
+
+# Get help
+python toolchain/run-pipeline.py help
+```
+
+**📖 Detailed Instructions:**
+- **Pipeline Guide:** [toolchain/README.md](toolchain/README.md) - Complete pipeline manual
+- **Build Guide:** [src/README.md](src/README.md) - Manual build and test instructions
+- **Test Overview:** [tests/README.md](tests/README.md) - Test suite quick reference
+
+---
 
 ## Project Overview
 
@@ -28,9 +56,57 @@ The system supports two motor driver configurations, selectable at compile-time:
 
 Both drivers share the same software (unified HAL interface) and provide equivalent safety and functionality. See [Motor Driver Configuration Guide](documentation/07_MotorDriverConfiguration.md) for build and switching instructions.
 
+## Motor Configuration Architecture
 
+The system implements a robust motor configuration encapsulation pattern to support multiple motor driver types:
+
+### Design Approach
+
+- **Compile-Time Configuration (Current)**: Motor type is defined at compile-time in `src/motor_config.cpp` with validation
+- **Runtime-Ready (Future)**: Architecture is prepared for NVM-based runtime configuration without code changes
+- **Encapsulation Interface**: `MotorConfig_getMotorType()` function provides the sole accessor for motor configuration
+- **Application Transparency**: All application logic is motor-type-agnostic; HAL layer handles driver-specific details
+
+### Configuration Files
+
+| File | Role | Details |
+|------|------|---------|
+| `src/motor_config.h` | Public interface | Type definitions, feature documentation, function declaration |
+| `src/motor_config.cpp` | Private implementation | MOTOR_TYPE macro, validation, getter function, NVM migration comments |
+
+### Switching Motor Drivers
+
+```bash
+# Default: MT_BASIC (L298N)
+cmake -S . -B build && cmake --build build
+
+# To use MT_ROBUST (IBT_2): Edit src/motor_config.cpp line 44
+# #define MOTOR_TYPE MT_BASIC        <- Change to MT_ROBUST
+# Then rebuild:
+cmake --build build
+```
+
+### Test Coverage
+
+All 37 unit and integration tests validate both motor configurations:
+- **MT_BASIC**: L298N driver (default)
+- **MT_ROBUST**: IBT_2 driver
+
+Tests can be run against either driver by changing the MOTOR_TYPE definition. See [05_SoftwareArchitecture.md](documentation/05_SoftwareArchitecture.md) (AD-009: Motor Configuration Encapsulation) and [06_00_DetailedDesign.md](documentation/06_00_DetailedDesign.md) (Motor Configuration Module) for detailed technical documentation.
+
+---
 
 ## Documentation Index
+
+### Development Guidelines
+
+| Document | Description |
+|----------|-------------|
+| [toolchain/coding_guides_and_checks.md](toolchain/coding_guides_and_checks.md) | **⚠️ Coding standards for safety-critical code (NASA Power of Ten, MISRA C:2012, ISO 25119)** |
+| [toolchain/README.md](toolchain/README.md) | Development pipeline and automated testing guide |
+| [toolchain/ARCHITECTURE.md](toolchain/ARCHITECTURE.md) | Pipeline architecture and design details |
+
+### Requirements and Design
 
 | Document | Description |
 |----------|-------------|
@@ -45,9 +121,11 @@ Both drivers share the same software (unified HAL interface) and provide equival
 | [03_01_01_TechnicalSafetyConcept.md](documentation/03_01_01_TechnicalSafetyConcept.md) | Technical safety concept |
 | [03_02_RequirementsTraceabilityMatrix.md](documentation/03_02_RequirementsTraceabilityMatrix.md) | Requirements traceability matrix |
 | [04_SoftwareRequirements.md](documentation/04_SoftwareRequirements.md) | Software requirements and functional specifications |
+| [04_01_SoftwareVerificationSpecification.md](documentation/04_01_SoftwareVerificationSpecification.md) | Software test specifications and verification methods |
 | [05_SoftwareArchitecture.md](documentation/05_SoftwareArchitecture.md) | Software architecture design and component structure |
-| [06_DetailedDesign.md](documentation/06_DetailedDesign.md) | Detailed software design and implementation details |
-| [07_MotorDriverConfiguration.md](documentation/07_MotorDriverConfiguration.md) | Motor driver configuration guide (L298N vs IBT_2) |
+| [06_00_DetailedDesign.md](documentation/06_00_DetailedDesign.md) | Detailed software design and implementation details |
+| [06_01_DetailedDesign_InteractionDiagrams.md](documentation/06_01_DetailedDesign_InteractionDiagrams.md) | Sequence diagrams and data flow visualizations |
+| [07_MotorDriverConfiguration.md](documentation/07_MotorDriverConfiguration.md) | Motor driver configuration guide (L298N vs IBT_2)
 | [10_SystemTestSpecification.md](documentation/10_SystemTestSpecification.md) | System test plan and test specifications |
 | [10_01_SystemTestReport.md](documentation/10_01_SystemTestReport.md) | System test report and results |
 | [11_HardwareDocumentation.md](documentation/11_HardwareDocumentation.md) | Hardware components and wiring documentation |

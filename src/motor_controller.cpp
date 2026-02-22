@@ -269,7 +269,7 @@ static uint8_t ramp_pwm(uint8_t target_pwm, uint32_t elapsed_ms)
 MotorControllerOutput_t MotorController_update(MotorDirection_t cmd_dir, uint8_t target_pwm, uint32_t now_ms)
 {
     // Step 1: Initialize output structure with safe defaults
-    MotorControllerOutput_t out;
+    MotorControllerOutput_t out = {0};
     out.dir = cmd_dir;      // Echo commanded direction
     out.pwm = 0U;           // Default to stopped (will be overridden below)
     out.fault = false;      // Assume no fault unless detected

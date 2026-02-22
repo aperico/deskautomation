@@ -67,6 +67,7 @@ All software requirements comply with INCOSE quality criteria:
 | **SWReq-012** | The software subsystem shall command motor STOP when no valid UP/DOWN command is present. | Prevents unintended motion in the absence of user intent (SysReq-010). | SysReq-010 |
 | **SWReq-013** | The software subsystem shall initialize to a safe STOP state after reset or brownout and require a new valid command before motion. | Prevents unintended motion on power recovery (SysReq-011). | SysReq-011 |
 | **SWReq-014** | The software subsystem shall detect motor driver stuck-on or runaway behavior and enter a fault state that commands STOP and indicates error. | Mitigates electrical fault hazards (SysReq-012). | SysReq-012 |
+| **SWReq-015** | The software subsystem shall support configurable motor driver implementation (MT_BASIC: L298N or MT_ROBUST: IBT_2) with identical functional behavior across both variants. | Enables product line support for multiple hardware configurations from unified codebase (SysReq-014). All control logic, safety features, and timing requirements shall be motor-type-agnostic; differences encapsulated in HAL. | SysReq-014 |
 
 ---
 
@@ -85,6 +86,7 @@ All software requirements comply with INCOSE quality criteria:
 | SysReq-010: No Motion Without Valid Command | SWReq-012 |
 | SysReq-011: Safe STOP After Reset/Brownout | SWReq-013 |
 | SysReq-012: Stuck-On/Runaway Detection | SWReq-014 |
+| SysReq-014: Motor Type Configuration | SWReq-015 |
 
 ---
 
@@ -104,6 +106,7 @@ All software verification specifications, test methods, test procedures, and tes
 | Control Loop Manager | SWReq-008 |
 | Startup/Reset Handling | SWReq-013 |
 | Fault Handling/Diagnostics | SWReq-014 |
+| Motor Configuration Module | SWReq-015 |
 
 
 

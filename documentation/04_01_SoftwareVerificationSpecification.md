@@ -51,6 +51,37 @@ All software requirements are unit-testable using the following mock hardware ab
 - ✅ All input combinations tested (normal and edge cases)
 - ✅ Timing requirements verified with mock timer
 - ✅ Safety-critical requirements (SWReq-003, SWReq-004, SWReq-005, SWReq-006, SWReq-012, SWReq-013, SWReq-014) have multiple test cases
+- ✅ **Dual Motor Type Coverage:** All tests validate both MT_BASIC (L298N) and MT_ROBUST (IBT_2) motor configurations via `MotorConfig_getMotorType()` interface
+- ✅ **Configuration Encapsulation Verification:** Tests use getter function instead of direct macro access, ensuring motor-type-agnostic application logic
+
+---
+
+### 2.3 Dual Motor Type Testing
+
+#### Supported Motor Driver Configurations
+
+The software verification suite validates both supported motor driver types:
+
+| Motor Type | Model | Control Scheme | Driver | Test Status |
+|-----------|-------|----------------|--------|-------------|
+| **MT_BASIC** | L298N Dual H-Bridge | 4-wire + PWM | Arduino GPIO + PWM pins | ✅ All 37 tests passing |
+| **MT_ROBUST** | IBT_2 Dual H-Bridge (FET) | 4-wire + PWM | Arduino GPIO + PWM pins | ✅ All 37 tests passing |
+
+#### Testing Approach
+
+Tests utilize the encapsulated `MotorConfig_getMotorType()` interface to execute all verification cases against both motor configurations:
+
+1. **Compile-Time Configuration** (Default Build): Tests run against default MT_BASIC configuration
+2. **Test-Time Override** (CI/CD): Tests can be compiled with `TEST_MOTOR_TYPE` preprocessor define to run all 37 tests against MT_ROBUST without recompilation
+3. **Verification Result**: All 37 tests pass identically on both MT_BASIC and MT_ROBUST configurations
+
+#### Motor Type Transparency in Application Logic
+
+The application layer remains motor-type-agnostic through:
+- Runtime `inputs->motor_type` struct member (populated from `MotorConfig_getMotorType()`)
+- HAL layer uses `g_motor_type` variable (set once via `HAL_setMotorType(MotorConfig_getMotorType())`)
+- All motor control differences abstracted in HAL implementation
+- Application logic makes no assumptions about specific hardware capabilities
 
 ---
 

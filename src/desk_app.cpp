@@ -52,7 +52,7 @@ static void handle_fault(AppOutput_t *outputs)
 
 void APP_Task(const AppInput_t *inputs, AppOutput_t *outputs)
 {
-    if (inputs == nullptr || outputs == nullptr)
+    if (inputs == NULL || outputs == NULL)
     {
         return;
     }

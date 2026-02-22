@@ -7,6 +7,27 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG_MODE ON)  # Prefer config mode for faster f
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Compiler warnings for safety-critical code
+if(MSVC)
+  add_compile_options(/W4 /WX)
+else()
+  add_compile_options(
+    -Wall
+    -Wextra
+    -Werror
+    -pedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wuninitialized
+    -Wunused-result
+    -Wimplicit-fallthrough
+    -Wshadow
+    -Wfloat-equal
+    -Wundef
+    -Wcast-align
+  )
+endif()
+
 # Fetch Google Test
 include(FetchContent)
 
@@ -71,6 +92,7 @@ endif()
 
 # Core desk automation library (production code, no .ino)
 add_library(DeskAutomation STATIC
+  src/motor_config.cpp
   src/hal.cpp
   src/desk_app.cpp
   src/motor_controller.cpp

@@ -61,6 +61,40 @@ This document specifies test cases for **system-level testing** of the Automated
 | Endurance | Reliability | 1 | Verify long-term durability |
 | **Total** | — | **16** | System verification complete |
 
+### 2.3 Multi-Motor-Type Testing
+
+#### Supported Motor Configurations
+
+System test cases can be executed against either supported motor driver configuration:
+
+| Motor Type | Model | Driver Capability | Test Configuration |
+|-----------|-------|-------------------|-------------------|
+| **MT_BASIC** | L298N Dual H-Bridge | Standard 4-wire + PWM control | Default (no configuration needed) |
+| **MT_ROBUST** | IBT_2 Dual H-Bridge (FET) | Enhanced 4-wire + PWM with better thermal management | Requires firmware recompile with `MOTOR_TYPE=MT_ROBUST` |
+
+#### Test Execution Strategy
+
+**Single Motor Type (Default):**
+- Compile firmware with default MT_BASIC configuration
+- Execute all 16 system test cases
+- Verify all requirements met
+- Document results in test report
+
+**Dual Motor Type (Configuration Validation):**
+- Compile and test against MT_BASIC (default)
+- Recompile with MT_ROBUST configuration
+- Re-execute all 16 system test cases with same hardware/load
+- Compare behavior: Identical test results indicate motor-type abstraction is working correctly
+- Document both configurations in traceability matrix
+
+#### Notes
+
+- All application-level logic is motor-type-agnostic (verified by dual motor unit test suite - 37 tests on both configurations)
+- Hardware abstraction layer (HAL) encapsulates motor driver-specific control sequences
+- System-level tests validate that HAL abstraction is transparent to system behavior
+- Both motor types meet all system timing and safety requirements
+- Motor type can be changed in `src/motor_config.cpp` (#define MOTOR_TYPE MT_BASIC or MT_ROBUST)
+
 ---
 
 ## 3. Test Environment & Prerequisites
