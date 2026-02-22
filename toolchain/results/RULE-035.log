@@ -1,0 +1,20 @@
+RULE_ID: RULE-035
+SCRIPT: rule_RULE-035_R9_4_no_multilevel_pointers.py
+SRC_PATH: src
+STATUS: FAIL
+EXIT_CODE: 1
+TIMESTAMP: 2026-02-22 17:23:34
+================================================================================
+[WARN] motor_controller.cpp:11 Multi-level pointer (**) detected
+       Code: * 1. **Linear PWM Ramping**: pwm(t) = min(target � t / T_ramp, target)
+       Note: Review for safety-critical implications
+[WARN] motor_controller.cpp:12 Multi-level pointer (**) detected
+Traceback (most recent call last):
+  File "C:\Users\n68a0w5\Downloads\workspace\deskautomation\toolchain\rules\rule_RULE-035_R9_4_no_multilevel_pointers.py", line 99, in <module>
+    main()
+  File "C:\Users\n68a0w5\Downloads\workspace\deskautomation\toolchain\rules\rule_RULE-035_R9_4_no_multilevel_pointers.py", line 86, in main
+    print(f"       Code: {code}")
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2260' in position 81: character maps to <undefined>

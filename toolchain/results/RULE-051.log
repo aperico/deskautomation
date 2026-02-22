@@ -1,9 +1,9 @@
 RULE_ID: RULE-051
 SCRIPT: rule_RULE-051_R14_3_nesting_depth.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:31
+TIMESTAMP: 2026-02-22 17:23:39
 ================================================================================
 RULE: RULE-051 (R14.3)
 DESC: Nesting depth <= 4 levels (Code Quality Metrics)

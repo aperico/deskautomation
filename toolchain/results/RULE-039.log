@@ -1,9 +1,9 @@
 RULE_ID: RULE-039
 SCRIPT: rule_RULE-039_R10_3_cppcheck_run.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:30
+TIMESTAMP: 2026-02-22 17:23:34
 ================================================================================
 RULE: RULE-039 (R10.3)
 DESC: Cppcheck report exists

@@ -1,9 +1,9 @@
 RULE_ID: RULE-023
 SCRIPT: rule_RULE-023_R6_4_init_at_decl.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:29
+TIMESTAMP: 2026-02-22 17:23:31
 ================================================================================
 RULE: RULE-023 (R6.4)
 DESC: Initialize variables at declaration (heuristic)

@@ -1,9 +1,9 @@
 RULE_ID: RULE-024
 SCRIPT: rule_RULE-024_R7_1_unused_return.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:29
+TIMESTAMP: 2026-02-22 17:23:31
 ================================================================================
 RULE: RULE-024 (R7.1)
 DESC: Check all return values (heuristic)

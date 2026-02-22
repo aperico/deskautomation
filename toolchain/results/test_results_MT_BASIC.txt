@@ -3,7 +3,7 @@ TEST RESULTS - MT_BASIC
 ================================================================================
 Command: ctest --test-dir build -C Release --output-on-failure
 Filter: All tests
-Timestamp: 2026-02-22 14:35:03
+Timestamp: 2026-02-22 17:19:06
 Workspace: C:\Users\n68a0w5\Downloads\workspace\deskautomation
 Configuration: Release
 
@@ -12,85 +12,85 @@ This log contains the results of test execution.
 
 Test project C:/Users/n68a0w5/Downloads/workspace/deskautomation/build
       Start  1: DeskAppComponentTest.TC_SWReq007_001_InitialStateIsIdle
- 1/37 Test  #1: DeskAppComponentTest.TC_SWReq007_001_InitialStateIsIdle .....................   Passed    0.07 sec
+ 1/37 Test  #1: DeskAppComponentTest.TC_SWReq007_001_InitialStateIsIdle .....................   Passed    0.15 sec
       Start  2: DeskAppComponentTest.TC_SWReq001_001_UpButtonCommandsMotorUp
- 2/37 Test  #2: DeskAppComponentTest.TC_SWReq001_001_UpButtonCommandsMotorUp ................   Passed    0.05 sec
+ 2/37 Test  #2: DeskAppComponentTest.TC_SWReq001_001_UpButtonCommandsMotorUp ................   Passed    0.12 sec
       Start  3: DeskAppComponentTest.TC_SWReq002_001_DownButtonCommandsMotorDown
- 3/37 Test  #3: DeskAppComponentTest.TC_SWReq002_001_DownButtonCommandsMotorDown ............   Passed    0.04 sec
+ 3/37 Test  #3: DeskAppComponentTest.TC_SWReq002_001_DownButtonCommandsMotorDown ............   Passed    0.13 sec
       Start  4: DeskAppComponentTest.TC_SWReq014_001_CurrentSenseFaultLatches
- 4/37 Test  #4: DeskAppComponentTest.TC_SWReq014_001_CurrentSenseFaultLatches ...............   Passed    0.05 sec
+ 4/37 Test  #4: DeskAppComponentTest.TC_SWReq014_001_CurrentSenseFaultLatches ...............   Passed    0.13 sec
       Start  5: DeskAppComponentTest.TC_SWReq005_001_UpperLimitStopsUpwardMovement
- 5/37 Test  #5: DeskAppComponentTest.TC_SWReq005_001_UpperLimitStopsUpwardMovement ..........   Passed    0.05 sec
+ 5/37 Test  #5: DeskAppComponentTest.TC_SWReq005_001_UpperLimitStopsUpwardMovement ..........   Passed    0.16 sec
       Start  6: DeskAppComponentTest.TC_SWReq006_001_LowerLimitStopsDownwardMovement
- 6/37 Test  #6: DeskAppComponentTest.TC_SWReq006_001_LowerLimitStopsDownwardMovement ........   Passed    0.05 sec
+ 6/37 Test  #6: DeskAppComponentTest.TC_SWReq006_001_LowerLimitStopsDownwardMovement ........   Passed    0.17 sec
       Start  7: DeskAppComponentTest.TC_SWReq004_001_ConflictingButtonsForceStop
- 7/37 Test  #7: DeskAppComponentTest.TC_SWReq004_001_ConflictingButtonsForceStop ............   Passed    0.05 sec
+ 7/37 Test  #7: DeskAppComponentTest.TC_SWReq004_001_ConflictingButtonsForceStop ............   Passed    0.20 sec
       Start  8: DeskAppComponentTest.TC_SWReq004_002_ConflictingButtonsDuringMotion
- 8/37 Test  #8: DeskAppComponentTest.TC_SWReq004_002_ConflictingButtonsDuringMotion .........   Passed    0.05 sec
+ 8/37 Test  #8: DeskAppComponentTest.TC_SWReq004_002_ConflictingButtonsDuringMotion .........   Passed    0.17 sec
       Start  9: DeskAppComponentTest.TC_SWReq003_001_ButtonReleaseStopsMotor
- 9/37 Test  #9: DeskAppComponentTest.TC_SWReq003_001_ButtonReleaseStopsMotor ................   Passed    0.06 sec
+ 9/37 Test  #9: DeskAppComponentTest.TC_SWReq003_001_ButtonReleaseStopsMotor ................   Passed    0.13 sec
       Start 10: DeskAppComponentTest.TC_SWReq010_001_FaultInputTriggersErrorState
-10/37 Test #10: DeskAppComponentTest.TC_SWReq010_001_FaultInputTriggersErrorState ...........   Passed    0.06 sec
+10/37 Test #10: DeskAppComponentTest.TC_SWReq010_001_FaultInputTriggersErrorState ...........   Passed    0.10 sec
       Start 11: DeskAppComponentTest.TC_SWReq010_002_DualLimitSwitchFault
-11/37 Test #11: DeskAppComponentTest.TC_SWReq010_002_DualLimitSwitchFault ...................   Passed    0.07 sec
+11/37 Test #11: DeskAppComponentTest.TC_SWReq010_002_DualLimitSwitchFault ...................   Passed    0.09 sec
       Start 12: DeskAppComponentTest.TC_SWReq010_003_FaultRecoveryWhenButtonsReleased
-12/37 Test #12: DeskAppComponentTest.TC_SWReq010_003_FaultRecoveryWhenButtonsReleased .......   Passed    0.05 sec
+12/37 Test #12: DeskAppComponentTest.TC_SWReq010_003_FaultRecoveryWhenButtonsReleased .......   Passed    0.10 sec
       Start 13: DeskAppComponentTest.TC_SWReq011_001_PeriodicControlLoopExecution
-13/37 Test #13: DeskAppComponentTest.TC_SWReq011_001_PeriodicControlLoopExecution ...........   Passed    0.06 sec
+13/37 Test #13: DeskAppComponentTest.TC_SWReq011_001_PeriodicControlLoopExecution ...........   Passed    0.08 sec
       Start 14: DeskAppComponentTest.TC_SWReq012_001_MotorStopWhenNoValidCommand
-14/37 Test #14: DeskAppComponentTest.TC_SWReq012_001_MotorStopWhenNoValidCommand ............   Passed    0.07 sec
+14/37 Test #14: DeskAppComponentTest.TC_SWReq012_001_MotorStopWhenNoValidCommand ............   Passed    0.09 sec
       Start 15: DeskAppComponentTest.TC_SWReq013_001_SafeInitializationAfterReset
-15/37 Test #15: DeskAppComponentTest.TC_SWReq013_001_SafeInitializationAfterReset ...........   Passed    0.07 sec
+15/37 Test #15: DeskAppComponentTest.TC_SWReq013_001_SafeInitializationAfterReset ...........   Passed    0.08 sec
       Start 16: DeskAppComponentTest.TC_SWReq014_002_ObstructionDetectionDuringMovingUp
-16/37 Test #16: DeskAppComponentTest.TC_SWReq014_002_ObstructionDetectionDuringMovingUp .....   Passed    0.05 sec
+16/37 Test #16: DeskAppComponentTest.TC_SWReq014_002_ObstructionDetectionDuringMovingUp .....   Passed    0.09 sec
       Start 17: DeskAppComponentTest.TC_SWReq014_003_ObstructionDetectionDuringMovingDown
-17/37 Test #17: DeskAppComponentTest.TC_SWReq014_003_ObstructionDetectionDuringMovingDown ...   Passed    0.05 sec
+17/37 Test #17: DeskAppComponentTest.TC_SWReq014_003_ObstructionDetectionDuringMovingDown ...   Passed    0.09 sec
       Start 18: MotorControllerUnitTest.TC_MC_INIT_001_InitialStateIsStopped
-18/37 Test #18: MotorControllerUnitTest.TC_MC_INIT_001_InitialStateIsStopped ................   Passed    0.06 sec
+18/37 Test #18: MotorControllerUnitTest.TC_MC_INIT_001_InitialStateIsStopped ................   Passed    0.08 sec
       Start 19: MotorControllerUnitTest.TC_MC_RAMP_001_PWMRampsUpOverTime
-19/37 Test #19: MotorControllerUnitTest.TC_MC_RAMP_001_PWMRampsUpOverTime ...................   Passed    0.05 sec
+19/37 Test #19: MotorControllerUnitTest.TC_MC_RAMP_001_PWMRampsUpOverTime ...................   Passed    0.08 sec
       Start 20: MotorControllerUnitTest.TC_MC_RAMP_002_DirectionChangeResetsRamp
-20/37 Test #20: MotorControllerUnitTest.TC_MC_RAMP_002_DirectionChangeResetsRamp ............   Passed    0.05 sec
+20/37 Test #20: MotorControllerUnitTest.TC_MC_RAMP_002_DirectionChangeResetsRamp ............   Passed    0.08 sec
       Start 21: MotorControllerUnitTest.TC_MC_STOP_001_StopCommandSetsZeroPWM
-21/37 Test #21: MotorControllerUnitTest.TC_MC_STOP_001_StopCommandSetsZeroPWM ...............   Passed    0.06 sec
+21/37 Test #21: MotorControllerUnitTest.TC_MC_STOP_001_StopCommandSetsZeroPWM ...............   Passed    0.08 sec
       Start 22: MotorControllerUnitTest.TC_MC_TARGET_001_VaryingTargetPWMValues
-22/37 Test #22: MotorControllerUnitTest.TC_MC_TARGET_001_VaryingTargetPWMValues .............   Passed    0.06 sec
+22/37 Test #22: MotorControllerUnitTest.TC_MC_TARGET_001_VaryingTargetPWMValues .............   Passed    0.08 sec
       Start 23: MotorControllerUnitTest.TC_MC_SAFETY_001_ZeroPWMProducesNoMotion
-23/37 Test #23: MotorControllerUnitTest.TC_MC_SAFETY_001_ZeroPWMProducesNoMotion ............   Passed    0.05 sec
+23/37 Test #23: MotorControllerUnitTest.TC_MC_SAFETY_001_ZeroPWMProducesNoMotion ............   Passed    0.07 sec
       Start 24: HALIntegrationTest.HALInitializes
-24/37 Test #24: HALIntegrationTest.HALInitializes ...........................................   Passed    0.06 sec
+24/37 Test #24: HALIntegrationTest.HALInitializes ...........................................   Passed    0.07 sec
       Start 25: HALIntegrationTest.ButtonReadReturnsValidValue
 25/37 Test #25: HALIntegrationTest.ButtonReadReturnsValidValue ..............................   Passed    0.06 sec
       Start 26: HALIntegrationTest.LimitSensorReadReturnsValidValue
-26/37 Test #26: HALIntegrationTest.LimitSensorReadReturnsValidValue .........................   Passed    0.06 sec
+26/37 Test #26: HALIntegrationTest.LimitSensorReadReturnsValidValue .........................   Passed    0.07 sec
       Start 27: HALIntegrationTest.MotorCurrentReadReturnsMilliamps
-27/37 Test #27: HALIntegrationTest.MotorCurrentReadReturnsMilliamps .........................   Passed    0.05 sec
+27/37 Test #27: HALIntegrationTest.MotorCurrentReadReturnsMilliamps .........................   Passed    0.07 sec
       Start 28: HALIntegrationTest.MotorCurrentReadZeroAtAdcZero
-28/37 Test #28: HALIntegrationTest.MotorCurrentReadZeroAtAdcZero ............................   Passed    0.07 sec
+28/37 Test #28: HALIntegrationTest.MotorCurrentReadZeroAtAdcZero ............................   Passed    0.06 sec
       Start 29: HALIntegrationTest.MotorCurrentReadMaxAtAdcMax
-29/37 Test #29: HALIntegrationTest.MotorCurrentReadMaxAtAdcMax ..............................   Passed    0.05 sec
+29/37 Test #29: HALIntegrationTest.MotorCurrentReadMaxAtAdcMax ..............................   Passed    0.06 sec
       Start 30: HALIntegrationTest.TimeReturnsMonotonicallyIncreasing
-30/37 Test #30: HALIntegrationTest.TimeReturnsMonotonicallyIncreasing .......................   Passed    0.06 sec
+30/37 Test #30: HALIntegrationTest.TimeReturnsMonotonicallyIncreasing .......................   Passed    0.07 sec
       Start 31: SystemIntegrationTest.AppOutputDrivesMotorControllerCorrectly
-31/37 Test #31: SystemIntegrationTest.AppOutputDrivesMotorControllerCorrectly ...............   Passed    0.05 sec
+31/37 Test #31: SystemIntegrationTest.AppOutputDrivesMotorControllerCorrectly ...............   Passed    0.07 sec
       Start 32: SystemIntegrationTest.LimitSensorPreventsDangerousMovement
-32/37 Test #32: SystemIntegrationTest.LimitSensorPreventsDangerousMovement ..................   Passed    0.05 sec
+32/37 Test #32: SystemIntegrationTest.LimitSensorPreventsDangerousMovement ..................   Passed    0.07 sec
       Start 33: SystemIntegrationTest.SWReq012_MotorStopWithoutValidCommand
-33/37 Test #33: SystemIntegrationTest.SWReq012_MotorStopWithoutValidCommand .................   Passed    0.05 sec
+33/37 Test #33: SystemIntegrationTest.SWReq012_MotorStopWithoutValidCommand .................   Passed    0.07 sec
       Start 34: SystemIntegrationTest.SWReq013_SafeInitializationAfterReset
-34/37 Test #34: SystemIntegrationTest.SWReq013_SafeInitializationAfterReset .................   Passed    0.06 sec
+34/37 Test #34: SystemIntegrationTest.SWReq013_SafeInitializationAfterReset .................   Passed    0.07 sec
       Start 35: SystemIntegrationTest.SWReq014_002_ObstructionDetectionDuringMovingUp
-35/37 Test #35: SystemIntegrationTest.SWReq014_002_ObstructionDetectionDuringMovingUp .......   Passed    0.06 sec
+35/37 Test #35: SystemIntegrationTest.SWReq014_002_ObstructionDetectionDuringMovingUp .......   Passed    0.07 sec
       Start 36: SystemIntegrationTest.SWReq014_003_ObstructionDetectionDuringMovingDown
-36/37 Test #36: SystemIntegrationTest.SWReq014_003_ObstructionDetectionDuringMovingDown .....   Passed    0.06 sec
+36/37 Test #36: SystemIntegrationTest.SWReq014_003_ObstructionDetectionDuringMovingDown .....   Passed    0.07 sec
       Start 37: SystemIntegrationTest.SWReq014_001_StuckOnDetectionDuringStop
 37/37 Test #37: SystemIntegrationTest.SWReq014_001_StuckOnDetectionDuringStop ...............   Passed    0.06 sec
 
 100% tests passed, 0 tests failed out of 37
 
 Label Time Summary:
-Component      =   0.95 sec*proc (17 tests)
-Integration    =   0.81 sec*proc (14 tests)
-Unit           =   0.34 sec*proc (6 tests)
+Component      =   2.10 sec*proc (17 tests)
+Integration    =   0.92 sec*proc (14 tests)
+Unit           =   0.47 sec*proc (6 tests)
 
-Total Test time (real) =   2.31 sec
+Total Test time (real) =   3.75 sec

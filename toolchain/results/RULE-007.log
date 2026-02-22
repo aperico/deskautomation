@@ -1,9 +1,9 @@
 RULE_ID: RULE-007
 SCRIPT: rule_RULE-007_R2_3_no_while_true.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:28
+TIMESTAMP: 2026-02-22 17:23:28
 ================================================================================
 RULE: RULE-007 (R2.3)
 DESC: No while(true)/for(;;) except main

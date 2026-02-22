@@ -1,9 +1,9 @@
 RULE_ID: RULE-049
 SCRIPT: rule_RULE-049_R14_1_function_length.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:31
+TIMESTAMP: 2026-02-22 17:23:38
 ================================================================================
 RULE: RULE-049 (R14.1)
 DESC: Function length <= 60 lines (Code Quality Metrics)

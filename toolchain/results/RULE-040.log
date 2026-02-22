@@ -1,9 +1,9 @@
 RULE_ID: RULE-040
 SCRIPT: rule_RULE-040_R10_4_cppcheck_clean.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:31
+TIMESTAMP: 2026-02-22 17:23:35
 ================================================================================
 RULE: RULE-040 (R10.4)
 DESC: Zero cppcheck errors

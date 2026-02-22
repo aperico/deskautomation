@@ -1,9 +1,9 @@
 RULE_ID: RULE-053
 SCRIPT: rule_RULE-053_R14_5_assertion_density.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:32
+TIMESTAMP: 2026-02-22 17:23:40
 ================================================================================
 RULE: RULE-053 (R14.5)
 DESC: Assertions >= 2 per function (Code Quality Metrics)

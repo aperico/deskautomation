@@ -1,5 +1,38 @@
 # Coding Guidelines and Automated Checks for Safety-Critical Embedded Software
 
+## Quick Start: Running Pipeline Analysis
+
+**Run all automated rule checks:**
+
+```bash
+# Complete pipeline with all analysis modes (integration, test, static-analysis)
+python toolchain/run-pipeline.py all
+
+# Individual analysis modes
+python toolchain/run-pipeline.py integration   # Build and integration tests
+python toolchain/run-pipeline.py test          # Unit and component tests
+python toolchain/run-pipeline.py static-analysis  # CPPCheck and custom rules
+
+# Run ALL rules with automatic comprehensive summary report
+python toolchain/pipeline_analysis.py rules-all --src-path src
+
+# Individual rule checks
+python toolchain/rules/rule_RULE-001_R1_1_no_goto.py src      # Check specific rule
+python toolchain/rules/rule_RULE-028_R8_1_include_guards.py src
+```
+
+**Expected Output:**
+- `[PASS]` - Rule compliance verified
+- `[FAIL]` - Violations found (exit code 1)
+- `[WARN]` - Warnings or advisory issues (exit code 0)
+- `[SKIP]` - Check skipped (tool not available)
+
+**Current Coverage:** 81 total rules, 52 automated (64%)
+- 🤖 Automated Scripts: 52 rules with pattern matching, AST analysis, and tool integration
+- 🔍 Code Review: 29 rules requiring human judgment
+- **See Rule Index below for complete list and automation method**
+
+---
 
 **Document Revision History:**
 
@@ -34,6 +67,7 @@
 ## Table of Contents
 
 - [Coding Guidelines and Automated Checks for Safety-Critical Embedded Software](#coding-guidelines-and-automated-checks-for-safety-critical-embedded-software)
+  - [Quick Start: Running Pipeline Analysis](#quick-start-running-pipeline-analysis)
   - [Table of Contents](#table-of-contents)
   - [Rule Index (Unified IDs)](#rule-index-unified-ids)
   - [Introduction](#introduction)

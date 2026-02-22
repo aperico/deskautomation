@@ -1,0 +1,14 @@
+RULE_ID: RULE-047
+SCRIPT: rule_RULE-047_R13_1_test_coverage.py
+SRC_PATH: src
+STATUS: FAIL
+EXIT_CODE: 1
+TIMESTAMP: 2026-02-22 17:23:37
+================================================================================
+[INFO] Test Coverage Analysis:
+       Test files found: 0
+       Test functions: 0
+       Assertions: 0
+       Estimated coverage: 50.0%
+[FAIL] RULE-047: No test files found
+[Info] gcov found, running coverage analysis...

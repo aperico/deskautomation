@@ -301,6 +301,191 @@ Results are saved in both text and XML formats for review and CI integration.
         self._write_grouped_summary(rule_ids, src_path, datetime.now())
         return all_ok
 
+    def run_all_available_rules(self, src_path: str) -> bool:
+        """Run all available rule scripts from the rules directory with automatic summary generation."""
+        # Discover all rule scripts from directory
+        all_rule_files = sorted(self.rules_dir.glob("rule_RULE-*.py"))
+        
+        if not all_rule_files:
+            write_error("No rule scripts found in rules directory")
+            return False
+        
+        # Extract rule IDs from filenames
+        rule_ids = []
+        rules_by_id = {}
+        for script_path in all_rule_files:
+            name = script_path.stem
+            parts = name.split("_")
+            if len(parts) >= 2:
+                rule_id = parts[1]
+                rule_ids.append(rule_id)
+                rules_by_id[rule_id] = script_path
+        
+        write_header(f"RUNNING ALL AVAILABLE RULES ({len(rule_ids)} rules discovered)")
+        write_info(f"Source path: {src_path}")
+        write_info(f"Rules directory: {self.rules_dir}")
+        
+        # Clear previous logs
+        self._clear_rule_logs(rule_ids)
+        
+        # Check if we need cppcheck report
+        if any(rule_id in set(self.rule_groups.get("cppcheck", [])) for rule_id in rule_ids):
+            write_info("Ensuring cppcheck static analysis report is available...")
+            if not self._ensure_cppcheck_report():
+                write_error("Failed to generate cppcheck report")
+                return False
+        
+        # Run all rules
+        pass_count = 0
+        fail_count = 0
+        skip_count = 0
+        
+        for rule_id in rule_ids:
+            script_path = rules_by_id.get(rule_id)
+            if not script_path:
+                skip_count += 1
+                continue
+            
+            log_path = self.config.results_dir / f"{rule_id}.log"
+            exit_code, output = run_command(
+                [sys.executable, str(script_path), src_path],
+                cwd=self.config.workspace_root
+            )
+            
+            status = "PASS"
+            if exit_code == 2:
+                status = "SKIP"
+                skip_count += 1
+            elif exit_code != 0:
+                status = "FAIL"
+                fail_count += 1
+            else:
+                pass_count += 1
+            
+            # Write log
+            log_header = (
+                f"RULE_ID: {rule_id}\n"
+                f"SCRIPT: {script_path.name}\n"
+                f"SRC_PATH: {src_path}\n"
+                f"STATUS: {status}\n"
+                f"EXIT_CODE: {exit_code}\n"
+                f"TIMESTAMP: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"{'=' * 80}\n"
+            )
+            with open(log_path, "w", encoding="utf-8") as log_file:
+                log_file.write(log_header)
+                if output:
+                    log_file.write(output)
+            
+            # Print progress
+            status_icon = "✅" if status == "PASS" else ("⚠️ " if status == "SKIP" else "❌")
+            write_info(f"{status_icon} [{status}] {rule_id}")
+        
+        # Generate comprehensive summary report
+        timestamp = datetime.now()
+        self._write_all_rules_summary(rule_ids, rules_by_id, src_path, timestamp, pass_count, fail_count, skip_count)
+        
+        # Display summary
+        print()
+        write_header("RULE EXECUTION SUMMARY")
+        print(colorize(f"  Total Rules:  {len(rule_ids)}", Colors.WHITE))
+        print(colorize(f"  ✅ Passed:    {pass_count}", Colors.GREEN))
+        print(colorize(f"  ❌ Failed:    {fail_count}", Colors.RED))
+        print(colorize(f"  ⚠️  Skipped:   {skip_count}", Colors.YELLOW))
+        
+        if len(rule_ids) > 0:
+            success_rate = ((pass_count + skip_count) / len(rule_ids)) * 100
+            print(colorize(f"  Success Rate: {success_rate:.1f}%", Colors.WHITE))
+        
+        return fail_count == 0
+
+    def _write_all_rules_summary(self, rule_ids, rules_by_id, src_path: str, timestamp, pass_count: int, fail_count: int, skip_count: int) -> None:
+        """Write comprehensive summary for all available rules."""
+        summary_path = self.config.results_dir / "all_rules_summary.md"
+        
+        lines = []
+        lines.append("# Comprehensive Rule Analysis Report")
+        lines.append("")
+        lines.append(f"**Generated:** {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"**Source Path:** `{src_path}`")
+        lines.append(f"**Rules Directory:** `{self.rules_dir}`")
+        lines.append("")
+        lines.append("[📋 Back to Coding Guidelines](../coding_guides_and_checks.md)")
+        lines.append("")
+        
+        # Summary statistics
+        lines.append("## Execution Summary")
+        lines.append("")
+        lines.append(f"- **Total Rules Scanned:** {len(rule_ids)}")
+        lines.append(f"- **✅ Passed:** {pass_count}")
+        lines.append(f"- **❌ Failed:** {fail_count}")
+        lines.append(f"- **⚠️  Skipped:** {skip_count}")
+        
+        if len(rule_ids) > 0:
+            success_rate = ((pass_count + skip_count) / len(rule_ids)) * 100
+            lines.append(f"- **Success Rate:** {success_rate:.1f}%")
+        lines.append("")
+        
+        # Detailed results table
+        lines.append("## Detailed Results")
+        lines.append("")
+        lines.append("| Rule ID | Script | Status | Log |")
+        lines.append("|---------|--------|--------|-----|")
+        
+        for rule_id in sorted(rule_ids):
+            script_path = rules_by_id.get(rule_id)
+            log_path = self.config.results_dir / f"{rule_id}.log"
+            status = self._read_rule_status(log_path)
+            log_name = f"{rule_id}.log"
+            
+            if status == "NOT_RUN":
+                status_icon = "-"
+                log_link = "-"
+            elif status == "PASS":
+                status_icon = "✅ PASS"
+                log_link = f"[{log_name}](./{log_name})"
+            elif status == "FAIL":
+                status_icon = "❌ FAIL"
+                log_link = f"[{log_name}](./{log_name})"
+            elif status == "SKIP":
+                status_icon = "⚠️  SKIP"
+                log_link = f"[{log_name}](./{log_name})"
+            else:
+                status_icon = status
+                log_link = f"[{log_name}](./{log_name})" if log_path.exists() else "-"
+            
+            script_name = script_path.name if script_path else "N/A"
+            lines.append(f"| {rule_id} | `{script_name}` | {status_icon} | {log_link} |")
+        
+        # Failures section
+        failed_rules = []
+        for rule_id in rule_ids:
+            log_path = self.config.results_dir / f"{rule_id}.log"
+            status = self._read_rule_status(log_path)
+            if status == "FAIL":
+                failed_rules.append(rule_id)
+        
+        if failed_rules:
+            lines.append("")
+            lines.append("## Failed Rules Details")
+            lines.append("")
+            for rule_id in failed_rules:
+                log_path = self.config.results_dir / f"{rule_id}.log"
+                lines.append(f"### {rule_id}")
+                lines.append("")
+                lines.append("```")
+                if log_path.exists():
+                    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines.append(f.read())
+                lines.append("```")
+                lines.append("")
+        
+        summary = "\n".join(lines) + "\n"
+        with open(summary_path, "w", encoding="utf-8") as summary_file:
+            summary_file.write(summary)
+        
+        write_success(f"Comprehensive summary report written to: {summary_path}")
+
     def _run_rule_script(self, rule_id: str, script_path: Path, src_path: str) -> bool:
         write_info(f"Running {script_path.name} on {src_path}")
         self.config.results_dir.mkdir(parents=True, exist_ok=True)
@@ -531,7 +716,7 @@ def main():
             if not args.src_path:
                 write_error("--src-path is required for rules-all")
                 return 1
-            success = pipeline.run_all_groups(args.src_path)
+            success = pipeline.run_all_available_rules(args.src_path)
         
         if not success:
             write_error("Analysis pipeline failed")

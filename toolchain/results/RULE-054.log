@@ -1,9 +1,9 @@
 RULE_ID: RULE-054
 SCRIPT: rule_RULE-054_MISRA_9_1_uninit.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:33
+TIMESTAMP: 2026-02-22 17:23:41
 ================================================================================
 RULE: RULE-054 (MISRA-9.1)
 DESC: No uninitialized auto vars (cppcheck)

@@ -1,0 +1,31 @@
+RULE_ID: RULE-021
+SCRIPT: rule_RULE-021_R6_2_minimize_globals.py
+SRC_PATH: src
+STATUS: FAIL
+EXIT_CODE: 1
+TIMESTAMP: 2026-02-22 17:23:30
+================================================================================
+[FAIL] desk_app.cpp:5 Global variable 'current_state' should be minimized
+       static AppState_t current_state = APP_STATE_IDLE;
+[FAIL] desk_app.cpp:6 Global variable 'state_entry_time' should be minimized
+       static uint32_t state_entry_time = 0U;
+[FAIL] desk_app.cpp:9 Global variable 'button_fault_latched' should be minimized
+       static bool button_fault_latched = false;      // Dual button press fault
+[FAIL] desk_app.cpp:11 Global variable 'current_fault_latched' should be minimized
+       static bool current_fault_latched = false;     // Stuck-on or obstruction fault
+[FAIL] desk_app.cpp:14 Global variable 'stuck_on_timer_start_ms' should be minimized
+       static uint32_t stuck_on_timer_start_ms = UINT32_MAX;    // Stuck-on detection when motor should be stopped
+[FAIL] desk_app.cpp:15 Global variable 'obstruction_timer_start_ms' should be minimized
+       static uint32_t obstruction_timer_start_ms = UINT32_MAX; // Obstruction detection during motion
+[FAIL] hal.cpp:12 Global variable 'g_motor_type' should be minimized
+       static MotorType_t g_motor_type = MT_BASIC;  // Default to MT_BASIC if not explicitly set
+[FAIL] motor_controller.cpp:90 Global variable 'last_dir' should be minimized
+       static MotorDirection_t last_dir = MOTOR_STOP;
+[FAIL] motor_controller.cpp:101 Global variable 'dir_start_time' should be minimized
+       static uint32_t dir_start_time = 0U;
+[FAIL] motor_controller.cpp:109 Global variable 'last_update_time' should be minimized
+       static uint32_t last_update_time = 0U;
+[FAIL] motor_controller.cpp:123 Global variable 'low_pwm_start_time' should be minimized
+       static uint32_t low_pwm_start_time = 0U;
+
+[FAIL] RULE-021 VIOLATION: Found 11 potential global variables

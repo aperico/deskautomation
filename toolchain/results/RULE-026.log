@@ -1,9 +1,9 @@
 RULE_ID: RULE-026
 SCRIPT: rule_RULE-026_R7_3_null_checks.py
-SRC_PATH: C:\Users\n68a0w5\Downloads\workspace\deskautomation\src
+SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
-TIMESTAMP: 2026-02-22 16:42:29
+TIMESTAMP: 2026-02-22 17:23:32
 ================================================================================
 RULE: RULE-026 (R7.3)
 DESC: Pointer parameters must be NULL-checked (heuristic)

@@ -1,10 +1,8 @@
-RULE_ID: RULE-034
-SCRIPT: rule_RULE-034_R9_3_no_function_pointers.py
+RULE_ID: RULE-030
+SCRIPT: rule_RULE-030_R8_3_named_constants.py
 SRC_PATH: src
 STATUS: PASS
 EXIT_CODE: 0
 TIMESTAMP: 2026-02-22 17:23:33
 ================================================================================
-RULE: RULE-034 (R9.3)
-DESC: No function pointers
-STATUS: PASS
+[PASS] RULE-030: All constants properly defined (using const/enum, not #define)
